@@ -4,7 +4,13 @@ import { StyleProp } from "react-native";
 
 interface ListsProps<T> {
   list: T[];
-  renderItem: ({ item }: { item: T }) => React.ReactElement;
+  renderItem: ({
+    item,
+    index,
+  }: {
+    item: T;
+    index: number;
+  }) => React.ReactElement;
   onRefresh?: () => void;
   refreshing?: boolean;
   onEndReached?: () => void;
@@ -27,11 +33,8 @@ export function Lists<T>({
     <FlatList
       data={list}
       renderItem={({ item, index }) => (
-        <View
-          key={item?.id ?? index}
-          style={[{ width: "100%" }, containerStyle]}
-        >
-          {renderItem({ item })}
+        <View style={[{ width: "100%" }, containerStyle]}>
+          {renderItem({ item, index })}
         </View>
       )}
       keyExtractor={(item: any, index) =>

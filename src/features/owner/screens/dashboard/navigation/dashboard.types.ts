@@ -7,7 +7,7 @@ export type OwnerDashboardStackParamList = {
     fromMaps?: boolean;
     [key: string]: any; // allow extra params if needed
   };
-  RoomsBookingListsScreen: {
+  RoomsListMainScreen: {
     paramsId: number;
   };
   RoomsDetailsScreen: {
@@ -16,7 +16,6 @@ export type OwnerDashboardStackParamList = {
     fromMaps?: boolean;
     [key: string]: any; // allow extra params if needed
   };
-  RoomsCheckoutScreen: undefined;
   VerificationMainScreen: undefined;
   VerificationSubmitScreen: {
     userId: number;

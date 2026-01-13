@@ -103,6 +103,7 @@ export default function RoomsDetailsScreen({
                 <Text style={[s.textColor]}>Book Now</Text>
               </Button>
             </Box>
+            
             <Box>
               <ScrollView
                 style={{ height: 150 }}

@@ -1,6 +1,5 @@
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import React from "react";
-import { Image, Pressable, StyleSheet } from "react-native";
-import { Box, Button, Text, View, VStack } from "@gluestack-ui/themed";
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import {
   BorderRadius,
@@ -9,25 +8,23 @@ import {
   GlobalStyle,
   Spacing,
 } from "@/constants";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import { useGetOneQuery as useGetOneBoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import {
-  RoomsBookingScreenRouteProp,
-  TenantBookingStackParamList,
-} from "../navigation/booking.types";
-import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { VStack, Box } from "@gluestack-ui/themed";
 import { Lists } from "@/components/layout/Lists/Lists";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { OwnerDashboardStackParamList } from "../navigation/dashboard.types";
+import { useGetOneQuery as useGetOneBoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import RoomsItems from "@/components/ui/RoomsItems/RoomsItems";
-import ScreenHeaderComponent from "@/components/layout/ScreenHeaderComponent";
+import ScreenHeaderComponent from "../../../../../components/layout/ScreenHeaderComponent";
+import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
+import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 
-export default function RoomsBookingListScreen() {
+export default function RoomsListMainScreen({ route }) {
   const navigate =
-    useNavigation<NativeStackNavigationProp<TenantBookingStackParamList>>();
+    useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
 
-  const route = useRoute<RoomsBookingScreenRouteProp>();
-  const { paramsId } = route.params;
+  const paramsId = route.params.paramsId;
+  console.log("paramsId: ", paramsId);
 
   const {
     data: boardingHouseData,
@@ -43,12 +40,6 @@ export default function RoomsBookingListScreen() {
     navigate.navigate("RoomsDetailsScreen", {
       roomId: roomId,
       boardingHouseId: bhId,
-    });
-  };
-
-  const gotoBooking = (roomId: number) => {
-    navigate.navigate("RoomsCheckoutScreen", {
-      roomId: roomId,
     });
   };
 
@@ -68,19 +59,15 @@ export default function RoomsBookingListScreen() {
         <ScreenHeaderComponent text={{ textValue: "Rooms" }} />
         <Lists
           list={rooms}
+          contentContainerStyle={{ gap: Spacing.md }}
           renderItem={({ item }) => (
-              <RoomsItems data={item} key={item.id.toString()}>
-                <Pressable
-                  onPress={() => gotoDetails(item.id, item.boardingHouseId)}
-                >
-                  <Text style={[s.textColor, s.item_cta_buttons]}>Details</Text>
-                </Pressable>
-                <Pressable onPress={() => gotoBooking(item.id)}>
-                  <Text style={[s.textColor, s.item_cta_buttons]}>
-                    Book Now
-                  </Text>
-                </Pressable>
-              </RoomsItems>
+            <RoomsItems data={item} key={item.id.toString()}>
+              <Pressable
+                onPress={() => gotoDetails(item.id, item.boardingHouseId)}
+              >
+                <Text style={[s.textColor, s.item_cta_buttons]}>Details</Text>
+              </Pressable>
+            </RoomsItems>
           )}
         />
       </VStack>

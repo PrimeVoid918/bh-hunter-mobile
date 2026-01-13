@@ -9,6 +9,8 @@ import { ROOM_FEATURE_TAGS } from "./rooms.constants";
 /* -----------------------------------------
    ENUMS & BASE SCHEMAS
 ------------------------------------------ */
+
+// Frontend enum
 export enum RoomType {
   STUDIO = "STUDIO",
   SINGLE = "SINGLE",
@@ -17,6 +19,7 @@ export enum RoomType {
   APARTMENT = "APARTMENT",
 }
 
+// Labels used in frontend UI
 export const RoomTypeLabels: Record<RoomType, string> = {
   [RoomType.STUDIO]: "Studio Room",
   [RoomType.SINGLE]: "Single Room (Private Room)",
@@ -25,22 +28,72 @@ export const RoomTypeLabels: Record<RoomType, string> = {
   [RoomType.APARTMENT]: "Apartment / Shared Room",
 };
 
-export const RoomTypeEnumSchema = z.nativeEnum(RoomType);
+// Backend string union
+export type BackendRoomType =
+  | "STUDIO"
+  | "SINGLE"
+  | "DOUBLE"
+  | "BED_SPACER"
+  | "APARTMENT";
 
+// Backend → Frontend enum mapper
+export const BackendRoomTypeToFrontend: Record<BackendRoomType, RoomType> = {
+  STUDIO: RoomType.STUDIO,
+  SINGLE: RoomType.SINGLE,
+  DOUBLE: RoomType.DOUBLE,
+  BED_SPACER: RoomType.BED_SPACER,
+  APARTMENT: RoomType.APARTMENT,
+};
+
+// Zod schema for backend values
+export const RoomTypeEnumSchema = z.enum([
+  "STUDIO",
+  "SINGLE",
+  "DOUBLE",
+  "BED_SPACER",
+  "APARTMENT",
+]);
+
+/* -----------------------------------------
+   ROOM FURNISHING TYPE
+------------------------------------------ */
+
+// Frontend enum
 export enum RoomFurnishingType {
   UNFURNISHED = "UNFURNISHED",
   SEMI_FURNISHED = "SEMI_FURNISHED",
   FULLY_FURNISHED = "FULLY_FURNISHED",
 }
 
+// Labels used in UI
 export const RoomFurnishingLabels: Record<RoomFurnishingType, string> = {
   [RoomFurnishingType.UNFURNISHED]: "Unfurnished",
   [RoomFurnishingType.SEMI_FURNISHED]: "Semi-Furnished",
   [RoomFurnishingType.FULLY_FURNISHED]: "Fully Furnished",
 };
 
-export const RoomFurnishingEnumSchema = z.nativeEnum(RoomFurnishingType);
+// Backend union
+export type BackendRoomFurnishingType =
+  | "UNFURNISHED"
+  | "SEMI_FURNISHED"
+  | "FULLY_FURNISHED";
 
+// Backend → Frontend enum mapper
+export const BackendFurnishingToFrontend: Record<
+  BackendRoomFurnishingType,
+  RoomFurnishingType
+> = {
+  UNFURNISHED: RoomFurnishingType.UNFURNISHED,
+  SEMI_FURNISHED: RoomFurnishingType.SEMI_FURNISHED,
+  FULLY_FURNISHED: RoomFurnishingType.FULLY_FURNISHED,
+};
+
+// Zod schema for backend values
+export const RoomFurnishingEnumSchema = z.enum([
+  "UNFURNISHED",
+  "SEMI_FURNISHED",
+  "FULLY_FURNISHED",
+]);
 /* -----------------------------------------
    READ / FETCH SCHEMAS
 ------------------------------------------ */
@@ -116,7 +169,7 @@ export type CreateRoom = z.input<typeof CreateRoomSchema>;
    CREATE (UNIFIED WITH BOARDING HOUSE)
 ------------------------------------------ */
 
-// ✅ Used when rooms are created inline during Boarding House creation
+// Used when rooms are created inline during Boarding House creation
 export const UnifiedRoomCreateSchema = z
   .object({
     roomNumber: z.string().min(1, "Room number is required"),
@@ -145,3 +198,51 @@ export const UnifiedRoomCreateSchema = z
   }));
 
 export type UnifiedRoomCreate = z.output<typeof UnifiedRoomCreateSchema>;
+
+/* -----------------------------------------
+   UPDATE (PATCH) SCHEMA — For Redux RTK
+------------------------------------------ */
+
+export const PatchRoomInputSchema = z.object({
+  roomNumber: z.string().optional(),
+  description: z.string().optional(),
+
+  maxCapacity: z.union([z.string(), z.number()]).optional(),
+
+  price: z.union([z.string(), z.number()]).optional(),
+
+  roomType: RoomTypeEnumSchema.optional(),
+
+  furnishingType: RoomFurnishingEnumSchema.optional(),
+
+  tags: z.array(z.enum(ROOM_FEATURE_TAGS)).optional(),
+
+  // RN image objects for upload
+  gallery: z
+    .array(
+      z.object({
+        uri: z.string(),
+        name: z.string().optional(),
+        type: z.string().optional(),
+      })
+    )
+    .optional(),
+
+  thumbnail: z
+    .array(
+      z.object({
+        uri: z.string(),
+        name: z.string().optional(),
+        type: z.string().optional(),
+      })
+    )
+    .optional(),
+
+  // Optional removal arrays
+  removeGalleryIds: z.array(z.number()).optional(),
+  removeThumbnailId: z.number().optional(),
+
+  availabilityStatus: z.boolean().optional(),
+});
+
+export type PatchRoomInput = z.infer<typeof PatchRoomInputSchema>;

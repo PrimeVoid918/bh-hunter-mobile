@@ -2,30 +2,36 @@ import React, {
   createContext,
   useContext,
   useState,
-  ReactNode,
   useCallback,
+  ReactNode,
 } from "react";
 import { Portal } from "@gorhom/portal";
 import { View } from "react-native";
-import EditStateContextSwitcherButtons from "./EditStateContextSwitcherButtons"; // Your button component
+import EditStateContextSwitcherButtons from "./EditStateContextSwitcherButtons";
 
-type ContextType = {
-  showButtons: (options?: {
-    onEdit?: () => void;
-    onSave?: () => void;
-    onDiscard?: () => void;
-  }) => void;
-  hideButtons: () => void;
-  isVisible: boolean;
+type Callbacks = {
+  onEdit?: () => void;
+  onSave?: () => void;
+  onDiscard?: () => void;
 };
 
-const Context = createContext<ContextType>({
-  showButtons: () => {},
-  hideButtons: () => {},
-  isVisible: false,
-});
+type ContextType = {
+  showButtons: (callbacks?: Callbacks) => void;
+  hideButtons: () => void;
+  isEditing: boolean;
+  setIsEditing: (value: boolean) => void;
+};
 
-export const useEditStateContextSwitcherButtons = () => useContext(Context);
+const Context = createContext<ContextType | undefined>(undefined);
+
+export const useEditStateContextSwitcherButtons = () => {
+  const context = useContext(Context);
+  if (!context)
+    throw new Error(
+      "useEditStateContextSwitcherButtons must be used within provider"
+    );
+  return context;
+};
 
 export const GlobalEditStateContextSwitcherButtonsProvider = ({
   children,
@@ -33,38 +39,28 @@ export const GlobalEditStateContextSwitcherButtonsProvider = ({
   children: ReactNode;
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // ← Now shared
+  const [callbacks, setCallbacks] = useState<Callbacks>({});
 
-  const [callbacks, setCallbacks] = useState<{
-    onEdit?: () => void;
-    onSave?: () => void;
-    onDiscard?: () => void;
-  }>({});
-
-  const showButtons = useCallback((options?: typeof callbacks) => {
-    if (options) setCallbacks(options);
+  const showButtons = useCallback((cbs?: Callbacks) => {
+    if (cbs) setCallbacks(cbs);
     setIsVisible(true);
   }, []);
 
-  const hideButtons = useCallback(() => setIsVisible(false), []);
+  const hideButtons = useCallback(() => {
+    setIsVisible(false);
+    // setIsEditing(false); // optional: reset when hiding
+  }, []);
 
-  const handleEdit = () => {
-    setIsEditing(true);
-    callbacks.onEdit?.();
-  };
-
-  const handleSave = () => {
-    setIsEditing(false);
-    callbacks.onSave?.();
-  };
-
-  const handleDiscard = () => {
-    setIsEditing(false);
-    callbacks.onDiscard?.();
+  const value = {
+    showButtons,
+    hideButtons,
+    isEditing,
+    setIsEditing,
   };
 
   return (
-    <Context.Provider value={{ showButtons, hideButtons, isVisible }}>
+    <Context.Provider value={value}>
       {children}
 
       <Portal name="EditContextSwitchingPortal">
@@ -72,9 +68,9 @@ export const GlobalEditStateContextSwitcherButtonsProvider = ({
           <View style={{ position: "absolute", right: 5, top: 15 }}>
             <EditStateContextSwitcherButtons
               isEditing={isEditing}
-              onEdit={handleEdit}
-              onSave={handleSave}
-              onDiscard={handleDiscard}
+              onEdit={callbacks.onEdit}
+              onSave={callbacks.onSave}
+              onDiscard={callbacks.onDiscard}
             />
           </View>
         )}

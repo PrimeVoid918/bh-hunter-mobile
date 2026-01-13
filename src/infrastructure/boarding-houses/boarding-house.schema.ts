@@ -33,7 +33,15 @@ export const OccupancyTypeLabels: Record<OccupancyType, string> = {
   [OccupancyType.MIXED]: "Mixed",
 };
 
-export const OccupancyTypeEnumSchema = z.nativeEnum(OccupancyType);
+export type BackendOccupancyType = "MALE" | "FEMALE" | "MIXED";
+export const BackendToFrontendMap: Record<BackendOccupancyType, OccupancyType> =
+  {
+    MALE: OccupancyType.MALE,
+    FEMALE: OccupancyType.FEMALE,
+    MIXED: OccupancyType.MIXED,
+  };
+
+export const OccupancyTypeEnumSchema = z.enum(["MALE", "FEMALE", "MIXED"]);
 
 /* -----------------------------------------
    ENUMS & BASE SCHEMAS
@@ -198,7 +206,7 @@ export const PatchBoardingHouseSchema = z
 
     // Strict enum array
     amenities: z.array(z.enum(AMENITIES)).optional(),
-    occupancyType: OccupancyTypeEnumSchema,
+    occupancyType: OccupancyTypeEnumSchema.optional(),
 
     availabilityStatus: z.boolean().optional(),
 

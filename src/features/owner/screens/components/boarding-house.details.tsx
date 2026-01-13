@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,7 +7,6 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import React, { useState, useMemo } from "react";
 import {
   Colors,
   Spacing,
@@ -14,266 +14,243 @@ import {
   Fontsize,
   BorderRadius,
 } from "@/constants";
-import { Box, FormControl, Input, InputField } from "@gluestack-ui/themed";
+import {
+  Box,
+  FormControl,
+  Input,
+  InputField,
+  HStack,
+  VStack,
+  Button,
+} from "@gluestack-ui/themed";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
 
-// ui components
+// UI Components
 import ImageCarousel from "@/components/ui/ImageCarousel";
-import Button from "@/components/ui/Button";
-
-// layout
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-
-// redux
-import { HStack, VStack } from "@gluestack-ui/themed";
-
-import {
-  useGetOneQuery as useGetOneBoardingHouses,
-  usePatchMutation,
-} from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
 import Container from "@/components/layout/Container/Container";
+import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
+
+// Form & Validation
 import { Controller, useForm } from "react-hook-form";
-import { PatchBoardingHouseInput } from "@/infrastructure/boarding-houses/boarding-house.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PatchBoardingHouseSchema } from "../../../../infrastructure/boarding-houses/boarding-house.schema";
+import {
+  BackendOccupancyType,
+  OccupancyType,
+  PatchBoardingHouseSchema,
+  type PatchBoardingHouseInput,
+} from "@/infrastructure/boarding-houses/boarding-house.schema";
+
+// RTK Query
+import {
+  useGetOneQuery as useGetOneBoardingHouses,
+  usePatchMutation,
+} from "@/infrastructure/boarding-houses/boarding-house.redux.api";
+
+// Constants
 import {
   AMENITIES,
-  Amenity,
+  type Amenity,
 } from "@/infrastructure/boarding-houses/boarding-house.constants";
-import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
-import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
 import { useEditStateContextSwitcherButtons } from "@/components/ui/Portals/GlobalEditStateContextSwitcherButtonsProvider";
 import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
+import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { OwnerDashboardStackParamList } from "../dashboard/navigation/dashboard.types";
 
 export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
-  const [isEditing, setIsEditing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [isActionSheetOpen, setIsActionSheetOpen] = React.useState(false);
 
-  const { showButtons, hideButtons } = useEditStateContextSwitcherButtons();
-
+  const {
+    showButtons,
+    hideButtons,
+    isEditing: globalIsEditing,
+    setIsEditing: setGlobalIsEditing,
+  } = useEditStateContextSwitcherButtons();
   const { showModal } = useDecisionModal();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
+  const isFocused = useIsFocused();
 
-  const { selectedUser: data } = useDynamicUserApi();
-  const user = data;
-
-  const navigation = useNavigation<any>(); // adjust type if you have a typed navigator
-
-  // ──────────────────────────────────────
-  // 1. All hooks – unconditional
-  // ──────────────────────────────────────
+  //* ── Fetch Data ──
   const {
     data: boardinghouse,
-    isLoading: isBoardingHouseLoading,
-    isError: isBoardingHouseError,
-    refetch: refetchBoardingHouse,
+    isLoading: isLoadingBH,
+    isError: isErrorBH,
+    refetch,
   } = useGetOneBoardingHouses(bhID);
 
-  const [
-    patchBoardingHouse,
-    { isLoading: isPatchLoading, isError: isPatchError },
-  ] = usePatchMutation();
+  const [patchBoardingHouse] = usePatchMutation();
 
-  // ---- defaultValues (memoised) ----
-  const initialDefaultValues = useMemo<Partial<PatchBoardingHouseInput>>(() => {
-    if (!boardinghouse) return {};
-    return {
-      name: boardinghouse.name,
-      address: boardinghouse.address,
-      description: boardinghouse.description,
-      availabilityStatus: boardinghouse.availabilityStatus,
-      amenities: boardinghouse.amenities,
-    };
-  }, [boardinghouse]);
-
+  //* ── Form Setup ──
   const {
     control,
-    handleSubmit,
-    setValue,
     reset,
+    getValues,
+    setValue,
     watch,
-    formState: { errors },
+    formState: { dirtyFields, errors },
   } = useForm<PatchBoardingHouseInput>({
-    resolver: zodResolver(PatchBoardingHouseSchema) as any,
-    defaultValues: initialDefaultValues,
+    resolver: zodResolver(PatchBoardingHouseSchema),
+    defaultValues: {
+      name: "",
+      address: "",
+      description: "",
+      amenities: [],
+      availabilityStatus: true,
+      occupancyType: "MIXED",
+    },
   });
 
-  const currentValues = watch(); // watch entire form
-
-  const hasChanges = useMemo(() => {
-    // simple shallow comparison, you can make it deep if needed
-    return (
-      JSON.stringify(currentValues) !== JSON.stringify(initialDefaultValues)
-    );
-  }, [currentValues, initialDefaultValues]);
-
-  React.useEffect(() => {
+  //* Reset form when data loads
+  useEffect(() => {
     if (boardinghouse) {
       reset({
         name: boardinghouse.name,
         address: boardinghouse.address,
-        description: boardinghouse.description,
+        description: boardinghouse.description ?? "",
+        amenities: boardinghouse.amenities ?? [],
         availabilityStatus: boardinghouse.availabilityStatus,
-        amenities: boardinghouse.amenities,
+        occupancyType: boardinghouse.occupancyType,
       });
     }
   }, [boardinghouse, reset]);
 
+  // Watch current selected amenities
   const selectedAmenities = watch("amenities") ?? [];
 
-  const isFocused = useIsFocused();
-  React.useEffect(() => {
-    if (isFocused) {
-      showButtons({
-        onEdit: () => setIsEditing(true),
-        onSave: () => {
-          showModal({
-            title: "Save Changes?",
-            cancelText: "Cancel",
-            confirmText: "Save",
-            message:
-              "You are about to save changes to this listing. Once saved, the updated information will be visible to all users. Are you sure you want to continue?",
-            onConfirm: async () => {
-              try {
-                if (user?.id) return Alert.alert("Owner Id cant be fetched!");
-                const res = await patchBoardingHouse({
-                  id: user?.id!,
-                  data: {
-                    name: currentValues.name,
-                    address: currentValues.address,
-                    description: currentValues.description,
-                    availabilityStatus: currentValues.availabilityStatus,
-                    amenities: currentValues.amenities,
-                  },
-                }).unwrap();
-
-              } catch (e) {}
-              Alert.alert("Changes saved successfully!");
-              // Here you could also call your patch API
-              setIsEditing(false);
-            },
-          });
-        },
-        onDiscard: () => {
-          // ! watching the changes does not work
-          if (hasChanges) {
-            showModal({
-              title: "Discard Changes?",
-              cancelText: "Cancel",
-              confirmText: "Discard",
-              message:
-                "You have unsaved changes. Discarding will lose all edits made to this listing. Are you sure you want to continue?",
-              onConfirm: () => {
-                setIsEditing(false);
-                // optionally reset form to initial values
-                reset(initialDefaultValues);
-              },
-            });
-          } else {
-            setIsEditing(false);
-          }
-        },
-      });
+  // ── Global Edit Buttons (No stale data!) ──
+  useEffect(() => {
+    if (!isFocused) {
+      hideButtons();
+      return;
     }
 
-    return () => {
-      hideButtons(); // will run on unmount
-    };
-  }, [isFocused]);
+    showButtons({
+      onEdit: () => {
+        setGlobalIsEditing(true);
+      },
 
-  // ---- derived available amenities (no state, no useEffect) ----
-  const availableAmenities = useMemo(() => {
-    return AMENITIES.filter((a) => !selectedAmenities.includes(a));
-  }, [selectedAmenities]);
+      onSave: () => {
+        showModal({
+          title: "Save Changes?",
+          message: "This will update your boarding house listing.",
+          cancelText: "Cancel",
+          confirmText: "Save",
+          onConfirm: async () => {
+            try {
+              const payload = getValues();
+              await patchBoardingHouse({ id: bhID, data: payload }).unwrap();
+              Alert.alert("Success", "Changes saved!");
+              console.log("is editing?: ", globalIsEditing);
+              setGlobalIsEditing(false);
+            } catch (err: any) {
+              const message = Array.isArray(err?.data?.message)
+                ? err.data.message.join("\n")
+                : err?.data?.message || "Failed to save";
+              Alert.alert("Error", message);
+            }
+          },
+        });
+      },
 
-  // ──────────────────────────────────────
-  // 2. Handlers
-  // ──────────────────────────────────────
-  const handleSelectAmenity = (item: string) => {
-    const update = [...selectedAmenities, item] as Amenity[];
-    setValue("amenities", update);
+      onDiscard: () => {
+        showModal({
+          title: "Discard Changes?",
+          message: "All unsaved changes will be lost.",
+          cancelText: "Cancel",
+          confirmText: "Discard",
+          onConfirm: () => {
+            reset();
+            setGlobalIsEditing(false); // ← Only exit after confirm
+          },
+        });
+      },
+    });
+
+    return () => hideButtons();
+  }, [
+    isFocused,
+    showButtons,
+    hideButtons,
+    showModal,
+    getValues,
+    reset,
+    patchBoardingHouse,
+    bhID,
+  ]);
+
+  // ── Amenity Toggle (Now 100% type-safe!) ──
+  const toggleAmenity = (amenity: Amenity) => {
+    const current = getValues("amenities") ?? [];
+    const updated = current.includes(amenity)
+      ? current.filter((a) => a !== amenity)
+      : [...current, amenity];
+
+    setValue("amenities", updated, { shouldDirty: true });
   };
 
-  const handleRemoveAmenity = (item: string) => {
-    const update = selectedAmenities.filter((a) => a !== item);
-    setValue("amenities", update as Amenity[]);
+  // ── Other Handlers ──
+  const goToRooms = () => {
+    navigation.navigate("RoomsListMainScreen", { paramsId: bhID });
   };
 
-  const onSubmitForm = (data: PatchBoardingHouseInput) => {
-    // await patchBoardingHouse({ id: bhID, data }).unwrap();
-    // setIsEditing(false);
-    // refetchBoardingHouse();
-  };
-
-  const handleGotoRoomLists = (bhNumber: number) => {
-    if (!bhNumber) return;
-    navigation.navigate("RoomsBookingListsScreen", { paramsId: bhNumber });
-  };
-
-  const handRefetchBoardingHouse = () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    refetchBoardingHouse();
+    refetch?.();
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  // ──────────────────────────────────────
-  // 3. Early returns (AFTER all hooks)
-  // ──────────────────────────────────────
-  if (isBoardingHouseLoading || !boardinghouse) {
-    return <FullScreenLoaderAnimated />;
-  }
+  // ── Early Returns ──
+  if (isLoadingBH || !boardinghouse) return <FullScreenLoaderAnimated />;
+  if (isErrorBH) return <FullScreenErrorModal />;
 
-  if (isBoardingHouseError) {
-    return <FullScreenErrorModal />;
-  }
-
-  // ──────────────────────────────────────
-  // 4. Render UI
-  // ──────────────────────────────────────
+  // ── Render ──
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
+      style={GlobalStyle.GlobalsContainer}
+      contentContainerStyle={GlobalStyle.GlobalsContentContainer}
       wrapInScrollView={false}
     >
-      <Container refreshing={refreshing} onRefresh={handRefetchBoardingHouse}>
-        <VStack style={[GlobalStyle.GlobalsContainer, s.main_container]}>
-          {/* ── Header ── */}
+      <Container refreshing={refreshing} onRefresh={onRefresh}>
+        <VStack style={[GlobalStyle.GlobalsContainer, s.container]}>
+          {/* Header */}
           <View style={s.header}>
             <PressableImageFullscreen
-              image={boardinghouse?.thumbnail?.[0]}
-              containerStyle={{ width: "100%", aspectRatio: 1 }}
+              image={boardinghouse.thumbnail?.[0]}
+              containerStyle={{ width: "100%", aspectRatio: 1.2 }}
               imageStyleConfig={{
                 resizeMode: "cover",
-                containerStyle: {
-                  margin: "auto",
-                  borderRadius: BorderRadius.md,
-                },
+                containerStyle: { borderRadius: BorderRadius.md },
               }}
             />
 
-            <HStack>
-              <Text style={s.text_generic_small}>*****</Text>
-              <Text style={s.text_generic_small}>( 4.0 )</Text>
+            <HStack style={{ marginTop: 12, gap: 8 }}>
+              <Text style={s.rating}>*****</Text>
+              <Text style={s.rating}>(4.0)</Text>
             </HStack>
 
-            <HStack style={{ alignItems: "center", gap: 10 }}>
-              <VStack style={{ width: "75%", gap: 10 }}>
+            <HStack
+              style={{ marginTop: 16, alignItems: "flex-start", gap: 12 }}
+            >
+              <VStack style={{ flex: 1, gap: 12 }}>
                 {/* Name */}
                 <FormControl isInvalid={!!errors.name}>
                   <Controller
                     control={control}
                     name="name"
-                    render={({ field: { onChange, onBlur, value } }) =>
-                      isEditing ? (
-                        <Input borderColor="$green">
+                    render={({ field }) =>
+                      globalIsEditing ? (
+                        <Input borderColor="$green500">
                           <InputField
-                            placeholder={value}
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            value={value}
+                            value={field.value ?? ""}
+                            onChangeText={field.onChange}
+                            onBlur={field.onBlur}
+                            placeholder="Boarding house name"
                             style={[s.text_title, { fontWeight: "bold" }]}
                           />
                         </Input>
@@ -283,7 +260,7 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
                     }
                   />
                   {errors.name && (
-                    <Text style={{ color: "red" }}>{errors.name.message}</Text>
+                    <Text style={s.errorText}>{errors.name.message}</Text>
                   )}
                 </FormControl>
 
@@ -292,14 +269,14 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
                   <Controller
                     control={control}
                     name="address"
-                    render={({ field: { onChange, onBlur, value } }) =>
-                      isEditing ? (
-                        <Input borderColor="$green">
+                    render={({ field }) =>
+                      globalIsEditing ? (
+                        <Input borderColor="$green500">
                           <InputField
+                            value={field.value ?? ""}
+                            onChangeText={field.onChange}
+                            onBlur={field.onBlur}
                             placeholder="Enter address"
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            value={value}
                             style={s.text_address}
                           />
                         </Input>
@@ -311,27 +288,55 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
                     }
                   />
                   {errors.address && (
-                    <Text style={{ color: "red" }}>
-                      {errors.address.message}
-                    </Text>
+                    <Text style={s.errorText}>{errors.address.message}</Text>
                   )}
+                </FormControl>
+
+                {/* OccupancyType */}
+                <FormControl isInvalid={!!errors.occupancyType}>
+                  {/* <FormControl.Label>
+                    <Text style={[]}>OccupancyType Type</Text>
+                  </FormControl.Label> */}
+
+                  <Controller
+                    control={control}
+                    name="occupancyType"
+                    rules={{ required: "BH Occupancy Type is required" }}
+                    render={({ field: { onChange, value } }) => (
+                      <View>
+                        {globalIsEditing ? (
+                          <Button onPress={() => setIsActionSheetOpen(true)}>
+                            <Text>{value || "Select Room Type"}</Text>
+                          </Button>
+                        ) : (
+                          <Text
+                            style={{
+                              color: Colors.TextInverse[2],
+                              fontSize: Fontsize.md,
+                            }}
+                          >
+                            OccupancyType: {value}
+                          </Text>
+                        )}
+                      </View>
+                    )}
+                  />
                 </FormControl>
               </VStack>
 
-              <Button
-                containerStyle={{ marginTop: 10, padding: 10 }}
-                onPressAction={() => handleGotoRoomLists(boardinghouse.id)}
-              >
-                <Text>View Rooms</Text>
+              <Button onPress={goToRooms}>
+                <Text style={{ color: "white", fontWeight: "600" }}>
+                  View Rooms
+                </Text>
               </Button>
             </HStack>
           </View>
 
-          {/* ── Body ── */}
+          {/* Body */}
           <VStack style={s.body}>
             <ImageCarousel
               variant="secondary"
-              images={boardinghouse?.gallery ?? []}
+              images={boardinghouse.gallery ?? []}
             />
 
             {/* Description */}
@@ -339,31 +344,24 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
               <Controller
                 control={control}
                 name="description"
-                rules={{
-                  maxLength: {
-                    value: 500,
-                    message: "Description must be 500 characters or less",
-                  },
-                }}
-                render={({ field: { onChange, onBlur, value } }) =>
-                  isEditing ? (
+                render={({ field }) =>
+                  globalIsEditing ? (
                     <AutoExpandingInput
-                      placeholder="Enter Description of your property"
+                      value={field.value ?? ""}
+                      onChangeText={field.onChange}
+                      placeholder="Enter description..."
                       style={s.text_description}
                       containerStyle={{
-                        padding: 10,
-                        borderColor: "green",
+                        padding: 14,
+                        borderColor: "#10b981",
                         borderWidth: 2,
                         backgroundColor: Colors.PrimaryLight[7],
                         borderRadius: BorderRadius.md,
                       }}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      value={value}
                     />
                   ) : (
                     <Text style={s.text_description}>
-                      {boardinghouse.description}
+                      {boardinghouse.description || "No description provided."}
                     </Text>
                   )
                 }
@@ -371,115 +369,143 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
             </FormControl>
 
             {/* Amenities */}
-            <VStack
-              style={{
-                backgroundColor: Colors.PrimaryLight[7],
-                padding: 10,
-                borderRadius: BorderRadius.md,
-              }}
-            >
-              <Text style={s.text_generic_large}>Additional Information:</Text>
+            <VStack style={s.amenitiesContainer}>
+              <Text style={s.sectionTitle}>Additional Information:</Text>
 
-              {isEditing ? (
+              {/* ! refactorable into a component for multiple selection of ameneties */}
+              {globalIsEditing ? (
                 <ScrollView
-                  style={{ height: 150 }}
-                  contentContainerStyle={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 10,
-                    justifyContent: "flex-start",
-                    alignContent: "flex-start",
-                  }}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={{ marginTop: 12 }}
                 >
-                  {availableAmenities.map((item, idx) => (
-                    <Pressable
-                      key={idx}
-                      onPress={() => handleSelectAmenity(item)}
-                    >
-                      <Box
-                        style={{
-                          borderRadius: BorderRadius.md,
-                          padding: 5,
-                          backgroundColor: Colors.PrimaryLight[6],
-                        }}
-                      >
-                        <Text style={s.generic_text}>{item}</Text>
-                      </Box>
-                    </Pressable>
-                  ))}
+                  <HStack style={{ gap: 12, paddingRight: 20 }}>
+                    {AMENITIES.map((amenity) => {
+                      const isSelected = selectedAmenities.includes(amenity);
+                      return (
+                        <Pressable
+                          key={amenity}
+                          onPress={() => toggleAmenity(amenity)}
+                        >
+                          <Box
+                            style={[
+                              s.amenityChip,
+                              isSelected && s.amenityChipSelected,
+                            ]}
+                          >
+                            <Text
+                              style={
+                                isSelected
+                                  ? s.amenityTextSelected
+                                  : s.amenityText
+                              }
+                            >
+                              {amenity}
+                            </Text>
+                          </Box>
+                        </Pressable>
+                      );
+                    })}
+                  </HStack>
+                  {/*! refactorable into a component for multiple selection of ameneties */}
                 </ScrollView>
               ) : (
-                <VStack style={{ gap: 5, marginTop: 5 }}>
-                  {boardinghouse?.amenities?.map((key, idx) => (
-                    <Text
-                      key={idx}
-                      style={[
-                        s.text_generic_medium,
-                        {
-                          backgroundColor: Colors.PrimaryLight[8],
-                          padding: 5,
-                          borderRadius: BorderRadius.md,
-                        },
-                      ]}
-                    >
-                      {key.replace(/([a-z])([A-Z])/g, "$1 $2")}
+                <VStack style={{ gap: 8, marginTop: 12 }}>
+                  {boardinghouse.amenities?.length ? (
+                    boardinghouse.amenities.map((amenity) => (
+                      <Text key={amenity} style={s.amenityDisplay}>
+                        {amenity}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={{ color: Colors.TextInverse[3] }}>
+                      No amenities listed
                     </Text>
-                  ))}
+                  )}
                 </VStack>
               )}
             </VStack>
           </VStack>
         </VStack>
+        <BottomSheetSelector<BackendOccupancyType>
+          values={["MALE", "FEMALE", "MIXED"] as const}
+          isOpen={isActionSheetOpen}
+          onClose={() => setIsActionSheetOpen(false)}
+          onSelect={(value) => {
+            setValue("occupancyType", value, { shouldDirty: true });
+            setIsActionSheetOpen(false);
+          }}
+        />
       </Container>
     </StaticScreenWrapper>
   );
 }
 
-// ──────────────────────────────────────
-// Styles
-// ──────────────────────────────────────
+// ── Styles ──
 const s = StyleSheet.create({
-  main_container: {
-    flex: 1,
-    padding: Spacing.md,
-    gap: Spacing.md,
-  },
-  header: {
-    minHeight: 250,
-    width: "100%",
-    borderTopRightRadius: 10,
-    borderTopLeftRadius: 10,
-    zIndex: 5,
-    marginBottom: 10,
-    gap: 10,
-  },
-  body: { gap: Spacing.md },
-
+  container: { flex: 1, padding: Spacing.md, gap: Spacing.md },
+  header: { gap: Spacing.md },
+  body: { gap: Spacing.xl },
   text_title: {
-    color: Colors.TextInverse[1],
     fontSize: Fontsize.xxl,
     fontWeight: "900",
+    color: Colors.TextInverse[1],
+  },
+  text_address: {
+    fontSize: Fontsize.md,
+    color: Colors.TextInverse[2],
   },
   text_description: {
     fontSize: Fontsize.lg,
     color: Colors.TextInverse[2],
+    lineHeight: 26,
   },
-  text_address: {
-    fontSize: Fontsize.sm,
-    paddingTop: 5,
-    color: Colors.TextInverse[2],
-  },
-  text_generic_small: {
+  rating: {
     fontSize: Fontsize.sm,
     color: Colors.TextInverse[1],
   },
-  text_generic_medium: {
+  viewRoomsBtn: {
+    marginTop: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+  },
+  sectionTitle: {
+    fontSize: Fontsize.lg,
+    fontWeight: "600",
+    color: Colors.TextInverse[1],
+  },
+  amenitiesContainer: {
+    backgroundColor: Colors.PrimaryLight[7],
+    padding: 16,
+    borderRadius: BorderRadius.md,
+  },
+  amenityChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: Colors.PrimaryLight[6],
+    borderRadius: BorderRadius.md,
+  },
+  amenityChipSelected: {
+    backgroundColor: "#10b981",
+  },
+  amenityText: {
+    color: Colors.TextInverse[1],
+    fontSize: Fontsize.sm,
+  },
+  amenityTextSelected: {
+    color: "white",
+    fontWeight: "600",
+  },
+  amenityDisplay: {
+    backgroundColor: Colors.PrimaryLight[8],
+    padding: 10,
+    borderRadius: BorderRadius.md,
     fontSize: Fontsize.md,
     color: Colors.TextInverse[1],
   },
-  text_generic_large: {
-    fontSize: Fontsize.lg,
-    color: Colors.TextInverse[1],
+  errorText: {
+    color: "red",
+    marginTop: 4,
+    fontSize: Fontsize.sm,
   },
-  generic_text: {},
 });

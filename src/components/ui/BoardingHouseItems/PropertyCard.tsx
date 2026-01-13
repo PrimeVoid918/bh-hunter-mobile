@@ -8,6 +8,7 @@ import {
 import { Colors, Fontsize, Spacing } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import PressableImageFullscreen from "../ImageComponentUtilities/PressableImageFullscreen";
+import { formatNumberWithCommas } from "@/infrastructure/utils/string.formatter.util";
 
 interface PropertyCardProps {
   data: GetBoardingHouse;
@@ -43,7 +44,8 @@ export default function PropertyCard({ data, children }: PropertyCardProps) {
               { marginLeft: "auto" },
             ]}
           >
-            ₱{data.priceRange?.highestPrice} - {data.priceRange?.highestPrice}
+            ₱{formatNumberWithCommas(data.priceRange?.lowestPrice!)} - ₱
+            {formatNumberWithCommas(data.priceRange?.highestPrice!)}
           </Text>
         </HStack>
         <HStack>
@@ -52,14 +54,13 @@ export default function PropertyCard({ data, children }: PropertyCardProps) {
             <Text style={[s.generic_text_xs]}> {data.rooms?.length}</Text>
           </HStack>
           <Text style={[s.generic_text_xs, { marginLeft: "auto" }]}>
-            No. of Rooms: {data.rooms?.length}
+            {data.rooms?.length} {data.rooms?.length == 1 ? "room" : "rooms"}
           </Text>
         </HStack>
         <HStack style={[s.ameneity_style]}>
           {data.amenities?.map((amenity, i) => (
-            <HStack style={[s.ameneity_style_item]}>
+            <HStack style={[s.ameneity_style_item]} key={i}>
               <Text
-                key={i}
                 style={[s.generic_text_xs, { color: Colors.TextInverse[3] }]}
               >
                 {amenity}

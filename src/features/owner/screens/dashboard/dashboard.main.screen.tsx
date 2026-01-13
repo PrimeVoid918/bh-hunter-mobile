@@ -165,32 +165,29 @@ export default function DashboardMainScreen() {
           <>
             <Lists
               list={boardingHouses}
-              containerStyle={[
+              contentContainerStyle={[
                 {
                   gap: Spacing.lg,
                 },
               ]}
-              renderItem={({ item }) => (
-                <>
-                  <PropertyCard data={item}>
-                    <Pressable
-                      onPress={() => handleGotoPress(item.id)}
-                      style={{
-                        paddingTop: Spacing.xs,
-                        paddingBottom: Spacing.xs,
-                        paddingLeft: Spacing.sm,
-                        paddingRight: Spacing.sm,
-                        borderWidth: 2,
-                        borderColor: Colors.PrimaryLight[5],
-                        borderRadius: BorderRadius.md,
-                        backgroundColor: Colors.PrimaryLight[6],
-                        
-                      }}
-                    >
-                      <Text style={{ color: "white" }}>Details</Text>
-                    </Pressable>
-                  </PropertyCard>
-                </>
+              renderItem={({ item, index }) => (
+                <PropertyCard data={item} key={index}>
+                  <Pressable
+                    onPress={() => handleGotoPress(item.id)}
+                    style={{
+                      paddingTop: Spacing.xs,
+                      paddingBottom: Spacing.xs,
+                      paddingLeft: Spacing.sm,
+                      paddingRight: Spacing.sm,
+                      borderWidth: 2,
+                      borderColor: Colors.PrimaryLight[5],
+                      borderRadius: BorderRadius.md,
+                      backgroundColor: Colors.PrimaryLight[6],
+                    }}
+                  >
+                    <Text style={{ color: "white" }}>Details</Text>
+                  </Pressable>
+                </PropertyCard>
               )}
             />
           </>

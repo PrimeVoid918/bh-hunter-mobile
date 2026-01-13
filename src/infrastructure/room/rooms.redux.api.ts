@@ -1,7 +1,13 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import api from "@/application/config/api";
 import { ApiResponseType } from "../common/types/api.types";
-import { CreateRoom, FindOneRoom, GetRoom } from "./rooms.schema";
+import {
+  CreateRoom,
+  FindOneRoom,
+  GetRoom,
+  PatchRoomInput,
+  PatchRoomInputSchema,
+} from "./rooms.schema";
 
 const roomApiRoute = `/api/boarding-houses/`;
 export const roomApi = createApi({
@@ -45,6 +51,31 @@ export const roomApi = createApi({
       }),
       invalidatesTags: ["Room"],
     }),
+
+    patchRoom: builder.mutation<
+      ApiResponseType<GetRoom>,
+      {
+        boardingHouseId: number | string;
+        roomId: number | string;
+        data: PatchRoomInput;
+      }
+    >({
+      query: ({ boardingHouseId, roomId, data }) => {
+        const parsed = PatchRoomInputSchema.safeParse(data);
+
+        if (!parsed.success) {
+          console.error("❌ Invalid PATCH data", parsed.error.format());
+          throw new Error("Invalid PATCH data");
+        }
+
+        return {
+          url: `${roomApiRoute}${boardingHouseId}/rooms/${roomId}`,
+          method: "PATCH",
+          body: parsed.data,
+        };
+      },
+      invalidatesTags: ["Room"],
+    }),
     delete: builder.mutation<
       GetRoom,
       { boardingHouseId: number; roomId: number }
@@ -62,5 +93,6 @@ export const {
   useGetAllQuery,
   useGetOneQuery,
   useCreateMutation,
+  usePatchRoomMutation,
   useDeleteMutation,
 } = roomApi;

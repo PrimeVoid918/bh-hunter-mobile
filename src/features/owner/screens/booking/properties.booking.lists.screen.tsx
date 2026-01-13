@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import React, { useState } from "react";
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import {
@@ -45,7 +45,13 @@ export default function PropertiesBookingListsScreen() {
   const { data: boardingHouseData } = useGetOneQuery(bhId);
 
   const handleGotoBookingDetails = (bookId: number) => {
-    navigation.navigate("PropertiesDetailsScreen", { bookId });
+    console.log("togo book detalils", bookId);
+    if (!bookId) {
+      Alert.alert("Error", "Missing required parameter: bookId");
+      return;
+    }
+
+    navigation.navigate("PropertiesDetailsScreen", { bookId: bookId });
   };
 
   const handlePageRefresh = () => {

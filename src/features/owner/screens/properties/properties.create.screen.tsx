@@ -26,6 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 import { useCreateMutation } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import {
+  BackendOccupancyType,
   CreateBoardingHouseInput,
   CreateBoardingHouseInputSchema,
   CreateBoardingHouseSchema,
@@ -73,7 +74,7 @@ export default function PropertiesCreateScreen() {
     description: "",
     ownerId: user?.id ?? 0,
     availabilityStatus: true,
-    occupancyType: OccupancyType.MIXED,
+    occupancyType: "MIXED",
     amenities: [],
     thumbnail: [],
     gallery: [],
@@ -641,8 +642,8 @@ export default function PropertiesCreateScreen() {
             </Pressable>
           </FormControl>
         </View>
-        <BottomSheetSelector<OccupancyType>
-          values={Object.values(OccupancyType)}
+        <BottomSheetSelector<BackendOccupancyType>
+          values={["MALE", "FEMALE", "MIXED"] as const}
           isOpen={isActionSheetOpen}
           onClose={() => setIsActionSheetOpen(false)}
           onSelect={(value) => {

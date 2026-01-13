@@ -18,6 +18,7 @@ import {
 } from "./boarding-house.schema";
 
 import { uploadBoardingHouse } from "../utils/upload.service";
+import { expoStorageCleaner } from "../utils/expo-utils/expo-utils.service";
 
 //* -- createApi --
 const boardingHouseApiRoute = `/api/boarding-houses`;
@@ -99,6 +100,7 @@ export const boardingHouseApi = createApi({
           const result = await uploadBoardingHouse(data);
 
           if (result.success) {
+            await expoStorageCleaner("images");
             return {
               data: {
                 success: true,
@@ -113,6 +115,7 @@ export const boardingHouseApi = createApi({
             error: {
               status: "SERVER_REJECTED",
               data: result.error,
+              dataObj: result,
             },
           };
         } catch (error: any) {

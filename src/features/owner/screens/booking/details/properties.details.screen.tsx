@@ -14,13 +14,9 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/application/store/stores";
 import Container from "@/components/layout/Container/Container";
 
-type RouteProps = RouteProp<
-  OwnerBookingStackParamList,
-  "PropertiesDetailsScreen"
->;
-
-export default function PropertiesDetailsScreen() {
-  const route = useRoute<RouteProps>();
+export default function PropertiesDetailsScreen({ route: routeVal }) {
+  const route = routeVal;
+  console.log(route);
   const [refreshing, setRefreshing] = React.useState(false);
   const [childRefresh, setChildRefresh] = React.useState();
 
