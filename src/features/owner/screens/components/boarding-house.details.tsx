@@ -60,6 +60,7 @@ import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OwnerDashboardStackParamList } from "../dashboard/navigation/dashboard.types";
+import AmenitiesList from "@/components/ui/AmenitiesAndTagsLists/AmenitiesListStateful";
 
 export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
   const [refreshing, setRefreshing] = useState(false);
@@ -294,10 +295,6 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
 
                 {/* OccupancyType */}
                 <FormControl isInvalid={!!errors.occupancyType}>
-                  {/* <FormControl.Label>
-                    <Text style={[]}>OccupancyType Type</Text>
-                  </FormControl.Label> */}
-
                   <Controller
                     control={control}
                     name="occupancyType"
@@ -370,60 +367,11 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
 
             {/* Amenities */}
             <VStack style={s.amenitiesContainer}>
-              <Text style={s.sectionTitle}>Additional Information:</Text>
-
-              {/* ! refactorable into a component for multiple selection of ameneties */}
-              {globalIsEditing ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={{ marginTop: 12 }}
-                >
-                  <HStack style={{ gap: 12, paddingRight: 20 }}>
-                    {AMENITIES.map((amenity) => {
-                      const isSelected = selectedAmenities.includes(amenity);
-                      return (
-                        <Pressable
-                          key={amenity}
-                          onPress={() => toggleAmenity(amenity)}
-                        >
-                          <Box
-                            style={[
-                              s.amenityChip,
-                              isSelected && s.amenityChipSelected,
-                            ]}
-                          >
-                            <Text
-                              style={
-                                isSelected
-                                  ? s.amenityTextSelected
-                                  : s.amenityText
-                              }
-                            >
-                              {amenity}
-                            </Text>
-                          </Box>
-                        </Pressable>
-                      );
-                    })}
-                  </HStack>
-                  {/*! refactorable into a component for multiple selection of ameneties */}
-                </ScrollView>
-              ) : (
-                <VStack style={{ gap: 8, marginTop: 12 }}>
-                  {boardinghouse.amenities?.length ? (
-                    boardinghouse.amenities.map((amenity) => (
-                      <Text key={amenity} style={s.amenityDisplay}>
-                        {amenity}
-                      </Text>
-                    ))
-                  ) : (
-                    <Text style={{ color: Colors.TextInverse[3] }}>
-                      No amenities listed
-                    </Text>
-                  )}
-                </VStack>
-              )}
+              <Text style={s.sectionTitle}>Amenities: </Text>
+              <AmenitiesList
+                globalIsEditing={globalIsEditing}
+                formDataOps={{ getValues, setValue, watch }}
+              ></AmenitiesList>
             </VStack>
           </VStack>
         </VStack>

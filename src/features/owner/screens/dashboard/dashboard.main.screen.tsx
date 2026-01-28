@@ -47,6 +47,7 @@ export default function DashboardMainScreen() {
   const { selectedUser: userData } = useDynamicUserApi();
   const owner = userData as Owner;
 
+
   const {
     data: boardingHouses,
     isLoading: boardingHousesLoading,

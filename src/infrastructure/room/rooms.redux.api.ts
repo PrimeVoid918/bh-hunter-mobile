@@ -8,6 +8,10 @@ import {
   PatchRoomInput,
   PatchRoomInputSchema,
 } from "./rooms.schema";
+import {
+  normalizeRoomResponse,
+  normalizeRoomsResponse,
+} from "../utils/apiResponseHelper";
 
 const roomApiRoute = `/api/boarding-houses/`;
 export const roomApi = createApi({
@@ -26,11 +30,19 @@ export const roomApi = createApi({
   endpoints: (builder) => ({
     getAll: builder.query<GetRoom[], number>({
       query: (id) => `${roomApiRoute}${id}/rooms`,
-      transformResponse: (response: ApiResponseType<GetRoom[]>) =>
-        response.results ?? [],
+      transformResponse: (response: ApiResponseType<Record<string, GetRoom>>) =>
+        normalizeRoomsResponse(response),
+      providesTags: (result) =>
+        result
+          ? [
+              { type: "Room", id: "LIST" },
+              ...result.map((room) => ({ type: "Room" as const, id: room.id })),
+            ]
+          : [{ type: "Room", id: "LIST" }],
     }),
+
     getOne: builder.query<
-      FindOneRoom,
+      FindOneRoom | null,
       { boardingHouseId: number; roomId: number }
     >({
       query: ({ boardingHouseId, roomId }) => ({
@@ -38,8 +50,11 @@ export const roomApi = createApi({
         method: "GET",
       }),
       transformResponse: (response: ApiResponseType<FindOneRoom>) =>
-        response.results ?? null,
+        normalizeRoomResponse(response),
+      providesTags: (result, _error, { roomId }) =>
+        result ? [{ type: "Room", id: roomId }] : [],
     }),
+
     create: builder.mutation<
       CreateRoom,
       { boardingHouseId: number | string; data: Partial<CreateRoom>[] }
@@ -49,7 +64,10 @@ export const roomApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["Room"],
+      invalidatesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: roomId },
+        { type: "Room", id: "LIST" },
+      ],
     }),
 
     patchRoom: builder.mutation<
@@ -62,20 +80,35 @@ export const roomApi = createApi({
     >({
       query: ({ boardingHouseId, roomId, data }) => {
         const parsed = PatchRoomInputSchema.safeParse(data);
+        if (!parsed.success) throw new Error("Invalid PATCH data");
 
-        if (!parsed.success) {
-          console.error("❌ Invalid PATCH data", parsed.error.format());
-          throw new Error("Invalid PATCH data");
-        }
+        const body: any = { ...parsed.data };
+
+        // Convert numeric fields to string for backend
+        if (body.maxCapacity !== undefined)
+          body.maxCapacity = String(body.maxCapacity);
+        if (body.price !== undefined) body.price = String(body.price);
+
+        // Only send defined fields → true PATCH
+        const dataToSend = Object.fromEntries(
+          Object.entries(body).filter(([_, v]) => v !== undefined),
+        );
+
+        console.log("dataToSend", dataToSend);
 
         return {
           url: `${roomApiRoute}${boardingHouseId}/rooms/${roomId}`,
           method: "PATCH",
-          body: parsed.data,
+          body: dataToSend,
         };
       },
-      invalidatesTags: ["Room"],
+
+      invalidatesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: roomId },
+        { type: "Room", id: "LIST" },
+      ],
     }),
+
     delete: builder.mutation<
       GetRoom,
       { boardingHouseId: number; roomId: number }
@@ -84,7 +117,10 @@ export const roomApi = createApi({
         url: `${roomApiRoute}${boardingHouseId}/rooms/${roomId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Room"],
+      invalidatesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: roomId },
+        { type: "Room", id: "LIST" },
+      ],
     }),
   }),
 });

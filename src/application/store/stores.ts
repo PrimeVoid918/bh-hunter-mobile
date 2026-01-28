@@ -13,6 +13,7 @@ import { roomApi } from "@/infrastructure/room/rooms.redux.api";
 import genericSearchBarSlice from "../../infrastructure/redux-utils/genericSearchBar.slice";
 import { bookingApi } from "@/infrastructure/booking/booking.redux.api";
 import { verificationDocumentsApi } from "@/infrastructure/valid-docs/verification-document/verification-document.redux.api";
+import { bHAndRoomShareApi } from "@/infrastructure/shared/redux.api";
 
 export const store = configureStore({
   reducer: {
@@ -27,6 +28,7 @@ export const store = configureStore({
     boardingHouses: boardingHouseSlice,
     [boardingHouseApi.reducerPath]: boardingHouseApi.reducer,
     [roomApi.reducerPath]: roomApi.reducer,
+    // [bHAndRoomShareApi.reducerPath]: bHAndRoomShareApi.reducer,
     [bookingApi.reducerPath]: bookingApi.reducer,
     [verificationDocumentsApi.reducerPath]: verificationDocumentsApi.reducer,
     genericSearch: genericSearchBarSlice,
@@ -40,7 +42,7 @@ export const store = configureStore({
       .concat(ownerApi.middleware)
       .concat(boardingHouseApi.middleware)
       .concat(roomApi.middleware)
-      .concat(bookingApi.middleware)
+      // .concat(bHAndRoomShareAp+i.middleware)
       .concat(verificationDocumentsApi.middleware),
 });
 

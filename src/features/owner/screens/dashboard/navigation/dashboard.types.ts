@@ -16,6 +16,9 @@ export type OwnerDashboardStackParamList = {
     fromMaps?: boolean;
     [key: string]: any; // allow extra params if needed
   };
+  RoomsAddScreen: {
+    bhId: number;
+  };
   VerificationMainScreen: undefined;
   VerificationSubmitScreen: {
     userId: number;
