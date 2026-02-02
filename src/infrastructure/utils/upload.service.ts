@@ -1,6 +1,8 @@
 import RNFetchBlob from "react-native-blob-util";
 import api from "@/application/config/api";
 import { CreateBoardingHouseInput } from "../boarding-houses/boarding-house.schema";
+import { CreateRoom } from "../room/rooms.schema";
+
 
 type UploadResponse =
   | { success: true; data: any }
@@ -107,6 +109,64 @@ export const uploadBoardingHouse = async (
     }
   } catch (err: any) {
     console.error("Upload failed:", err);
+    return { success: false, error: err.message ?? "Network error" };
+  }
+};
+
+
+export const uploadRoom = async (
+  boardingHouseId: number | string,
+  rooms: Partial<CreateRoom>[],
+): Promise<UploadResponse> => {
+  try {
+    const API_URL = api.BASE_URL;
+
+    const formData: any[] = [
+      {
+        name: "rooms",
+        data: JSON.stringify(
+          rooms.map(({ gallery, thumbnail, ...rest }) => rest)
+        ),
+      },
+    ];
+
+    rooms.forEach((room, index) => {
+      // Room gallery
+      room.gallery?.forEach((file, j) => {
+        if (!file?.uri) return;
+        const cleanUri = file.uri.startsWith("file://") ? file.uri : `file://${file.uri}`;
+        formData.push({
+          name: `roomGallery${index}_${j}`,
+          filename: file.name ?? `room-${index}-${j}.jpg`,
+          type: file.type ?? "image/jpeg",
+          data: RNFetchBlob.wrap(cleanUri.replace("file://", "")),
+        });
+      });
+
+      // Room thumbnail
+      if (room.thumbnail?.[0]?.uri) {
+        const thumbFile = room.thumbnail[0];
+        const cleanThumbUri = thumbFile.uri.startsWith("file://") ? thumbFile.uri : `file://${thumbFile.uri}`;
+        formData.push({
+          name: `roomThumbnail${index}_0`,
+          filename: thumbFile.name ?? `roomThumbnail-${index}.jpg`,
+          type: thumbFile.type ?? "image/jpeg",
+          data: RNFetchBlob.wrap(cleanThumbUri.replace("file://", "")),
+        });
+      }
+    });
+
+    const response = await RNFetchBlob.fetch(
+      "POST",
+      `${API_URL}/api/boarding-houses/${boardingHouseId}/rooms`,
+      { "Content-Type": "multipart/form-data" },
+      formData
+    );
+
+    const json = response.json();
+    return json.success ? { success: true, data: json.results } : { success: false, error: json.results };
+  } catch (err: any) {
+    console.error("Room upload failed:", err);
     return { success: false, error: err.message ?? "Network error" };
   }
 };

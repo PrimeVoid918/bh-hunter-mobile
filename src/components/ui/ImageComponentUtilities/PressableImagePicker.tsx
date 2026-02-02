@@ -19,9 +19,9 @@ import { IoniconsIconType } from "@/constants/icons/IonIconsTypes";
 import { useImageFullScreenModal } from "./GlobalImageFullScreenProvider";
 
 /**
- * Props for `PressebleImagePicker` component.
+ * Props for `PressableImagePicker` component.
  */
-interface PressebleImagePickerProps {
+interface PressableImagePickerProps {
   /** Pass image object */
   image?: AppImageFile;
   /** Callback when an image is picked */
@@ -66,7 +66,7 @@ interface PressebleImagePickerProps {
 }
 
 /**
- * `PressebleImagePicker` is a customizable React Native component
+ * `PressableImagePicker` is a customizable React Native component
  * for selecting, displaying fullscreen images.
  *
  * Features:
@@ -75,9 +75,9 @@ interface PressebleImagePickerProps {
  * - Optional fullscreen preview using a global modal hook
  * - Configurable icon buttons for adding/removing images
  *
- * @param {PressebleImagePickerProps} props
+ * @param {PressableImagePickerProps} props
  */
-export default function PressebleImagePicker({
+export default function PressableImagePicker({
   image,
   pickImage,
   removeImage,
@@ -104,7 +104,7 @@ export default function PressebleImagePicker({
     fullscreenIconContainerStyle,
   } = {},
   alt,
-}: PressebleImagePickerProps) {
+}: PressableImagePickerProps) {
   /** The current selected image */
   const [pickedImage, setPickedImage] = React.useState<AppImageFile>();
 

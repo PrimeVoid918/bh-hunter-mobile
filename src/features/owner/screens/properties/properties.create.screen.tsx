@@ -31,6 +31,7 @@ import {
   CreateBoardingHouseInputSchema,
   CreateBoardingHouseSchema,
   OccupancyType,
+  occupancyTypeOptions,
 } from "@/infrastructure/boarding-houses/boarding-house.schema";
 
 import {
@@ -643,7 +644,7 @@ export default function PropertiesCreateScreen() {
           </FormControl>
         </View>
         <BottomSheetSelector<BackendOccupancyType>
-          values={["MALE", "FEMALE", "MIXED"] as const}
+          options={occupancyTypeOptions}
           isOpen={isActionSheetOpen}
           onClose={() => setIsActionSheetOpen(false)}
           onSelect={(value) => {

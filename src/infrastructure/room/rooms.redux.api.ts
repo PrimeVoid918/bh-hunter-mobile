@@ -12,6 +12,8 @@ import {
   normalizeRoomResponse,
   normalizeRoomsResponse,
 } from "../utils/apiResponseHelper";
+import { uploadRoom } from "../utils/upload.service";
+import { expoStorageCleaner } from "../utils/expo-utils/expo-utils.service";
 
 const roomApiRoute = `/api/boarding-houses/`;
 export const roomApi = createApi({
@@ -56,18 +58,43 @@ export const roomApi = createApi({
     }),
 
     create: builder.mutation<
-      CreateRoom,
+      ApiResponseType<any>, // same as boarding house pattern
       { boardingHouseId: number | string; data: Partial<CreateRoom>[] }
     >({
-      query: ({ boardingHouseId, data }) => ({
-        url: `${roomApiRoute}${boardingHouseId}/rooms`,
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: (_result, _error, { roomId }) => [
-        { type: "Room", id: roomId },
-        { type: "Room", id: "LIST" },
-      ],
+      async queryFn({ boardingHouseId, data }) {
+        try {
+          const result = await uploadRoom(boardingHouseId, data);
+
+          if (result.success) {
+            // Clean temp files after upload
+            await expoStorageCleaner(["images", "documents"]);
+            return {
+              data: {
+                success: true,
+                results: result.data,
+                timestamp: new Date().toISOString(),
+              },
+            };
+          }
+
+          // ❌ Backend rejected request
+          return {
+            error: {
+              status: "SERVER_REJECTED",
+              data: result.error,
+            },
+          };
+        } catch (err: any) {
+          return {
+            error: {
+              status: "EXCEPTION",
+              data: err?.message ?? "Unknown error",
+            } as any,
+          };
+        }
+      },
+
+      invalidatesTags: (_result, _error) => [{ type: "Room", id: "LIST" }],
     }),
 
     patchRoom: builder.mutation<

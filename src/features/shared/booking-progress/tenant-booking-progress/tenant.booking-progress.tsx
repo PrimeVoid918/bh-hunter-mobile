@@ -14,7 +14,7 @@ import { AppImageFile } from "@/infrastructure/image/image.schema";
 import DecisionModal from "@/components/ui/DecisionModal";
 import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
-import PressebleImagePicker from "@/components/ui/ImageComponentUtilities/PressableImagePicker";
+import PressableImagePicker from "@/components/ui/ImageComponentUtilities/PressableImagePicker";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import Container from "@/components/layout/Container/Container";
 
@@ -149,7 +149,7 @@ export default function TenantBookingProgress({
           >
             {isPaymentFormInputVisible && (
               <>
-                <PressebleImagePicker
+                <PressableImagePicker
                   pickImage={setPickedImage}
                   removeImage={() => setPickedImage(undefined)}
                 />

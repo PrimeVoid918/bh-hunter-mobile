@@ -36,7 +36,6 @@ export default function AutoExpandingInput({
     >
       <TextInput
         defaultValue={value}
-        // value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         multiline
@@ -60,6 +59,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   input: {
+    padding: "2%",
     // shadowOffset: { width: 0, height: 2 },
     // shadowOpacity: 0.1,
     // shadowRadius: 4,

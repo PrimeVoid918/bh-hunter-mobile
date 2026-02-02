@@ -32,8 +32,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEditStateContextSwitcherButtons } from "@/components/ui/Portals/GlobalEditStateContextSwitcherButtonsProvider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  BackendRoomFurnishingType,
+  BackendRoomType,
   PatchRoomInput,
   PatchRoomInputSchema,
+  RoomFurnishingType,
+  roomFurnishingTypeOptions,
+  RoomType,
+  RoomTypeEnumSchema,
+  RoomTypeLabels,
+  roomTypeOptions,
 } from "../../../../../infrastructure/room/rooms.schema";
 import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import {
@@ -49,6 +57,13 @@ import {
 // Form & Validation
 import { Controller, useForm } from "react-hook-form";
 import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
+import { BottomSheetTriggerField } from "../../../../../components/ui/BottomSheet/BottomSheetTriggerField";
+import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
+import { BackendFurnishingToFrontend } from "../../../../../infrastructure/room/rooms.schema";
+import { FormField } from "@/components/ui/FormFields/FormField";
+// import AmenitiesList from "@/components/ui/AmenitiesAndTagsLists/TagListStateful";
+import { TagListStateful } from "@/components/ui/AmenitiesAndTagsLists/TagListStateful";
+import { ROOM_FEATURE_TAGS } from "@/infrastructure/room/rooms.constants";
 
 export default function RoomsDetailsScreen({ route }) {
   const navigation =
@@ -58,7 +73,10 @@ export default function RoomsDetailsScreen({ route }) {
 
   const isFocused = useIsFocused();
   const { showModal } = useDecisionModal();
-  const [isActionSheetOpen, setIsActionSheetOpen] = React.useState(false);
+  const [isActionSheetRoomTypeOpen, setIsActionSheetRoomTypeOpen] =
+    React.useState(false);
+  const [isActionSheetFurnishingOpen, setIsActionSheetFurnishingOpen] =
+    React.useState(false);
 
   const {
     showButtons,
@@ -86,6 +104,7 @@ export default function RoomsDetailsScreen({ route }) {
     getValues,
     setValue,
     formState: { errors },
+    watch,
   } = useForm<PatchRoomInput>({
     resolver: zodResolver(PatchRoomInputSchema),
     defaultValues: {
@@ -95,6 +114,7 @@ export default function RoomsDetailsScreen({ route }) {
       price: "",
       roomType: "SINGLE",
       furnishingType: "UNFURNISHED",
+      availabilityStatus: false,
       tags: [],
     },
   });
@@ -113,6 +133,7 @@ export default function RoomsDetailsScreen({ route }) {
     }
   }, [roomData, reset]);
 
+  const selectedAmenities = watch("tags") ?? [];
   React.useEffect(() => {
     if (!isFocused) {
       hideButtons();
@@ -186,6 +207,21 @@ export default function RoomsDetailsScreen({ route }) {
         <VStack>
           {/* Header */}
           <View style={s.header}>
+            <View style={s.header_titleBackdrop}></View>
+            <FormField
+              name="roomNumber"
+              control={control}
+              isEditing={globalIsEditing}
+              inputConfig={{
+                inputType: "singleLine",
+                placeholder: "Room number",
+                inputStyle: s.header_titleText,
+                inputContainerStyle: s.inputContainerStyle,
+              }}
+              containerStyle={s.header_title}
+              textStyle={s.header_titleText}
+            />
+
             <PressableImageFullscreen
               image={roomData.thumbnail?.[0]}
               containerStyle={{ width: "100%", aspectRatio: 2 }}
@@ -194,114 +230,70 @@ export default function RoomsDetailsScreen({ route }) {
                 containerStyle: { borderRadius: BorderRadius.md },
               }}
             />
-
-            <Controller
-              control={control}
-              name="roomNumber"
-              render={({ field }) =>
-                globalIsEditing ? (
-                  <Input borderColor="$green500">
-                    <InputField
-                      value={field.value}
-                      onChangeText={field.onChange}
-                      placeholder="Room number"
-                    />
-                  </Input>
-                ) : (
-                  <Text style={s.text_title}>{field.value}</Text>
-                )
-              }
-            />
           </View>
 
           {/* Body */}
           <VStack style={{ paddingVertical: Spacing.md }}>
-            {/* Description */}
-            <Controller
-              control={control}
+            <FormField
               name="description"
-              render={({ field }) =>
-                globalIsEditing ? (
-                  <AutoExpandingInput
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    placeholder="Room description"
-                    style={s.textColor}
-                  />
-                ) : (
-                  <Text style={s.textColor}>
-                    {field.value || "No description provided."}
-                  </Text>
-                )
-              }
+              control={control}
+              isEditing={globalIsEditing}
+              inputConfig={{
+                inputType: "paragraph",
+                placeholder: "Room description",
+                inputStyle: { fontSize: 16 },
+                inputContainerStyle: s.inputContainerStyle,
+              }}
             />
 
             {/* Price & Capacity */}
-            <HStack style={{ justifyContent: "space-between", marginTop: 12 }}>
-              <Controller
-                control={control}
+            <VStack>
+              <FormField
                 name="price"
-                render={({ field }) =>
-                  globalIsEditing ? (
-                    <Input width={120}>
-                      <InputField
-                        keyboardType="numeric"
-                        value={String(field.value)}
-                        onChangeText={field.onChange}
-                        placeholder="Price"
-                      />
-                    </Input>
-                  ) : (
-                    <Text style={s.textColor}>₱{field.value}</Text>
-                  )
-                }
+                control={control}
+                isEditing={globalIsEditing}
+                inputConfig={{
+                  inputType: "singleLine",
+                  placeholder: "Price",
+                  inputContainerStyle: s.inputContainerStyle,
+                }}
+                textAffix={{ textPrefix: "₱ " }}
               />
 
-              <Controller
-                control={control}
+              <FormField
                 name="maxCapacity"
-                render={({ field }) =>
-                  globalIsEditing ? (
-                    <Input width={120}>
-                      <InputField
-                        keyboardType="numeric"
-                        value={String(field.value)}
-                        onChangeText={field.onChange}
-                        placeholder="Capacity"
-                      />
-                    </Input>
-                  ) : (
-                    <Text style={s.textColor}>Capacity: {field.value}</Text>
-                  )
-                }
+                control={control}
+                isEditing={globalIsEditing}
+                inputConfig={{
+                  inputType: "singleLine",
+                  placeholder: "Max Capacity",
+                  inputContainerStyle: s.inputContainerStyle,
+                }}
               />
-            </HStack>
+            </VStack>
 
             {/* Room Type */}
-            <Controller
-              control={control}
+            <BottomSheetTriggerField
               name="roomType"
-              render={({ field }) =>
-                globalIsEditing ? (
-                  <Button
-                    onPress={() => setIsActionSheetOpen(true)}
-                    style={{ marginTop: 12 }}
-                  >
-                    <Text>{field.value}</Text>
-                  </Button>
-                ) : (
-                  <Text style={s.textColor}>Room Type: {field.value}</Text>
-                )
-              }
+              control={control}
+              label="Room Type"
+              options={roomTypeOptions}
+              isEditing={globalIsEditing}
+              placeholder="Select Furnishing Type"
+              error={errors.furnishingType?.message}
+              onOpen={() => setIsActionSheetRoomTypeOpen(true)}
             />
 
             {/* Furnishing */}
-            <Controller
-              control={control}
+            <BottomSheetTriggerField
               name="furnishingType"
-              render={({ field }) => (
-                <Text style={s.textColor}>Furnishing: {field.value}</Text>
-              )}
+              control={control}
+              label="Furnishing Type"
+              options={roomFurnishingTypeOptions}
+              isEditing={globalIsEditing}
+              placeholder="Select Furnishing Type"
+              error={errors.furnishingType?.message}
+              onOpen={() => setIsActionSheetFurnishingOpen(true)}
             />
 
             <ImageCarousel
@@ -309,7 +301,37 @@ export default function RoomsDetailsScreen({ route }) {
               variant="secondary"
             />
           </VStack>
+
+          <VStack style={s.tagsContainer}>
+            <Text style={s.sectionTitle}>Amenities: </Text>
+            <TagListStateful
+              name="tags"
+              items={ROOM_FEATURE_TAGS}
+              isEditing={globalIsEditing}
+              form={{ getValues, setValue, watch }}
+            />
+          </VStack>
         </VStack>
+
+        <BottomSheetSelector
+          options={roomTypeOptions}
+          isOpen={isActionSheetRoomTypeOpen}
+          onClose={() => setIsActionSheetRoomTypeOpen(false)}
+          onSelect={(value) => {
+            setValue("roomType", value, { shouldDirty: true });
+            setIsActionSheetRoomTypeOpen(false);
+          }}
+        />
+
+        <BottomSheetSelector
+          options={roomFurnishingTypeOptions}
+          isOpen={isActionSheetFurnishingOpen}
+          onClose={() => setIsActionSheetFurnishingOpen(false)}
+          onSelect={(value) => {
+            setValue("furnishingType", value, { shouldDirty: true });
+            setIsActionSheetFurnishingOpen(false);
+          }}
+        />
       </Container>
     </StaticScreenWrapper>
   );
@@ -317,8 +339,8 @@ export default function RoomsDetailsScreen({ route }) {
 
 const s = StyleSheet.create({
   container: { flex: 1, padding: Spacing.md, gap: Spacing.md },
-  header: { gap: Spacing.md },
-  header_titleContainer: {
+  header: { gap: Spacing.md, position: "relative", overflow: "hidden" },
+  header_titleBackdrop: {
     position: "absolute",
     height: "35%",
     width: "110%",
@@ -329,27 +351,33 @@ const s = StyleSheet.create({
     left: -10,
     filter: [{ blur: 6 }],
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+    zIndex: 10,
+    elevation: 10, // Android
   },
   header_title: {
     position: "absolute",
-    top: "70%",
+    top: "65%",
     width: "100%",
     paddingLeft: Spacing.md,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.md,
     left: 0,
+    borderColor: "green",
+    zIndex: 2000,
+    elevation: 2000, // Android
+  },
+  header_titleText: {
+    fontSize: Fontsize.h1,
+    fontWeight: "900",
+    color: Colors.TextInverse[2],
   },
   body: { gap: Spacing.xl },
 
   boxStyle: {
     marginTop: Spacing.md,
-    // borderWidth: 2,
-    // paddingLeft: Spacing.lg,
-    // paddingRight: Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 5,
     overflow: "hidden",
-    // borderRadius: BorderRadius.md,
     borderBottomRightRadius: BorderRadius.md,
   },
 
@@ -426,5 +454,10 @@ const s = StyleSheet.create({
     color: "red",
     marginTop: 4,
     fontSize: Fontsize.sm,
+  },
+  inputContainerStyle: {
+    borderWidth: 3,
+    borderColor: "green",
+    borderRadius: BorderRadius.md,
   },
 });

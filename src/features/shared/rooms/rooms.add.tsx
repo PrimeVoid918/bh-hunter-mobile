@@ -1,55 +1,59 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
   Text,
-  TouchableOpacity,
   Pressable,
   Alert,
 } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Input,
-  InputField,
-  VStack,
-  FormControl,
-  Box,
-  Image,
-  Button,
-} from "@gluestack-ui/themed";
+import { VStack, FormControl, Image, Button } from "@gluestack-ui/themed";
 import { Ionicons } from "@expo/vector-icons";
 import { BorderRadius, Colors, Fontsize, Spacing } from "@/constants";
 import { pickImageExpo } from "@/infrastructure/image/image.service";
-import {
-  ROOM_FEATURE_TAGS,
-  RoomFeatureTag,
-} from "@/infrastructure/room/rooms.constants";
-import ButtomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
+import { ROOM_FEATURE_TAGS } from "@/infrastructure/room/rooms.constants";
 import {
   CreateRoomInput,
   CreateRoomInputSchema,
   RoomFurnishingType,
+  roomFurnishingTypeOptions,
   RoomType,
+  roomTypeOptions,
 } from "@/infrastructure/room/rooms.schema";
 import { z } from "zod";
+
+import { FormField } from "../../../components/ui/FormFields/FormField";
+import { TagListStateful } from "../../../components/ui/AmenitiesAndTagsLists/TagListStateful";
+import PressableImagePicker from "../../../components/ui/ImageComponentUtilities/PressableImagePicker";
+import { AppImageFile } from "@/infrastructure/image/image.schema";
+import { BottomSheetTriggerField } from "@/components/ui/BottomSheet/BottomSheetTriggerField";
+import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
+import { useCreateMutation } from "@/infrastructure/room/rooms.redux.api";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OwnerDashboardStackParamList } from "@/features/owner/screens/dashboard/navigation/dashboard.types";
-
-type RoomWithIndex = CreateRoomInput & { index?: number };
+import { expoStorageCleaner } from "@/infrastructure/utils/expo-utils/expo-utils.service";
 
 export default function RoomsAddScreen({ route }: any) {
-  const navigation =
+  React.useEffect(() => {
+    return () => {
+      expoStorageCleaner(["images"]);
+    };
+  }, []);
+  const { initialData, bhId } = route.params || {};
+  const navigate =
     useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
-  const { initialData, isEditing } = route.params || {};
 
+  const [createRoom, { isError, isLoading }] = useCreateMutation();
+
+  /* ------------------------- Default values ------------------------- */
   const defaultValues: CreateRoomInput = {
     roomNumber: "",
     description: "",
-    roomType: RoomType.SINGLE_PRIVATE,
-    furnishingType: RoomFurnishingType.UNFURNISHED,
+    roomType: "STUDIO",
+    furnishingType: "FULLY_FURNISHED",
     maxCapacity: 0,
     price: 0,
     tags: [],
@@ -57,6 +61,7 @@ export default function RoomsAddScreen({ route }: any) {
     thumbnail: [],
   };
 
+  /* --------------------------- Form setup --------------------------- */
   const {
     control,
     handleSubmit,
@@ -71,240 +76,276 @@ export default function RoomsAddScreen({ route }: any) {
   });
 
   useEffect(() => {
-    if (initialData) reset(initialData);
-    else reset(defaultValues);
+    reset(initialData || defaultValues);
   }, [initialData]);
 
-  const [availableFeatureTage, setAvailableFeatureTage] = useState<string[]>(
-    ROOM_FEATURE_TAGS.filter((f) => !defaultValues.tags?.includes(f)),
-  );
-  const selectedFeatureTags = watch("tags") ?? [];
-  useEffect(() => {
-    setAvailableFeatureTage(
-      ROOM_FEATURE_TAGS.filter((f) => !selectedFeatureTags.includes(f)),
-    );
-  }, [selectedFeatureTags]);
+  const [isActionSheetRoomTypeOpen, setIsActionSheetRoomTypeOpen] =
+    React.useState(false);
+  const [isActionSheetFurnishingOpen, setIsActionSheetFurnishingOpen] =
+    React.useState(false);
 
-  const handleSelectFeatureTag = (item: string) => {
-    setValue("tags", [...(selectedFeatureTags || []), item]);
-    setAvailableFeatureTage((prev) => prev.filter((a) => a !== item));
-  };
-  const handleRemoveFeatureTag = (item: string) => {
-    setValue(
-      "tags",
-      (selectedFeatureTags || []).filter((a) => a !== item),
-    );
-    setAvailableFeatureTage((prev) => [...prev, item]);
-  };
+  /* ------------------------- Image handlers -------------------------- */
+  const thumbnailImage = watch("thumbnail")?.[0] as AppImageFile;
+  const handlePickThumbnailImage = React.useCallback(
+    (image: AppImageFile) => {
+      setValue("thumbnail", [image], {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+    },
+    [setValue],
+  );
 
   const handlePickGalleryImages = async () => {
     const pick = await pickImageExpo(10);
-    if (pick && pick.length) setValue("gallery", pick);
+    if (pick?.length) setValue("gallery", pick);
   };
+
   const handleRemoveGalleryImage = (indexToRemove: number) => {
-    const newGallery = [...(getValues("gallery") ?? [])];
-    newGallery.splice(indexToRemove, 1);
-    setValue("gallery", newGallery);
-  };
-  const handlePickThumbnailImage = async () => {
-    const picked = await pickImageExpo(1);
-    if (picked && picked.length)
-      setValue("thumbnail", [picked[0]], { shouldValidate: true });
+    const gallery = [...(getValues("gallery") ?? [])];
+    gallery.splice(indexToRemove, 1);
+    setValue("gallery", gallery);
   };
 
-  const handleFinalSubmit = (data: CreateRoomInput) => {
-    // Here you can call API or pass data to parent
+  /* --------------------------- Submit --------------------------- */
+  const handleFinalSubmit = async (data: CreateRoomInput) => {
     console.log("Room Data Submitted:", data);
-    navigation.goBack();
+
+    try {
+      const payload = [{ ...data, boardingHouseId: +bhId }];
+
+      await createRoom({
+        boardingHouseId: bhId,
+        data: payload,
+      });
+
+      await expoStorageCleaner(["images", "documents"]);
+      Alert.alert("Success", "Room Added");
+      navigate.goBack();
+    } catch (err: any) {
+      console.error("PATCH failed:", err);
+      let message = "Unknown error";
+      if (err?.data) {
+        message = JSON.stringify(err.data, null, 2);
+      } else if (err?.error) {
+        message = err.error;
+      }
+      Alert.alert("Failed to Add Room", message);
+    }
   };
 
-  const [isFurnishingActionSheetOpen, setIsFurnishingActionSheetOpen] =
-    useState(false);
-  const [isRoomTypeActionSheetOpen, setIsRoomTypeActionSheetOpen] =
-    useState(false);
-
+  /* ---------------------------- UI ----------------------------- */
   return (
-    <View style={modalStyles.screenContainer}>
-      {/* Header Close */}
-      <TouchableOpacity
-        style={modalStyles.closeButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="close" size={24} color="#333" />
-      </TouchableOpacity>
-
+    <View style={styles.screenContainer}>
       <ScrollView contentContainerStyle={{ padding: Spacing.md }}>
-        {/* Thumbnail Picker */}
-        <Pressable onPress={handlePickThumbnailImage}>
-          <Box style={modalStyles.thumbnailBox}>
-            <Controller
+        {/* Thumbnail */}
+        <PressableImagePicker
+          image={thumbnailImage}
+          pickImage={handlePickThumbnailImage}
+          removeImage={() => setValue("thumbnail", [])}
+        />
+
+        <VStack style={{ gap: Spacing.md }}>
+          <FormField
+            name="roomNumber"
+            control={control}
+            isEditing
+            inputConfig={{ inputContainerStyle: styles.input }}
+            labelConfig={{ label: "Room Code", labelStyle: styles.label }}
+          />
+
+          <FormControl isInvalid={!!errors.maxCapacity}>
+            <FormField
+              name="maxCapacity"
               control={control}
-              name="thumbnail"
-              render={({ field: { value } }) => {
-                const thumbnailImage = value?.[0] ?? null;
-                return thumbnailImage ? (
-                  <Image
-                    source={{
-                      uri: thumbnailImage.uri.startsWith("file://")
-                        ? thumbnailImage.uri
-                        : `file://${thumbnailImage.uri}`,
-                    }}
-                    style={{ width: "100%", height: "100%" }}
-                    alt="Thumbnail"
-                  />
-                ) : (
-                  <Text style={{ color: "#888", textAlign: "center" }}>
-                    Tap to upload
-                  </Text>
-                );
+              isEditing
+              inputConfig={{
+                inputContainerStyle: styles.input,
+                keyboardType: "numeric",
+              }}
+              labelConfig={{
+                label: "Room Max Capacity",
+                labelStyle: styles.label,
               }}
             />
-          </Box>
-        </Pressable>
-
-        {/* Room Form Fields */}
-        <VStack style={{ gap: Spacing.md }}>
-          {/* Room Number */}
-          <FormControl isInvalid={!!errors.roomNumber}>
-            <FormControl.Label>
-              <Text style={s.Form_SubLabel}>Room Number</Text>
-            </FormControl.Label>
-            <Controller
-              control={control}
-              name="roomNumber"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input borderColor="$coolGray400">
-                  <InputField
-                    placeholder="Room code"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                  />
-                </Input>
-              )}
-            />
-            {errors.roomNumber && (
-              <Text style={{ color: "red" }}>{errors.roomNumber.message}</Text>
-            )}
           </FormControl>
 
-          {/* Max Capacity */}
-          <FormControl isInvalid={!!errors.maxCapacity}>
-            <FormControl.Label>
-              <Text style={s.Form_SubLabel}>Max Capacity</Text>
-            </FormControl.Label>
-            <Controller
-              control={control}
-              name="maxCapacity"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input borderColor="$coolGray400">
-                  <InputField
-                    value={value?.toString() ?? ""}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    keyboardType="numeric"
-                  />
-                </Input>
-              )}
-            />
-          </FormControl>
-
-          {/* Price */}
           <FormControl isInvalid={!!errors.price}>
-            <FormControl.Label>
-              <Text style={s.Form_SubLabel}>Price</Text>
-            </FormControl.Label>
-            <Controller
-              control={control}
+            <FormField
               name="price"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input borderColor="$coolGray400">
-                  <InputField
-                    value={value?.toString() ?? ""}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    keyboardType="numeric"
-                  />
-                </Input>
-              )}
+              control={control}
+              isEditing
+              inputConfig={{
+                inputContainerStyle: styles.input,
+                keyboardType: "numeric",
+              }}
+              labelConfig={{
+                label: "Room Price",
+                labelStyle: styles.label,
+              }}
             />
           </FormControl>
 
-          {/* Submit Button */}
-          <Button
-            onPress={handleSubmit(handleFinalSubmit)}
-            style={{ marginTop: Spacing.md }}
+          {/* Room Type */}
+          <BottomSheetTriggerField
+            name="roomType"
+            control={control}
+            label="Room Type"
+            options={roomTypeOptions}
+            isEditing
+            error={errors.roomType?.message}
+            onOpen={() => setIsActionSheetRoomTypeOpen(true)}
+          />
+
+          {/* Furnishing */}
+          <BottomSheetTriggerField
+            name="furnishingType"
+            control={control}
+            label="Furnishing Type"
+            options={roomFurnishingTypeOptions}
+            isEditing
+            placeholder="Select Furnishing Type"
+            error={errors.furnishingType?.message}
+            onOpen={() => setIsActionSheetFurnishingOpen(true)}
+          />
+
+          <FormControl isInvalid={!!errors.description}>
+            <FormField
+              name="description"
+              control={control}
+              isEditing
+              inputConfig={{
+                inputContainerStyle: styles.input,
+                inputType: "paragraph",
+              }}
+              labelConfig={{
+                label: "Description: ",
+                labelStyle: styles.label,
+              }}
+            />
+          </FormControl>
+
+          <TagListStateful
+            name="tags"
+            items={ROOM_FEATURE_TAGS}
+            isEditing
+            form={{ getValues, setValue, watch }}
+          />
+        </VStack>
+
+        {/* Gallery */}
+        <VStack>
+          <Pressable
+            onPress={handlePickGalleryImages}
+            style={styles.pickButton}
           >
-            <Text>Add Room</Text>
-          </Button>
+            <Text style={styles.pickText}>Select Images</Text>
+          </Pressable>
+
+          <Controller
+            control={control}
+            name="gallery"
+            render={({ field: { value } }) => (
+              <ScrollView horizontal style={{ marginTop: 10 }}>
+                {value?.length ? (
+                  value.map((image, index) => (
+                    <View key={index}>
+                      <Image
+                        source={{
+                          uri: image.uri.startsWith("file://")
+                            ? image.uri
+                            : `file://${image.uri}`,
+                        }}
+                        style={styles.galleryImage}
+                        alt={`Gallery ${index}`}
+                      />
+                      <Pressable
+                        onPress={() => handleRemoveGalleryImage(index)}
+                        style={styles.removeIcon}
+                      >
+                        <Ionicons name="close-circle" size={20} color="white" />
+                      </Pressable>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={{ color: "white" }}>No Images Selected</Text>
+                )}
+              </ScrollView>
+            )}
+          />
         </VStack>
       </ScrollView>
 
-      {/* ActionSheets */}
-      <ButtomSheetSelector<RoomType>
-        values={Object.values(RoomType)}
-        isOpen={isRoomTypeActionSheetOpen}
-        onClose={() => setIsRoomTypeActionSheetOpen(false)}
+      <Button
+        onPress={handleSubmit(handleFinalSubmit, (errors) => {
+          console.log("❌ SUBMIT BLOCKED BY VALIDATION");
+          console.log(errors);
+        })}
+      >
+        <Text>Add Room</Text>
+      </Button>
+
+      <BottomSheetSelector
+        options={roomTypeOptions}
+        isOpen={isActionSheetRoomTypeOpen}
+        onClose={() => setIsActionSheetRoomTypeOpen(false)}
         onSelect={(value) => {
-          setValue("roomType", value);
-          setIsRoomTypeActionSheetOpen(false);
+          setValue("roomType", value, { shouldDirty: true });
+          setIsActionSheetRoomTypeOpen(false);
         }}
       />
-      <ButtomSheetSelector<RoomFurnishingType>
-        values={Object.values(RoomFurnishingType)}
-        isOpen={isFurnishingActionSheetOpen}
-        onClose={() => setIsFurnishingActionSheetOpen(false)}
+
+      <BottomSheetSelector
+        options={roomFurnishingTypeOptions}
+        isOpen={isActionSheetFurnishingOpen}
+        onClose={() => setIsActionSheetFurnishingOpen(false)}
         onSelect={(value) => {
-          setValue("furnishingType", value);
-          setIsFurnishingActionSheetOpen(false);
+          setValue("furnishingType", value, { shouldDirty: true });
+          setIsActionSheetFurnishingOpen(false);
         }}
       />
     </View>
   );
 }
 
-const modalStyles = StyleSheet.create({
+/* ---------------------------- Styles ---------------------------- */
+
+const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: Colors.PrimaryLight[8],
-    paddingTop: Spacing.md,
-    paddingHorizontal: Spacing.md,
+    padding: Spacing.md,
   },
-  closeButton: {
-    position: "absolute",
-    right: 12,
-    top: 12,
-    zIndex: 2,
-    backgroundColor: Colors.PrimaryLight[3],
-    borderRadius: BorderRadius.circle,
-    padding: 6,
-  },
-  thumbnailBox: {
-    width: "100%",
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: "#f0f0f0",
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.md,
-  },
-});
-
-const s = StyleSheet.create({
-  generic_text: {
-    color: Colors.TextInverse[2],
-  },
-  Form_Label: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.xxl,
-    marginBottom: 6,
-  },
-  Form_SubLabel: {
+  label: {
     color: Colors.TextInverse[2],
     fontWeight: "bold",
     fontSize: Fontsize.xl,
-    marginBottom: 6,
+  },
+  input: {
+    borderColor: Colors.PrimaryLight[2],
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.xs,
+  },
+  pickButton: {
+    padding: Spacing.sm,
+    alignSelf: "flex-start",
+    backgroundColor: Colors.PrimaryLight[6],
+    borderRadius: BorderRadius.md,
+  },
+  pickText: {
+    color: Colors.TextInverse[2],
+    fontSize: Fontsize.md,
+  },
+  galleryImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  removeIcon: {
+    position: "absolute",
+    top: 0,
+    right: 8,
   },
 });

@@ -40,6 +40,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BackendOccupancyType,
   OccupancyType,
+  occupancyTypeOptions,
   PatchBoardingHouseSchema,
   type PatchBoardingHouseInput,
 } from "@/infrastructure/boarding-houses/boarding-house.schema";
@@ -60,7 +61,11 @@ import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OwnerDashboardStackParamList } from "../dashboard/navigation/dashboard.types";
-import AmenitiesList from "@/components/ui/AmenitiesAndTagsLists/AmenitiesListStateful";
+// import AmenitiesList from "@/components/ui/AmenitiesAndTagsLists/TagListStateful";
+import { TagListStateful } from "@/components/ui/AmenitiesAndTagsLists/TagListStateful";
+import { BottomSheetTriggerField } from "@/components/ui/BottomSheet/BottomSheetTriggerField";
+import { FormField } from "@/components/ui/FormFields/FormField";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
   const [refreshing, setRefreshing] = useState(false);
@@ -130,6 +135,7 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
       hideButtons();
       return;
     }
+    //TODO add a delete button on context switcher abstraction
 
     showButtons({
       onEdit: () => {
@@ -221,104 +227,84 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
         <VStack style={[GlobalStyle.GlobalsContainer, s.container]}>
           {/* Header */}
           <View style={s.header}>
-            <PressableImageFullscreen
-              image={boardinghouse.thumbnail?.[0]}
-              containerStyle={{ width: "100%", aspectRatio: 1.2 }}
-              imageStyleConfig={{
-                resizeMode: "cover",
-                containerStyle: { borderRadius: BorderRadius.md },
-              }}
-            />
+            <View style={s.header}>
+              <View style={s.header_titleBackdrop}></View>
 
-            <HStack style={{ marginTop: 12, gap: 8 }}>
-              <Text style={s.rating}>*****</Text>
-              <Text style={s.rating}>(4.0)</Text>
-            </HStack>
+              <PressableImageFullscreen
+                image={boardinghouse.thumbnail?.[0]}
+                containerStyle={{ width: "100%", aspectRatio: 2 }}
+                imageStyleConfig={{
+                  resizeMode: "cover",
+                  containerStyle: { borderRadius: BorderRadius.md },
+                }}
+              />
+
+              <View style={[s.header_textContainer]}>
+                <View style={[s.header_title]}>
+                  <FormField
+                    name="name"
+                    control={control}
+                    isEditing={globalIsEditing}
+                    inputConfig={{
+                      inputType: "singleLine",
+                      placeholder: "Boarding House Name",
+                      inputStyle: s.header_titleText,
+                      inputContainerStyle: s.inputContainerStyle,
+                    }}
+                    textStyle={s.header_titleText}
+                    textOverflow={{ ellipsize: true }}
+                  />
+                  <HStack
+                    style={[
+                      {
+                        gap: 8,
+                      },
+                    ]}
+                  >
+                    <Ionicons name="star" size={20} color="gold" />
+                    <Ionicons name="star" size={20} color="gold" />
+                    <Ionicons name="star" size={20} color="gold" />
+                    <Ionicons name="star" size={20} color="gold" />
+                    <Ionicons name="star-half" size={20} color="gold" />
+                    <Text style={s.rating}>(4.0)</Text>
+                  </HStack>
+                </View>
+              </View>
+            </View>
 
             <HStack
               style={{ marginTop: 16, alignItems: "flex-start", gap: 12 }}
             >
               <VStack style={{ flex: 1, gap: 12 }}>
-                {/* Name */}
-                <FormControl isInvalid={!!errors.name}>
-                  <Controller
-                    control={control}
-                    name="name"
-                    render={({ field }) =>
-                      globalIsEditing ? (
-                        <Input borderColor="$green500">
-                          <InputField
-                            value={field.value ?? ""}
-                            onChangeText={field.onChange}
-                            onBlur={field.onBlur}
-                            placeholder="Boarding house name"
-                            style={[s.text_title, { fontWeight: "bold" }]}
-                          />
-                        </Input>
-                      ) : (
-                        <Text style={s.text_title}>{boardinghouse.name}</Text>
-                      )
-                    }
-                  />
-                  {errors.name && (
-                    <Text style={s.errorText}>{errors.name.message}</Text>
-                  )}
-                </FormControl>
-
                 {/* Address */}
-                <FormControl isInvalid={!!errors.address}>
-                  <Controller
-                    control={control}
+                <HStack style={[s.text_container]}>
+                  <Text style={s.text_address}>Address: </Text>
+                  <Ionicons name="location-outline" size={20} color="black" />
+                  <FormField
                     name="address"
-                    render={({ field }) =>
-                      globalIsEditing ? (
-                        <Input borderColor="$green500">
-                          <InputField
-                            value={field.value ?? ""}
-                            onChangeText={field.onChange}
-                            onBlur={field.onBlur}
-                            placeholder="Enter address"
-                            style={s.text_address}
-                          />
-                        </Input>
-                      ) : (
-                        <Text style={s.text_address}>
-                          {boardinghouse.address}
-                        </Text>
-                      )
-                    }
+                    control={control}
+                    isEditing={globalIsEditing}
+                    inputConfig={{
+                      inputType: "singleLine",
+                      placeholder: "Enter address",
+                      inputContainerStyle: s.inputContainerStyle,
+                      inputStyle: s.text_address,
+                    }}
+                    textStyle={s.text_address}
                   />
-                  {errors.address && (
-                    <Text style={s.errorText}>{errors.address.message}</Text>
-                  )}
-                </FormControl>
+                </HStack>
 
                 {/* OccupancyType */}
-                <FormControl isInvalid={!!errors.occupancyType}>
-                  <Controller
-                    control={control}
-                    name="occupancyType"
-                    rules={{ required: "BH Occupancy Type is required" }}
-                    render={({ field: { onChange, value } }) => (
-                      <View>
-                        {globalIsEditing ? (
-                          <Button onPress={() => setIsActionSheetOpen(true)}>
-                            <Text>{value || "Select Room Type"}</Text>
-                          </Button>
-                        ) : (
-                          <Text
-                            style={{
-                              color: Colors.TextInverse[2],
-                              fontSize: Fontsize.md,
-                            }}
-                          >
-                            OccupancyType: {value}
-                          </Text>
-                        )}
-                      </View>
-                    )}
-                  />
-                </FormControl>
+                <BottomSheetTriggerField
+                  name="occupancyType"
+                  control={control}
+                  label="Occupancy Type"
+                  options={occupancyTypeOptions}
+                  isEditing={globalIsEditing}
+                  placeholder="Select Occupancy Type"
+                  error={errors.occupancyType?.message}
+                  onOpen={() => setIsActionSheetOpen(true)}
+                />
               </VStack>
 
               <Button onPress={goToRooms}>
@@ -337,46 +323,33 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
             />
 
             {/* Description */}
-            <FormControl>
-              <Controller
-                control={control}
-                name="description"
-                render={({ field }) =>
-                  globalIsEditing ? (
-                    <AutoExpandingInput
-                      value={field.value ?? ""}
-                      onChangeText={field.onChange}
-                      placeholder="Enter description..."
-                      style={s.text_description}
-                      containerStyle={{
-                        padding: 14,
-                        borderColor: "#10b981",
-                        borderWidth: 2,
-                        backgroundColor: Colors.PrimaryLight[7],
-                        borderRadius: BorderRadius.md,
-                      }}
-                    />
-                  ) : (
-                    <Text style={s.text_description}>
-                      {boardinghouse.description || "No description provided."}
-                    </Text>
-                  )
-                }
-              />
-            </FormControl>
+            <Text style={s.sectionTitle}>Description: </Text>
+            <FormField
+              name="description"
+              control={control}
+              isEditing={globalIsEditing}
+              inputConfig={{
+                inputType: "paragraph",
+                placeholder: "Enter description...",
+                inputContainerStyle: s.inputContainerStyle,
+              }}
+            />
 
             {/* Amenities */}
             <VStack style={s.amenitiesContainer}>
               <Text style={s.sectionTitle}>Amenities: </Text>
-              <AmenitiesList
-                globalIsEditing={globalIsEditing}
-                formDataOps={{ getValues, setValue, watch }}
-              ></AmenitiesList>
+              <TagListStateful
+                name="amenities"
+                items={AMENITIES}
+                isEditing={globalIsEditing}
+                form={{ getValues, setValue, watch }}
+              />
             </VStack>
           </VStack>
         </VStack>
-        <BottomSheetSelector<BackendOccupancyType>
-          values={["MALE", "FEMALE", "MIXED"] as const}
+
+        <BottomSheetSelector
+          options={occupancyTypeOptions}
           isOpen={isActionSheetOpen}
           onClose={() => setIsActionSheetOpen(false)}
           onSelect={(value) => {
@@ -392,8 +365,51 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
 // ── Styles ──
 const s = StyleSheet.create({
   container: { flex: 1, padding: Spacing.md, gap: Spacing.md },
-  header: { gap: Spacing.md },
+  header: { gap: Spacing.md, position: "relative", overflow: "hidden" },
   body: { gap: Spacing.xl },
+
+  header_textContainer: {
+    position: "absolute",
+    top: "60%",
+    // borderWidth: 2,
+    // borderColor: "white",
+    // height: "35%",
+    width: "110%",
+    // top: "70%",
+  },
+  header_titleBackdrop: {
+    position: "absolute",
+    height: "35%",
+    width: "110%",
+    top: "70%",
+    paddingLeft: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.md,
+    left: -10,
+    filter: [{ blur: 6 }],
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    zIndex: 10,
+    // elevation: 10, // Android
+  },
+  header_title: {
+    position: "absolute",
+    top: "65%",
+    width: "100%",
+    paddingLeft: Spacing.md,
+    left: 0,
+    borderColor: "green",
+    zIndex: 2000,
+    elevation: 2000, // Android
+  },
+  header_titleText: {
+    fontSize: Fontsize.h1,
+    fontWeight: "900",
+    color: Colors.TextInverse[2],
+  },
+
+  text_container: {
+    alignItems: "center",
+  },
   text_title: {
     fontSize: Fontsize.xxl,
     fontWeight: "900",
@@ -410,6 +426,7 @@ const s = StyleSheet.create({
   },
   rating: {
     fontSize: Fontsize.sm,
+    fontWeight: "600",
     color: Colors.TextInverse[1],
   },
   viewRoomsBtn: {
@@ -455,5 +472,10 @@ const s = StyleSheet.create({
     color: "red",
     marginTop: 4,
     fontSize: Fontsize.sm,
+  },
+  inputContainerStyle: {
+    borderWidth: 3,
+    borderColor: "green",
+    borderRadius: BorderRadius.md,
   },
 });

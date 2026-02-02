@@ -5,6 +5,7 @@ import {
   AppImageFile,
 } from "../image/image.schema";
 import { ROOM_FEATURE_TAGS } from "./rooms.constants";
+import { SelectOption } from "@/components/ui/BottomSheet/BottomSheetSelector";
 
 /* -----------------------------------------
    ENUMS & BASE SCHEMAS
@@ -54,6 +55,13 @@ export const RoomTypeEnumSchema = z.enum([
   "APARTMENT",
 ]);
 
+export const roomTypeOptions: SelectOption<BackendRoomType>[] = (
+  Object.keys(RoomTypeLabels) as RoomType[]
+).map((key) => ({
+  value: key as BackendRoomType,
+  label: RoomTypeLabels[key],
+}));
+
 /* -----------------------------------------
    ROOM FURNISHING TYPE
 ------------------------------------------ */
@@ -94,6 +102,12 @@ export const RoomFurnishingEnumSchema = z.enum([
   "SEMI_FURNISHED",
   "FULLY_FURNISHED",
 ]);
+
+export const roomFurnishingTypeOptions: SelectOption<BackendRoomFurnishingType>[] =
+  (Object.keys(RoomFurnishingLabels) as RoomFurnishingType[]).map((key) => ({
+    value: key as BackendRoomFurnishingType,
+    label: RoomFurnishingLabels[key],
+  }));
 /* -----------------------------------------
    READ / FETCH SCHEMAS
 ------------------------------------------ */
@@ -141,7 +155,7 @@ export const CreateRoomInputSchema = z.object({
         uri: z.string(),
         name: z.string().optional(),
         type: z.string().optional(),
-      })
+      }),
     )
     .default([]),
   thumbnail: z
@@ -150,7 +164,7 @@ export const CreateRoomInputSchema = z.object({
         uri: z.string(),
         name: z.string().optional(),
         type: z.string().optional(),
-      })
+      }),
     )
     .default([]),
 });
@@ -206,15 +220,11 @@ export type UnifiedRoomCreate = z.output<typeof UnifiedRoomCreateSchema>;
 export const PatchRoomInputSchema = z.object({
   roomNumber: z.string().optional(),
   description: z.string().optional(),
-
   maxCapacity: z.union([z.string(), z.number()]).optional(),
-
   price: z.union([z.string(), z.number()]).optional(),
-
   roomType: RoomTypeEnumSchema.optional(),
-
   furnishingType: RoomFurnishingEnumSchema.optional(),
-
+  availabilityStatus: z.boolean().optional(),
   tags: z.array(z.enum(ROOM_FEATURE_TAGS)).optional(),
 
   // RN image objects for upload
@@ -224,7 +234,7 @@ export const PatchRoomInputSchema = z.object({
         uri: z.string(),
         name: z.string().optional(),
         type: z.string().optional(),
-      })
+      }),
     )
     .optional(),
 
@@ -234,15 +244,13 @@ export const PatchRoomInputSchema = z.object({
         uri: z.string(),
         name: z.string().optional(),
         type: z.string().optional(),
-      })
+      }),
     )
     .optional(),
 
   // Optional removal arrays
   removeGalleryIds: z.array(z.number()).optional(),
   removeThumbnailId: z.number().optional(),
-
-  availabilityStatus: z.boolean().optional(),
 });
 
 export type PatchRoomInput = z.infer<typeof PatchRoomInputSchema>;

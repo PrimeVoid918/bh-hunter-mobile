@@ -18,7 +18,7 @@ import Button from "@/components/ui/Button";
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 
 // redux
-import { HStack, VStack } from "@gluestack-ui/themed";
+import { Box, HStack, VStack } from "@gluestack-ui/themed";
 
 import { useGetOneQuery as useGetOneBoardingHouses } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import { TenantBookingStackParamList } from "../navigation/booking.types";
@@ -26,6 +26,8 @@ import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
+import AutoExpandingInput from "../../../../../components/ui/AutoExpandingInputComponent";
+import { Ionicons } from "@expo/vector-icons";
 
 // type Props = NativeStackScreenProps<TenantTabsParamList, "Booking">;
 type RouteProps = RouteProp<
@@ -164,6 +166,36 @@ export default function BoardingHouseDetailsScreen() {
               </VStack>
             </>
           )}
+
+          <View style={{ borderWidth: 3, borderColor: "red" }}>
+            <Text>Hello moto</Text>
+            <View style={{ borderWidth: 3, borderColor: "white" }}>
+              <Text>Add a Review:</Text>
+              <AutoExpandingInput value="??" onChangeText={() => {}} />
+              <HStack style={{ borderWidth: 3, borderColor: "yellow" }}>
+                <Text>Rating: </Text>
+                <HStack
+                  style={[
+                    {
+                      gap: 8,
+                    },
+                  ]}
+                >
+                  <Ionicons name="star" size={20} color="gold" />
+                  <Ionicons name="star" size={20} color="gold" />
+                  <Ionicons name="star" size={20} color="gold" />
+                  <Ionicons name="star" size={20} color="gold" />
+                  <Ionicons name="star-half" size={20} color="gold" />
+                  <Text>(4.0)</Text>
+                </HStack>
+              </HStack>
+
+              <Box>
+                <Pressable
+                <Text>Hello?</Text>
+              </Box>
+            </View>
+          </View>
         </VStack>
       </VStack>
     </StaticScreenWrapper>

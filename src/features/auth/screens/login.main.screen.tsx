@@ -68,8 +68,8 @@ export default function LoginMainScreen() {
     // };
 
     const packageLoad = {
-      username: "owner01",
-      password: "owner01",
+      username: "tenant1",
+      password: "tenant1",
     };
     await logExpoSystemDir(["images", "documents"]);
     console.log("packageLoad: ", packageLoad);

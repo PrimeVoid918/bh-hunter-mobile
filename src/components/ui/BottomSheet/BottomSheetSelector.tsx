@@ -7,15 +7,20 @@ import {
   ActionsheetItemText,
 } from "@gluestack-ui/themed";
 
-interface BottomSheetSelectorProps<T> {
-  values: T[];
+export type SelectOption<T extends string = string> = {
+  value: T;
+  label: string;
+};
+
+interface BottomSheetSelectorProps<T extends string> {
+  options: SelectOption<T>[];
   isOpen: boolean;
   onClose: () => void;
   onSelect: (value: T) => void;
 }
 
-export default function BottomSheetSelector<T>({
-  values,
+export default function BottomSheetSelector<T extends string>({
+  options = [],
   isOpen,
   onClose,
   onSelect,
@@ -24,15 +29,15 @@ export default function BottomSheetSelector<T>({
     <Actionsheet isOpen={isOpen} onClose={onClose}>
       <ActionsheetBackdrop />
       <ActionsheetContent>
-        {values.map((option, index) => (
+        {options.map((option) => (
           <ActionsheetItem
-            key={index}
+            key={option.value}
             onPress={() => {
-              onSelect(option);
+              onSelect(option.value);
               onClose();
             }}
           >
-            <ActionsheetItemText>{String(option)}</ActionsheetItemText>
+            <ActionsheetItemText>{option.label}</ActionsheetItemText>
           </ActionsheetItem>
         ))}
       </ActionsheetContent>

@@ -16,15 +16,16 @@ import {
 } from "../image/image.schema";
 import { GetBookingSchema } from "../booking/booking.schema";
 import { PDFSchema } from "../valid-docs/pdf/pdf.schema";
+import { SelectOption } from "@/components/ui/BottomSheet/BottomSheetSelector";
 
 /* -----------------------------------------
    ENUMS & BASE SCHEMAS
 ------------------------------------------ */
 
 export enum OccupancyType {
-  MALE = "Male Only",
-  FEMALE = "Female Only",
-  MIXED = "Mixed",
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+  MIXED = "MIXED",
 }
 
 export const OccupancyTypeLabels: Record<OccupancyType, string> = {
@@ -42,6 +43,13 @@ export const BackendToFrontendMap: Record<BackendOccupancyType, OccupancyType> =
   };
 
 export const OccupancyTypeEnumSchema = z.enum(["MALE", "FEMALE", "MIXED"]);
+
+export const occupancyTypeOptions: SelectOption<BackendOccupancyType>[] = (
+  Object.keys(OccupancyTypeLabels) as OccupancyType[]
+).map((key) => ({
+  value: key as BackendOccupancyType,
+  label: OccupancyTypeLabels[key],
+}));
 
 /* -----------------------------------------
    ENUMS & BASE SCHEMAS
@@ -188,7 +196,7 @@ export const CreateBoardingHouseSchema =
     ...data,
     rooms: data.rooms
       ? data.rooms.map(
-          (room) => CreateRoomInputSchema.parse(room) // Transform each room to output type
+          (room) => CreateRoomInputSchema.parse(room), // Transform each room to output type
         )
       : undefined,
   }));
