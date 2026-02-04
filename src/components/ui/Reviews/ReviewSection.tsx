@@ -6,12 +6,17 @@ import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
 import { Colors, Fontsize, Spacing } from "@/constants";
 import ReviewItem from "./ReviewItem";
 import ReviewInput from "./ReviewInput";
+import RatingSummary from "./RatingSummary";
 
 interface ReviewSectionInterface {}
 
 export default function ReviewSection({}: ReviewSectionInterface) {
   return (
     <View style={[, s.container]}>
+      <Text style={{ fontSize: Fontsize.h2, color: Colors.TextInverse[1] }}>
+        Ratings and reviews
+      </Text>
+      <RatingSummary></RatingSummary>
       <ReviewInput></ReviewInput>
 
       <ReviewItem></ReviewItem>
@@ -26,8 +31,9 @@ export default function ReviewSection({}: ReviewSectionInterface) {
 
 const s = StyleSheet.create({
   container: {
-    borderWidth: 3,
-    borderColor: "red",
+    paddingTop: Spacing.md,
+    // borderWidth: 3,
+    // borderColor: "red",
   },
   text_color: {
     color: Colors.TextInverse[1],
