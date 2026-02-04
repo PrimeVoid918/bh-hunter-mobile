@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Box, Button } from "@gluestack-ui/themed";
 import React from "react";
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
@@ -19,6 +19,7 @@ import HeroComponent from "../components/HeroComponent";
 import { TenantDashboardStackParamList } from "../navigation/dashboard.stack";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import VerificationIndicatorComponent from "@/components/ui/Verification/VerificationIndicatorComponent";
 
 export default function DashboardMainScreen() {
   // const dispatch = useDispatch();
@@ -32,6 +33,13 @@ export default function DashboardMainScreen() {
       style={[GlobalStyle.GlobalsContainer, s.StaticScreenWrapper]}
       contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
     >
+      <View>
+        <Pressable
+          onPress={() => navigation.navigate("VerificationMainScreen")}
+        >
+          <VerificationIndicatorComponent isVerified={user?.isVerified!} />
+        </Pressable>
+      </View>
       <VStack
         style={{
           gap: Spacing.lg,

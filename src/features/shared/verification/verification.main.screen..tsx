@@ -3,52 +3,70 @@ import React from "react";
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import { VStack, Button } from "@gluestack-ui/themed";
 import { Colors, BorderRadius, GlobalStyle, Spacing } from "@/constants";
-import LegitmacyContsentComponent from "../../../../../components/ui/TermsAndConditionsModals/LegitmacyContsentComponent";
+import LegitmacyContsentComponent from "../../../components/ui/TermsAndConditionsModals/LegitmacyContsentComponent";
 import { useGetVerificationStatusQuery } from "@/infrastructure/valid-docs/verification-document/verification-document.redux.api";
 import {
-  useGetOneQuery,
-  usePatchMutation,
+  useGetOneQuery as useGetOneQueryOwner,
+  usePatchMutation as usePatchMutationOwner,
 } from "@/infrastructure/owner/owner.redux.api";
+import {
+  useGetOneQuery as useGetOneQueryTenant,
+  usePatchMutation as usePatchMutationTenant,
+} from "@/infrastructure/tenants/tenant.redux.api";
 import { useSelector } from "react-redux";
 import { RootState } from "@/application/store/stores";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {
+  VerificationDocumentMetaData,
   VerificationStatus,
-  VerificationType,
   VerificationTypeMap,
 } from "@/infrastructure/valid-docs/verification-document/verification-document.schema";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { OwnerDashboardStackParamList } from "../navigation/dashboard.types";
+import { OwnerDashboardStackParamList } from "../../owner/screens/dashboard/navigation/dashboard.types";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
+import { TenantDashboardStackParamList } from "@/features/tenant/screens/dashboard/navigation/dashboard.stack";
+import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
+import { VerificationType } from "../../../infrastructure/valid-docs/verification-document/verification-document.schema";
+import { getVerificationRole, userRole } from "./verificationConfig";
+import {
+  statusStylesConfig,
+  verificationConfig,
+  VerificationListItem,
+  verificationRole,
+} from "./verificationConfig";
+
+type VerificationMainNavigationProp = NativeStackNavigationProp<
+  OwnerDashboardStackParamList,
+  "VerificationMainScreen"
+>;
 
 export default function VerificationMainScreen() {
-  const navigate =
-    useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
+  const navigation = useNavigation<VerificationMainNavigationProp>();
 
-  const ownerData = useSelector(
-    (state: RootState) => state.owners.selectedUser
-  );
-  const ownerId = ownerData?.id;
+  const { id, role } = useDynamicUserApi();
+  const userRole = getVerificationRole(role);
 
-  if (!ownerId) {
-    Alert.alert("Error", "Owner not found");
+  const userId = id;
+
+  const isTenant = role === "TENANT";
+  const isOwner = role === "OWNER";
+
+  if (!userId) {
+    Alert.alert("Error", "User not found");
     return null;
   }
 
-  // OWNER PROFILE QUERY WITH FULL DEBUG LOGS
+  // User PROFILE QUERY WITH FULL DEBUG LOGS
   const {
-    data: ownerProfileData,
-    isLoading: isOwnerLoading,
-    isError: isOwnerError,
+    data: userData,
+    isLoading: isUserLoading,
+    isError: isUserError,
+    refetch: userRefetch,
     isFetching,
-    refetch: ownerRefetch,
-  } = useGetOneQuery(ownerId, {
-    refetchOnMountOrArgChange: true,
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
-  });
+  } = isTenant ? useGetOneQueryTenant(userId) : useGetOneQueryOwner(userId); // owner hook
+  const { sourceTarget, verificationTypes } = verificationConfig[userRole];
 
   // VERIFICATION STATUS QUERY
   const {
@@ -57,96 +75,80 @@ export default function VerificationMainScreen() {
     isError: verificationStatusError,
     refetch: verificationStatusRefetch,
   } = useGetVerificationStatusQuery(
-    { id: ownerId, sourceTarget: "owners" },
-    { refetchOnMountOrArgChange: true, refetchOnFocus: true }
+    { id: userId, sourceTarget: sourceTarget },
+    { refetchOnMountOrArgChange: true, refetchOnFocus: true },
   );
 
-  const [patch] = usePatchMutation();
+  const [patchTenant] = usePatchMutationTenant();
+  const [patchOwner] = usePatchMutationOwner();
 
   // THIS IS THE VALUE YOU CARE ABOUT
   const hasAcceptedLegitimacyConsent =
-    ownerProfileData?.hasAcceptedLegitimacyConsent ?? false;
+    userData?.hasAcceptedLegitimacyConsent ?? false;
 
   // LOG EVERYTHING — YOU WILL SEE THIS IN CONSOLE
-  React.useEffect(() => {
-    // console.log("OWNER PROFILE FETCHED");
-    // console.log("ownerId:", ownerId);
-    // console.log("Full ownerProfileData:", ownerProfileData);
-    // console.log(
-    //   "hasAcceptedLegitimacyConsent from backend:",
-    //   ownerProfileData?.hasAcceptedLegitimacyConsent
-    // );
-    // console.log("Final value used in UI:", hasAcceptedLegitimacyConsent);
-    // console.log("isFetching:", isFetching, "| isLoading:", isOwnerLoading);
-    // console.log("--------------------------------------------------");
-  }, [ownerProfileData, isFetching, isOwnerLoading, ownerId]);
+  // React.useEffect(() => {
+  // }, [userData]);
 
   // Log when refetch happens
   useFocusEffect(
     React.useCallback(() => {
       // console.log("Screen focused → forcing refetch for ownerId:", ownerId);
-      ownerRefetch();
+      userRefetch();
       verificationStatusRefetch();
-    }, [ownerId, ownerRefetch, verificationStatusRefetch])
+    }, [userId, userRefetch, verificationStatusRefetch]),
   );
 
   const handleConsentChange = async (value: boolean) => {
-    console.log("User toggled consent to:", value);
     try {
-      await patch({
-        id: ownerId,
-        data: {
-          hasAcceptedLegitimacyConsent: value,
-          consentAcceptedAt: new Date().toISOString(),
-        },
-      }).unwrap();
-      console.log("Patch success → refetching owner data");
-      ownerRefetch();
-    } catch (error) {
-      console.error("Patch failed:", error);
+      if (isTenant) {
+        await patchTenant({
+          id: userId,
+          data: {
+            hasAcceptedLegitimacyConsent: value,
+            consentAcceptedAt: new Date().toISOString(),
+          },
+        }).unwrap();
+      } else {
+        await patchOwner({
+          id: userId,
+          data: {
+            hasAcceptedLegitimacyConsent: value,
+            consentAcceptedAt: new Date().toISOString(),
+          },
+        }).unwrap();
+      }
+      userRefetch();
+    } catch (err) {
       Alert.alert("Error", "Failed to save consent");
     }
   };
 
   const onRefresh = React.useCallback(() => {
-    console.log("Pull-to-refresh triggered");
-    ownerRefetch();
+    userRefetch();
     verificationStatusRefetch();
-  }, [ownerRefetch, verificationStatusRefetch]);
+  }, [userRefetch, verificationStatusRefetch]);
 
-  if (isOwnerLoading || verificationStatusLoading) {
-    return <FullScreenLoaderAnimated />;
-  }
+  const verificationList = React.useMemo<VerificationListItem[]>(() => {
+    const submittedDocsMap = Object.fromEntries(
+      (verificationStatusData?.verificationDocuments ?? []).map((doc) => [
+        doc.verificationType,
+        doc,
+      ]),
+    ) as Record<VerificationType, VerificationDocumentMetaData>;
 
-  if (isOwnerError || verificationStatusError) {
-    return <FullScreenErrorModal message="Failed to load data" />;
-  }
+    return verificationTypes.map((type) => {
+      const submitted = submittedDocsMap[type] ?? null;
 
-  const allTypes = Object.keys(VerificationTypeMap) as VerificationType[];
-  const submittedDocsMap = Object.fromEntries(
-    (verificationStatusData?.verificationDocuments ?? []).map((doc) => [
-      doc.verificationType,
-      doc,
-    ])
-  );
+      return {
+        type,
+        meta: VerificationTypeMap[type],
+        status: submitted?.verificationStatus ?? "MISSING",
+        document: submitted,
+      };
+    });
+  }, [verificationTypes, verificationStatusData]);
 
-  const verificationList = allTypes.map((type) => {
-    const submitted = submittedDocsMap[type];
-    return {
-      type,
-      meta: VerificationTypeMap[type],
-      status: submitted ? submitted.verificationStatus : "MISSING",
-      document: submitted || null,
-    };
-  });
-
-  const statusStyles: Record<VerificationStatus, { bg: string; icon: string }> =
-    {
-      APPROVED: { bg: "#125e27", icon: "#34A853" },
-      PENDING: { bg: "#6d5507", icon: "#FBBC05" },
-      REJECTED: { bg: "#8a1609", icon: "#EA4335" },
-      EXPIRED: { bg: "#063f8a", icon: "#4285F4" },
-    };
 
   return (
     <StaticScreenWrapper
@@ -158,6 +160,12 @@ export default function VerificationMainScreen() {
         s.containerStyle,
       ]}
     >
+      {isUserLoading ||
+        (verificationStatusLoading && <FullScreenLoaderAnimated />)}
+      {isUserError ||
+        (verificationStatusError && (
+          <FullScreenErrorModal message="Failed to load data" />
+        ))}
       {/* Header */}
       <View
         style={{
@@ -183,9 +191,11 @@ export default function VerificationMainScreen() {
 
       <VStack style={s.cardHolder}>
         {verificationList.map((doc, index) => {
-          console.log("doc: ", doc.document);
           const status = doc.status;
-          const colors = statusStyles[status] ?? { bg: "#666", icon: "#999" };
+          const colors = statusStylesConfig[status] ?? {
+            bg: "#666",
+            icon: "#999",
+          };
 
           return (
             <View
@@ -197,8 +207,8 @@ export default function VerificationMainScreen() {
                   status === "APPROVED"
                     ? "checkmark-circle"
                     : status === "REJECTED"
-                    ? "close-circle"
-                    : "time"
+                      ? "close-circle"
+                      : "time"
                 }
                 color={colors.icon}
                 size={50}
@@ -211,16 +221,15 @@ export default function VerificationMainScreen() {
                 style={s.cardCta}
                 onPress={() => {
                   if (status === "MISSING") {
-                    navigate.navigate("VerificationSubmitScreen", {
-                      userId: ownerId,
-                      meta: { ...doc.meta, type: doc.type },
+                    navigation.navigate("VerificationSubmitScreen", {
+                      userId,
+                      meta: { ...doc.meta, type: doc.type, role: role },
                     });
                   } else {
-                    console.log();
-                    navigate.navigate("VerificationViewScreen", {
-                      userId: ownerId,
-                      docId: doc.document.id,
-                      meta: { ...doc.meta, type: doc.type },
+                    navigation.navigate("VerificationViewScreen", {
+                      userId,
+                      docId: doc.document!.id,
+                      meta: { ...doc.meta, type: doc.type, role: role },
                     });
                   }
                 }}
@@ -236,8 +245,7 @@ export default function VerificationMainScreen() {
 
       {/* THIS IS WHERE THE TRUTH IS REVEALED */}
       <VStack style={{ marginTop: "auto", padding: Spacing.lg }}>
-        {/* DEBUG TEXT — REMOVE LATER */}
-        <Text
+        {/* <Text
           style={{
             color: "yellow",
             fontSize: 14,
@@ -246,7 +254,7 @@ export default function VerificationMainScreen() {
           }}
         >
           DEBUG: Consent = {String(hasAcceptedLegitimacyConsent)} (from backend)
-        </Text>
+        </Text> */}
 
         <LegitmacyContsentComponent
           value={hasAcceptedLegitimacyConsent}
@@ -254,7 +262,7 @@ export default function VerificationMainScreen() {
         />
       </VStack>
 
-      {isFetching && !isOwnerLoading && <FullScreenLoaderAnimated />}
+      {isFetching && !isUserLoading && <FullScreenLoaderAnimated />}
     </StaticScreenWrapper>
   );
 }

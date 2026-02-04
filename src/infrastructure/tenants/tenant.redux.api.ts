@@ -5,6 +5,7 @@ import {
   Tenant,
   RegisterTenant,
   UpdateTenant,
+  GetTenant,
 } from "./tenant.types";
 
 /** ---------------- ROUTE ---------------- **/
@@ -51,7 +52,7 @@ export const tenantApi = createApi({
     }),
 
     /** Update tenant (PATCH) */
-    patch: builder.mutation<Tenant, { id: number; data: UpdateTenant }>({
+    patch: builder.mutation<GetTenant, { id: number; data: UpdateTenant }>({
       query: ({ id, data }) => ({
         url: `${tenantApiRoute}/${id}`,
         method: "PATCH",

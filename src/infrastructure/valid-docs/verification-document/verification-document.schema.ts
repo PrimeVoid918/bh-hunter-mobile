@@ -9,7 +9,6 @@ export type UserRoleType = "owners" | "tenants" | "admins";
 export const FileFormatSchema = z.enum([
   "PDF",
   "IMAGE",
-  // "VIDEO",
   // "AUDIO",
   // "OTHER",
 ]);
@@ -35,6 +34,7 @@ export const VerificationTypeSchema = z.enum([
   "SEC",
   "FIRE_CERTIFICATE",
   "SANITARY_PERMIT",
+  "VALID_ID",
 ]);
 
 export const VerificationStatusSchema = z.enum([
@@ -72,7 +72,7 @@ export const VerificationDocumentMetaDataSchema = z
 
 /** Array response */
 export const VerificationDocumentMetaDataArraySchema = z.array(
-  VerificationDocumentMetaDataSchema
+  VerificationDocumentMetaDataSchema,
 );
 
 /** Payload for creating a VerificationDocument */
@@ -102,7 +102,7 @@ export const VerificationDocumentStatusSchema = z.object({
       verificationStatus: "APPROVED",
       expiresAt: "2025-08-15T01:34:00.000Z",
       fileFormat: "PDF",
-    })
+    }),
   ),
 });
 
@@ -162,5 +162,11 @@ export const VerificationTypeMap: Record<
     description:
       "Proof that the establishment complies with local sanitation and health regulations",
     applicableFor: "All business types",
+  },
+  VALID_ID: {
+    displayName: "Valid ID",
+    description:
+      "A clear photo of your Government ID (Passport, PhilID, Driver's License), School ID (for students), or Company ID (for workers). Please ensure the ID is current and all details are visible.",
+    applicableFor: "Students and Working Professionals",
   },
 };

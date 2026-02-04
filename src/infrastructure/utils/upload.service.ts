@@ -3,13 +3,16 @@ import api from "@/application/config/api";
 import { CreateBoardingHouseInput } from "../boarding-houses/boarding-house.schema";
 import { CreateRoom } from "../room/rooms.schema";
 
+import { AppDocumentFile } from "@/infrastructure/document/document.schema";
+import { AppImageFile } from "@/infrastructure/image/image.schema";
+import { UploadFile } from "./upload.schemas";
 
 type UploadResponse =
   | { success: true; data: any }
   | { success: false; error: string };
 
 export const uploadBoardingHouse = async (
-  data: CreateBoardingHouseInput
+  data: CreateBoardingHouseInput,
 ): Promise<UploadResponse> => {
   const API_URL = api.BASE_URL;
   try {
@@ -86,7 +89,7 @@ export const uploadBoardingHouse = async (
     formData.forEach((part, i) => {
       if (typeof part.data === "string") {
         console.log(
-          `  [${i}] ${part.name}: (string) ${part.data.slice(0, 80)}...`
+          `  [${i}] ${part.name}: (string) ${part.data.slice(0, 80)}...`,
         );
       } else {
         console.log(`  [${i}] ${part.name}: (binary) ${part.filename}`);
@@ -98,7 +101,7 @@ export const uploadBoardingHouse = async (
       "POST",
       `${API_URL}/api/boarding-houses`,
       { "Content-Type": "multipart/form-data" },
-      formData
+      formData,
     );
 
     const json = response.json();
@@ -113,7 +116,6 @@ export const uploadBoardingHouse = async (
   }
 };
 
-
 export const uploadRoom = async (
   boardingHouseId: number | string,
   rooms: Partial<CreateRoom>[],
@@ -125,7 +127,7 @@ export const uploadRoom = async (
       {
         name: "rooms",
         data: JSON.stringify(
-          rooms.map(({ gallery, thumbnail, ...rest }) => rest)
+          rooms.map(({ gallery, thumbnail, ...rest }) => rest),
         ),
       },
     ];
@@ -134,7 +136,9 @@ export const uploadRoom = async (
       // Room gallery
       room.gallery?.forEach((file, j) => {
         if (!file?.uri) return;
-        const cleanUri = file.uri.startsWith("file://") ? file.uri : `file://${file.uri}`;
+        const cleanUri = file.uri.startsWith("file://")
+          ? file.uri
+          : `file://${file.uri}`;
         formData.push({
           name: `roomGallery${index}_${j}`,
           filename: file.name ?? `room-${index}-${j}.jpg`,
@@ -146,7 +150,9 @@ export const uploadRoom = async (
       // Room thumbnail
       if (room.thumbnail?.[0]?.uri) {
         const thumbFile = room.thumbnail[0];
-        const cleanThumbUri = thumbFile.uri.startsWith("file://") ? thumbFile.uri : `file://${thumbFile.uri}`;
+        const cleanThumbUri = thumbFile.uri.startsWith("file://")
+          ? thumbFile.uri
+          : `file://${thumbFile.uri}`;
         formData.push({
           name: `roomThumbnail${index}_0`,
           filename: thumbFile.name ?? `roomThumbnail-${index}.jpg`,
@@ -160,13 +166,23 @@ export const uploadRoom = async (
       "POST",
       `${API_URL}/api/boarding-houses/${boardingHouseId}/rooms`,
       { "Content-Type": "multipart/form-data" },
-      formData
+      formData,
     );
 
     const json = response.json();
-    return json.success ? { success: true, data: json.results } : { success: false, error: json.results };
+    return json.success
+      ? { success: true, data: json.results }
+      : { success: false, error: json.results };
   } catch (err: any) {
     console.error("Room upload failed:", err);
     return { success: false, error: err.message ?? "Network error" };
   }
 };
+
+export function toUploadFile(file: AppDocumentFile | AppImageFile): UploadFile {
+  return {
+    uri: file.uri ?? file.url!,
+    name: file.name,
+    type: file.type,
+  };
+}

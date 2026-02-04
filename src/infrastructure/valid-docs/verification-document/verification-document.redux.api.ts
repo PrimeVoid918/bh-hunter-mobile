@@ -9,6 +9,12 @@ import {
   VerificationDocumentStatus,
 } from "./verification-document.schema"; // <-- import your Zod types
 import { AppDocumentFile } from "@/infrastructure/document/document.schema";
+import { UploadFile } from "@/infrastructure/utils/upload.schemas";
+
+const documentTypeResolver = (sourceType: UserRoleType) => {
+  const result = sourceType === "owners" ? "permits" : "valid-id";
+  return `${result}`;
+};
 
 const ownerPermitsApiRoute = `/api`;
 
@@ -22,20 +28,28 @@ export const verificationDocumentsApi = createApi({
   endpoints: (builder) => ({
     getAll: builder.query<VerificationDocumentMetaData[], UserRoleType>({
       query: (sourceTarget: UserRoleType) =>
-        `${ownerPermitsApiRoute}/${sourceTarget}/permits`,
+        `${ownerPermitsApiRoute}/${sourceTarget}/${documentTypeResolver(sourceTarget)}`,
       transformResponse: (
-        response: ApiResponseType<VerificationDocumentMetaData[]>
+        response: ApiResponseType<VerificationDocumentMetaData[]>,
       ) => response.results ?? [],
-      providesTags: (result) =>
+      providesTags: (result, error, sourceTarget) =>
         result
           ? [
               ...result.map((doc) => ({
                 type: "VerificationDocuments" as const,
-                id: doc.id,
+                id: `${sourceTarget}-${doc.id}`,
               })),
-              { type: "VerificationDocuments" as const, id: "LIST" },
+              {
+                type: "VerificationDocuments" as const,
+                id: `${sourceTarget}-LIST`,
+              },
             ]
-          : [{ type: "VerificationDocuments" as const, id: "LIST" }],
+          : [
+              {
+                type: "VerificationDocuments" as const,
+                id: `${sourceTarget}-LIST`,
+              },
+            ],
     }),
 
     getById: builder.query<
@@ -43,12 +57,15 @@ export const verificationDocumentsApi = createApi({
       { id: number; sourceTarget: UserRoleType }
     >({
       query: ({ id, sourceTarget }) =>
-        `${ownerPermitsApiRoute}/${sourceTarget}/${id}/permits`,
+        `${ownerPermitsApiRoute}/${sourceTarget}/${id}/${documentTypeResolver(sourceTarget)}`,
       transformResponse: (
-        response: ApiResponseType<VerificationDocumentMetaData>
+        response: ApiResponseType<VerificationDocumentMetaData>,
       ) => response.results!,
       providesTags: (result, error, { id, sourceTarget }) => [
-        { type: "VerificationDocuments", id: `${sourceTarget}-${id}` },
+        {
+          type: "VerificationDocuments",
+          id: `${sourceTarget}-${id}`,
+        },
       ],
     }),
 
@@ -62,18 +79,21 @@ export const verificationDocumentsApi = createApi({
           sourceTarget,
         });
         console.log(
-          `${ownerPermitsApiRoute}/${sourceTarget}/${id}/permit-verification-status`
+          `${ownerPermitsApiRoute}/${sourceTarget}/${id}/${documentTypeResolver(sourceTarget)}-verification-status`,
         );
-        return `${ownerPermitsApiRoute}/${sourceTarget}/${id}/permit-verification-status`;
+        return `${ownerPermitsApiRoute}/${sourceTarget}/${id}/${documentTypeResolver(sourceTarget)}-verification-status`;
       },
       transformResponse: (
-        response: ApiResponseType<VerificationDocumentStatus>
+        response: ApiResponseType<VerificationDocumentStatus>,
       ) => {
         console.log("getVerificationStatus transformResponse:", response);
         return response.results!;
       },
       providesTags: (result, error, { id, sourceTarget }) => [
-        { type: "VerificationDocuments", id: `${sourceTarget}-${id}` },
+        {
+          type: "VerificationDocuments",
+          id: `${sourceTarget}-${id}`,
+        },
       ],
     }),
 
@@ -97,12 +117,14 @@ export const verificationDocumentsApi = createApi({
         formData.append("file", file);
 
         return {
-          url: `${ownerPermitsApiRoute}/${sourceTarget}/permits`,
+          url: `${ownerPermitsApiRoute}/${sourceTarget}/${documentTypeResolver(sourceTarget)}`,
           method: "POST",
           body: formData,
         };
       },
-      invalidatesTags: [{ type: "VerificationDocuments", id: "LIST" }],
+      invalidatesTags: (result, error, { sourceTarget }) => [
+        { type: "VerificationDocuments", id: `${sourceTarget}-LIST` },
+      ],
     }),
 
     patchVerificaitonDocument: builder.mutation<
@@ -111,7 +133,7 @@ export const verificationDocumentsApi = createApi({
         id: number;
         sourceTarget: UserRoleType;
         data: UpdateVerificationDocumentDto;
-        file: AppDocumentFile;
+        file: UploadFile;
       }
     >({
       query: ({ id, sourceTarget, data, file }) => {
@@ -122,16 +144,17 @@ export const verificationDocumentsApi = createApi({
         });
 
         formData.append("file", file);
+        // formData.append("file on verificaiotn payload: ", file);
 
         return {
-          url: `${ownerPermitsApiRoute}/${sourceTarget}/permits/${id}`,
+          url: `${ownerPermitsApiRoute}/${sourceTarget}/${documentTypeResolver(sourceTarget)}/${id}`,
           method: "PATCH",
           body: formData,
         };
       },
-      invalidatesTags: (result, error, { id }) => [
-        { type: "VerificationDocuments", id },
-        { type: "VerificationDocuments", id: "LIST" },
+      invalidatesTags: (result, error, { id, sourceTarget }) => [
+        { type: "VerificationDocuments", id: `${sourceTarget}-${id}` },
+        { type: "VerificationDocuments", id: `${sourceTarget}-LIST` },
       ],
     }),
 
@@ -140,12 +163,12 @@ export const verificationDocumentsApi = createApi({
       { id: number; sourceTarget: UserRoleType }
     >({
       query: ({ id, sourceTarget }) => ({
-        url: `${ownerPermitsApiRoute}/${sourceTarget}/permits/${id}`,
+        url: `${ownerPermitsApiRoute}/${sourceTarget}/${documentTypeResolver(sourceTarget)}/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: (result, error, { id, sourceTarget }) => [
         { type: "VerificationDocuments", id: `${sourceTarget}-${id}` },
-        { type: "VerificationDocuments", id: "LIST" },
+        { type: "VerificationDocuments", id: `${sourceTarget}-LIST` },
       ],
     }),
   }),

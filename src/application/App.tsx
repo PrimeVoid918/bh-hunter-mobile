@@ -16,7 +16,7 @@ import { LogBox } from "react-native";
 import GlobalDocumentFullScreenProvider from "@/components/ui/DocumentComponentUtilities/GlobalDocumentFullScreenProvider";
 
 export default function App() {
-  // Initialize RevenueCat
+  // Initialize RevenukeCat
   // useEffect(() => {
   //   Purchases.configure({
   //     apiKey: "YOUR_REVENUECAT_PUBLIC_API_KEY",

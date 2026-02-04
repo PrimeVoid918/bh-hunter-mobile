@@ -1,4 +1,4 @@
-import { VerificationType } from "@/infrastructure/valid-docs/verification-document/verification-document.schema";
+import { VerificationSubmitScreenMeta } from "@/features/shared/verification/verificationConfig";
 
 export type OwnerDashboardStackParamList = {
   DashboardScreen: undefined;
@@ -30,13 +30,6 @@ export type OwnerDashboardStackParamList = {
     meta: VerificationSubmitScreenMeta;
   };
 };
-
-export interface VerificationSubmitScreenMeta {
-  type: VerificationType;
-  displayName: string;
-  description: string;
-  applicableFor: string;
-}
 
 /**
  * {
