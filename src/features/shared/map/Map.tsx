@@ -56,6 +56,17 @@ export default function Map({
     return () => clearTimeout(timer);
   }, [imageSize]); // ← Re-run when size changes
 
+  //TODO: use OSRM (Open Source Routing Machine)
+  /**
+   * Package,Purpose,Why you need it
+   *fetch (Built-in),API Requests,To call the OSRM servers. No extra install needed.
+   *@turf/turf,Geospatial Logic,"To calculate the distance (e.g., ""1.2 km away"") or ""clean"" the coordinates OSRM gives you."
+   *expo-location,User GPS,"If you don't have it yet, this gets the currentLocation for your user."
+    <MapLibreGL.ShapeSource id="routeSource" shape={routeData} tolerance={0.5}>
+    <MapLibreGL.LineLayer id="routeLine" style={{ lineCap: 'round', lineJoin: 'round' }} />
+    </MapLibreGL.ShapeSource>
+   */
+
   return (
     <View style={styles.container}>
       <MapView

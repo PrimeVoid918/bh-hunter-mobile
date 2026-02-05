@@ -26,9 +26,6 @@ import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
-import AutoExpandingInput from "../../../../../components/ui/AutoExpandingInputComponent";
-import { Ionicons } from "@expo/vector-icons";
-import ImageUserPFP from "@/components/ui/ImageComponentUtilities/ImageUserPFP";
 import ReviewSection from "../../../../../components/ui/Reviews/ReviewSection";
 
 // type Props = NativeStackScreenProps<TenantTabsParamList, "Booking">;
@@ -169,7 +166,7 @@ export default function BoardingHouseDetailsScreen() {
             </>
           )}
 
-          <ReviewSection />
+          <ReviewSection boardingHouseId={boardinghouse?.id} />
         </VStack>
       </VStack>
     </StaticScreenWrapper>
@@ -191,7 +188,8 @@ const s = StyleSheet.create({
     marginBottom: 10,
     gap: 10,
   },
-  body: {},
+  body: {
+  },
 
   text_title: {
     color: Colors.TextInverse[1],

@@ -6,11 +6,13 @@ import { computeStarFills } from "@/infrastructure/reviews/review.star-rating.se
 interface RatingStarRatioInterface {
   rating: number;
   size: number;
-  color: string;
+  starFilledColor: string;
+  starHollowedColor: string;
 }
 
 export default function RatingStarRatio({
-  color,
+  starFilledColor,
+  starHollowedColor,
   rating,
   size,
 }: RatingStarRatioInterface) {
@@ -24,7 +26,6 @@ export default function RatingStarRatio({
       style={{
         flexDirection: "row",
         alignItems: "center",
-        // borderWidth: 2,
       }}
     >
       {fills.map((fill, i) => {
@@ -40,8 +41,12 @@ export default function RatingStarRatio({
                   <Rect x="0" y="0" width={24 * fill} height="24" />
                 </ClipPath>
               </Defs>
-              <Path d={STAR_PATH} fill="#ddd" />
-              <Path d={STAR_PATH} fill={color} clipPath={`url(#${clipId})`} />
+              <Path d={STAR_PATH} fill={starHollowedColor} />
+              <Path
+                d={STAR_PATH}
+                fill={starFilledColor}
+                clipPath={`url(#${clipId})`}
+              />
             </Svg>
           </View>
         );

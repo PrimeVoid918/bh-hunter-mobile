@@ -95,12 +95,6 @@ export default function DashboardBookingDetailsScreen() {
           maxHeight={180}
           placeholder=""
         />
-        // <View>
-        //   <Text>Yawa animal</Text>
-        //   <Text>Yawa animal</Text>
-        //   <Text>Yawa animal</Text>
-        //   <Text>Yawa animal</Text>
-        // </View>
       ),
     });
   };

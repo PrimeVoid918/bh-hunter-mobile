@@ -12,24 +12,32 @@ export function computeStarFills(rating: number, maxStars = 5): StarFill[] {
   });
 }
 
-type StarDistribution = {
+export type StarDistribution = {
   star: number; // 5, 4, 3...
   count: number; // how many reviews
   percentage: number; // 0–1
 };
 
-export function computeStarDistribution(
-  reviews: { rating: number }[],
-  maxStars = 5,
-) {
-  const total = reviews.length;
-  const distribution: StarDistribution[] = [];
+// exprotconst computedDistribution: StarDistribution[] = Object.entries(distribution)
+//     .map(([star, countStr]) => {
+//       const count = Number(countStr);
+//       const percentage = total > 0 ? count / total : 0;
+//       return { star: Number(star), count, percentage };
+//     })
+//     .sort((a, b) => b.star - a.star); // descending stars
 
-  for (let star = maxStars; star >= 1; star--) {
-    const count = reviews.filter((r) => Math.round(r.rating) === star).length;
-    const percentage = total > 0 ? count / total : 0;
-    distribution.push({ star, count, percentage });
-  }
+// export function computeStarDistribution(
+//   reviews: { rating: number }[],
+//   maxStars = 5,
+// ) {
+//   const total = reviews.length;
+//   const distribution: StarDistribution[] = [];
 
-  return distribution;
-}
+//   for (let star = maxStars; star >= 1; star--) {
+//     const count = reviews.filter((r) => Math.round(r.rating) === star).length;
+//     const percentage = total > 0 ? count / total : 0;
+//     distribution.push({ star, count, percentage });
+//   }
+
+//   return distribution;
+// }

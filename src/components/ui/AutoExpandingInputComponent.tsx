@@ -1,3 +1,4 @@
+import { Colors } from "@/constants";
 import React, { useState, useRef } from "react";
 import {
   TextInput,
@@ -38,6 +39,7 @@ export default function AutoExpandingInput({
         defaultValue={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
+        placeholderTextColor={Colors.TextInverse[1] || "#999"}
         multiline
         style={[
           styles.input,
@@ -60,6 +62,7 @@ const styles = StyleSheet.create({
   },
   input: {
     padding: "2%",
+    color: Colors.TextInverse[1],
     // shadowOffset: { width: 0, height: 2 },
     // shadowOpacity: 0.1,
     // shadowRadius: 4,

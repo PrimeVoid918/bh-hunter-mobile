@@ -2,54 +2,71 @@ import { View, Text, StyleSheet } from "react-native";
 import React from "react";
 import { Box, HStack, VStack } from "@gluestack-ui/themed";
 import RatingStarRatio from "./RatingStarRatio";
-import { computeStarDistribution } from "@/infrastructure/reviews/review.star-rating.service";
+import { StarDistribution } from "@/infrastructure/reviews/review.star-rating.service";
 import { Colors, Fontsize, Spacing } from "@/constants";
+import { ReviewSummary } from "@/infrastructure/reviews/reviews.schema";
+import type { ReviewSummarySchema } from "../../../infrastructure/reviews/reviews.schema";
 
-const reviews = [
-  { rating: 5 },
-  { rating: 5 },
-  { rating: 4 },
-  { rating: 3 },
-  { rating: 1 },
-];
+interface RatingSummarInterface {
+  starFilledColor: string;
+  starHollowedColor: string;
+  metaData: ReviewSummary;
+  //   averageRating: number;
+  // total: number;
+  // distribution: Record<string, number>;
+}
 
-export default function RatingSummar() {
+export default function RatingSummar({
+  starFilledColor,
+  starHollowedColor,
+  metaData: { average, distribution, total },
+}: RatingSummarInterface) {
   const size = Fontsize.sm;
-  const color = "gold";
-  const rating = 3.6;
-  const distribution = computeStarDistribution(reviews);
-  const totalReviews = 5;
+
+  // Convert backend distribution object to array for the bars
+  const computedDistribution: StarDistribution[] = Object.entries(distribution)
+    .map(([star, countStr]) => {
+      const count = Number(countStr);
+      const percentage = total > 0 ? count / total : 0;
+      return { star: Number(star), count, percentage };
+    })
+    .sort((a, b) => b.star - a.star); // descending stars
 
   return (
     <Box style={[s.container]}>
       {/* Average rating */}
       <VStack style={[s.star_ratio_con]}>
-        <Text style={[s.ratio_text, s.text_color]}>{rating}</Text>
+        <Text style={[s.ratio_text, s.text_color]}>{average}</Text>
         <View style={{ marginTop: "auto" }}>
-          <RatingStarRatio color={color} rating={rating} size={size} />
-          <Text style={[s.text_color]}>{totalReviews}</Text>
+          <RatingStarRatio
+            starFilledColor={starFilledColor}
+            starHollowedColor={starHollowedColor}
+            rating={average}
+            size={size}
+          />
+          <Text style={[s.text_color]}>{total}</Text>
         </View>
       </VStack>
 
       {/* Distribution bars */}
       <VStack flex={1} style={[s.distributionBars_container]}>
-        {distribution.map((d) => (
+        {computedDistribution.map((d) => (
           <HStack key={d.star} style={[s.distributionBars_container_rows]}>
             <Text style={[s.text_color]}>{d.star}</Text>
             <Box
               flex={1}
               height={10}
-              backgroundColor="#ddd"
+              backgroundColor={starHollowedColor}
               borderRadius={5}
               overflow="hidden"
             >
               <Box
                 width={`${d.percentage * 100}%`}
                 height="100%"
-                backgroundColor={color}
+                backgroundColor={starFilledColor}
               />
             </Box>
-            {/* <Text>{d.count}</Text> */}
+            {/* Optional: <Text>{d.count}</Text> */}
           </HStack>
         ))}
       </VStack>

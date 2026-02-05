@@ -14,6 +14,7 @@ import genericSearchBarSlice from "../../infrastructure/redux-utils/genericSearc
 import { bookingApi } from "@/infrastructure/booking/booking.redux.api";
 import { verificationDocumentsApi } from "@/infrastructure/valid-docs/verification-document/verification-document.redux.api";
 import { bHAndRoomShareApi } from "@/infrastructure/shared/redux.api";
+import { reviewsApi } from "@/infrastructure/reviews/reviews.redux.api";
 
 export const store = configureStore({
   reducer: {
@@ -31,6 +32,7 @@ export const store = configureStore({
     // [bHAndRoomShareApi.reducerPath]: bHAndRoomShareApi.reducer,
     [bookingApi.reducerPath]: bookingApi.reducer,
     [verificationDocumentsApi.reducerPath]: verificationDocumentsApi.reducer,
+    [reviewsApi.reducerPath]: reviewsApi.reducer,
     genericSearch: genericSearchBarSlice,
   },
   middleware: (getDefaultMiddleware) =>
@@ -43,7 +45,8 @@ export const store = configureStore({
       .concat(boardingHouseApi.middleware)
       .concat(roomApi.middleware)
       // .concat(bHAndRoomShareAp+i.middleware)
-      .concat(verificationDocumentsApi.middleware),
+      .concat(verificationDocumentsApi.middleware)
+      .concat(reviewsApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

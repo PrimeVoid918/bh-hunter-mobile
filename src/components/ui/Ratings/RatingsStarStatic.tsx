@@ -2,25 +2,28 @@ import { View, Text, StyleSheet } from "react-native";
 import React from "react";
 import { Colors, Spacing } from "@/constants";
 import { HStack } from "@gluestack-ui/themed";
-import { Ionicons } from "@expo/vector-icons";
+import RatingStarRatio from "../Reviews/RatingStarRatio";
 
-export default function RatingsStarStatic() {
+interface RatingsStarStaticInterface {
+  star: number;
+  starFilledColor: string;
+  starHollowedColor: string;
+}
+
+export default function RatingsStarStatic({
+  star,
+  starFilledColor,
+  starHollowedColor,
+}: RatingsStarStaticInterface) {
+  const size = 10;
   return (
-    <HStack style={{}}>
-      <HStack
-        style={[
-          {
-            gap: Spacing.xs,
-          },
-        ]}
-      >
-        <Ionicons name="star" size={20} color="gold" />
-        <Ionicons name="star" size={20} color="gold" />
-        <Ionicons name="star" size={20} color="gold" />
-        <Ionicons name="star" size={20} color="gold" />
-        <Ionicons name="star-half" size={20} color="gold" />
-        <Text style={[s.text_color]}>(4.0)</Text>
-      </HStack>
+    <HStack>
+      <RatingStarRatio
+        size={size}
+        rating={star}
+        starFilledColor={starFilledColor}
+        starHollowedColor={starHollowedColor}
+      />
     </HStack>
   );
 }

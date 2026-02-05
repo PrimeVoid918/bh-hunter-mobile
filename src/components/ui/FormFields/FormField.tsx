@@ -121,13 +121,13 @@ const styles = StyleSheet.create({
   container: {
     width: "90%",
     minHeight: 40,
-    justifyContent: "center",
+    //! justifyContent: "center", //! when uncommented ill affect the ReviewCubmission in create state
     // borderWidth: 3,
     // borderColor: "white",
   },
   inputRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   affix: {
     fontSize: 16,

@@ -4,9 +4,24 @@ import { Box, HStack } from "@gluestack-ui/themed";
 import { Colors, Fontsize, Spacing } from "@/constants";
 import ImageUserPFP from "../ImageComponentUtilities/ImageUserPFP";
 import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
-import RatingsStar from "../Ratings/RatingsStarStatic";
+import RatingsStarStatic from "../Ratings/RatingsStarStatic";
+import { Review } from "@/infrastructure/reviews/reviews.schema";
+import { parseIsoDate } from "@/infrastructure/utils/parseISODate.util";
 
-export default function ReviewItem() {
+interface ReviewItemInterface {
+  review: Review;
+  starFilledColor: string;
+  starHollowedColor: string;
+}
+
+export default function ReviewItem({
+  review,
+  starFilledColor,
+  starHollowedColor,
+}: ReviewItemInterface) {
+  const dateDisplay = parseIsoDate(review.createdAt)?.dateOnlyDashed;
+  //TODO: make a smart day measurement`
+
   return (
     <Box style={[{ padding: Spacing.sm }, s.comment_container]}>
       <HStack style={{ alignItems: "stretch" }}>
@@ -18,26 +33,29 @@ export default function ReviewItem() {
             },
           ]}
         >
-          <ImageUserPFP height={40}></ImageUserPFP>
+          <ImageUserPFP height={30}></ImageUserPFP>
         </View>
         <Box style={[s.commentor_nameContainer]}>
           <HStack style={{ alignItems: "center", gap: Spacing.sm }}>
             <Text style={[s.text_color, s.commentor_name]}>
-              FirstName Lastname
+              {review.tenant.username}
             </Text>
             <Text style={[s.text_color, { fontSize: Fontsize.xs }]}>
-              yyyy-mm-dd
+              {dateDisplay}
             </Text>
           </HStack>
-          <RatingsStar></RatingsStar>
+          <RatingsStarStatic
+            star={review.rating}
+            starFilledColor={starFilledColor}
+            starHollowedColor={starHollowedColor}
+          ></RatingsStarStatic>
         </Box>
-        <Pressable
+        {/* <Pressable
           onPress={() => {
             console.log("pressed the options!");
           }}
           style={{
             padding: Spacing.xs,
-            // backgroundColor: Colors.PrimaryLight[1],
             marginLeft: "auto",
             justifyContent: "center",
           }}
@@ -47,18 +65,15 @@ export default function ReviewItem() {
             size={25}
             color={Colors.TextInverse[1]}
           />
-        </Pressable>
+        </Pressable> */}
       </HStack>
       <Text
         style={[
-          { paddingLeft: Spacing.md, paddingTop: Spacing.xs },
+          { paddingLeft: Spacing.lg, paddingTop: Spacing.md },
           s.text_color,
         ]}
       >
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Laudantium
-        enim doloremque qui ad, repudiandae doloribus sit modi ut! Ad enim
-        deserunt consequatur odit eligendi recusandae maxime temporibus. In,
-        officia optio.
+        {review.comment}
       </Text>
     </Box>
   );
@@ -78,10 +93,12 @@ const s = StyleSheet.create({
   },
   commentor_nameContainer: {
     marginLeft: Spacing.md,
-    // borderWidth: 4,
+    // gap: Spacing.md,
+    // borderWidth: 3,
+    borderColor: "green",
   },
   commentor_name: {
     fontWeight: "900",
-    fontSize: Fontsize.xl,
+    fontSize: Fontsize.lg,
   },
 });
