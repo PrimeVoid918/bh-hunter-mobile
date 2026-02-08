@@ -35,6 +35,7 @@ import {
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import Map from "./Map";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
+import PressableImageFullscreen from "../../../components/ui/ImageComponentUtilities/PressableImageFullscreen";
 
 export default function MapMainScreen() {
   const [search, setSearch] = useState("");
@@ -42,7 +43,7 @@ export default function MapMainScreen() {
   const snapPoints = useMemo(() => ["25%", "70%"], []);
   const [sheetData, setDataSheet] = useState<BoardingHouse | null>(null);
   const mapRef = useRef<{ moveCamera: (lng: number, lat: number) => void }>(
-    null
+    null,
   );
   // const [sheetThumbnail, setSheetThumbnail] = useState<BoardingHouseImage | null>(null)
 
@@ -86,12 +87,12 @@ export default function MapMainScreen() {
       wrapInScrollView={false}
     >
       {isBoardingHousesLoading && <FullScreenLoaderAnimated />}
-      <HeaderSearch
+      {/* <HeaderSearch
         containerStyle={s.search_headerContainer}
         placeholder="Search"
         value={search}
         setValue={onChangeInputValue}
-      />
+      /> */}
       <Map
         data={boardinghouses}
         isBoardingHousesLoading={isBoardingHousesLoading}
@@ -120,21 +121,19 @@ export default function MapMainScreen() {
               alignItems: "flex-start",
             }}
           >
-            <Image
-              source={
-                sheetData?.thumbnail?.[0]?.url
-                  ? { uri: sheetData.thumbnail[0].url }
-                  : require("@/assets/static/no-image.jpg")
-              }
-              style={{
-                // borderColor: "red",
-                // borderWidth: 2,
+            <PressableImageFullscreen
+              image={sheetData?.thumbnail?.[0]}
+              imageStyleConfig={{
+                resizeMode: "cover",
+                containerStyle: { borderRadius: BorderRadius.md },
+              }}
+              containerStyle={{
                 margin: "auto",
                 width: "98%",
                 height: 200,
                 borderRadius: BorderRadius.md,
               }}
-            />
+            ></PressableImageFullscreen>
             <View
               style={{
                 marginTop: Spacing.sm,

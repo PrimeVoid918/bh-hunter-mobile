@@ -16,8 +16,6 @@ import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
 import DecisionModal from "@/components/ui/DecisionModal";
 import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
-import Container from "@/components/layout/Container/Container";
-import { BookingStatusEnum } from "@/infrastructure/booking/booking.schema";
 import FullScreenLoaderAnimated from "../../../../components/ui/FullScreenLoaderAnimated";
 
 export interface OwnerBookingProgressProps {
@@ -151,7 +149,7 @@ export default function OwnerBookingProgress({
           Alert.alert(
             approve
               ? "Booking approved successfully!"
-              : "Booking rejected successfully!"
+              : "Booking rejected successfully!",
           );
           console.log(`${approve ? "Approve" : "Reject"} response:`, res);
         } catch (err) {

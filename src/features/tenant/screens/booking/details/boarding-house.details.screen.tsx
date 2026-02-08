@@ -27,6 +27,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
 import ReviewSection from "../../../../../components/ui/Reviews/ReviewSection";
+import Container from "@/components/layout/Container/Container";
 
 // type Props = NativeStackScreenProps<TenantTabsParamList, "Booking">;
 type RouteProps = RouteProp<
@@ -40,11 +41,20 @@ export default function BoardingHouseDetailsScreen() {
   const route = useRoute<RouteProps>();
   const { id: paramsId, fromMaps } = route.params;
 
+  const [refreshing, setRefreshing] = useState(false);
+
   const {
     data: boardinghouse,
     isLoading: isBoardingHouseLoading,
     isError: isBoardingHouseError,
+    refetch,
   } = useGetOneBoardingHouses(paramsId);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    refetch?.();
+    setTimeout(() => setRefreshing(false), 1000);
+  };
 
   // Optional logging
   useEffect(() => {
@@ -61,114 +71,121 @@ export default function BoardingHouseDetailsScreen() {
     });
   };
 
+  if (isBoardingHouseLoading || !boardinghouse)
+    return <FullScreenLoaderAnimated />;
+  if (isBoardingHouseError) return <FullScreenErrorModal />;
+
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
+      style={GlobalStyle.GlobalsContainer}
+      contentContainerStyle={GlobalStyle.GlobalsContentContainer}
+      wrapInScrollView={false}
     >
-      {isBoardingHouseLoading && <FullScreenLoaderAnimated />}
-      {isBoardingHouseError && <FullScreenErrorModal />}
-      <VStack style={[GlobalStyle.GlobalsContainer, s.main_container]}>
-        <View style={[s.header]}>
-          {boardinghouse && (
-            <>
-              <View>
-                <PressableImageFullscreen
-                  image={boardinghouse?.thumbnail?.[0]}
-                  containerStyle={{ width: "100%", aspectRatio: 1 }}
-                  imageStyleConfig={{
-                    resizeMode: "cover",
-                    containerStyle: {
-                      margin: "auto",
-                      borderRadius: BorderRadius.md,
-                    },
-                  }}
-                />
-              </View>
-              <HStack>
-                <Text style={[s.text_generic_small]}>* * * * *</Text>
-                <Text style={[s.text_generic_small]}>( 4.0 )</Text>
-              </HStack>
-              <HStack
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                }}
-              >
-                <VStack style={{ width: "75%" }}>
-                  <Text style={[s.text_title]}>{boardinghouse?.name}</Text>
-                  <Text style={[s.text_address]}>{boardinghouse?.address}</Text>
-                </VStack>
-                <Button
-                  containerStyle={{
-                    marginTop: 10,
-                    marginRight: 0,
-                    padding: 10,
-                  }}
-                  onPressAction={() => handleGotoRoomLists(boardinghouse.id)}
-                >
-                  <Text>View Rooms</Text>
-                </Button>
-              </HStack>
-            </>
-          )}
-        </View>
-        <VStack style={[s.body]}>
-          {boardinghouse && (
-            <>
-              <ImageCarousel
-                variant="secondary"
-                images={boardinghouse?.gallery ?? []}
-              />
-              <Text style={[s.text_description]}>
-                {boardinghouse?.description}
-              </Text>
-              <VStack
-                style={{
-                  backgroundColor: Colors.PrimaryLight[7],
-                  padding: 10,
-                  borderRadius: BorderRadius.md,
-                }}
-              >
-                <Text style={[s.text_generic_large]}>
-                  Additional Information:
-                </Text>
-                <VStack>
-                  <VStack
-                    style={[
-                      s.text_generic_medium,
-                      {
-                        gap: 5,
-                        marginTop: 5,
-                        flex: 1,
+      <Container refreshing={refreshing} onRefresh={onRefresh}>
+        <VStack style={[GlobalStyle.GlobalsContainer, s.main_container]}>
+          <View style={[s.header]}>
+            {boardinghouse && (
+              <>
+                <View>
+                  <PressableImageFullscreen
+                    image={boardinghouse?.thumbnail?.[0]}
+                    containerStyle={{ width: "100%", aspectRatio: 1 }}
+                    imageStyleConfig={{
+                      resizeMode: "cover",
+                      containerStyle: {
+                        margin: "auto",
+                        borderRadius: BorderRadius.md,
                       },
-                    ]}
+                    }}
+                  />
+                </View>
+                <HStack>
+                  <Text style={[s.text_generic_small]}>* * * * *</Text>
+                  <Text style={[s.text_generic_small]}>( 4.0 )</Text>
+                </HStack>
+                <HStack
+                  style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                  }}
+                >
+                  <VStack style={{ width: "75%" }}>
+                    <Text style={[s.text_title]}>{boardinghouse?.name}</Text>
+                    <Text style={[s.text_address]}>
+                      {boardinghouse?.address}
+                    </Text>
+                  </VStack>
+                  <Button
+                    containerStyle={{
+                      marginTop: 10,
+                      marginRight: 0,
+                      padding: 10,
+                    }}
+                    onPressAction={() => handleGotoRoomLists(boardinghouse.id)}
                   >
-                    {boardinghouse?.amenities?.map((key, index) => (
-                      <Text
-                        key={index}
-                        style={[
-                          s.text_generic_medium,
-                          {
-                            backgroundColor: Colors.PrimaryLight[8],
-                            padding: 5,
-                            borderRadius: BorderRadius.md,
-                          },
-                        ]}
-                      >
-                        {key.replace(/([a-z])([A-Z])/g, "$1 $2")}
-                      </Text>
-                    ))}
+                    <Text>View Rooms</Text>
+                  </Button>
+                </HStack>
+              </>
+            )}
+          </View>
+          <VStack style={[s.body]}>
+            {boardinghouse && (
+              <>
+                <ImageCarousel
+                  variant="secondary"
+                  images={boardinghouse?.gallery ?? []}
+                />
+                <Text style={[s.text_description]}>
+                  {boardinghouse?.description}
+                </Text>
+                <VStack
+                  style={{
+                    backgroundColor: Colors.PrimaryLight[7],
+                    padding: 10,
+                    borderRadius: BorderRadius.md,
+                  }}
+                >
+                  <Text style={[s.text_generic_large]}>
+                    Additional Information:
+                  </Text>
+                  <VStack>
+                    <VStack
+                      style={[
+                        s.text_generic_medium,
+                        {
+                          gap: 5,
+                          marginTop: 5,
+                          flex: 1,
+                        },
+                      ]}
+                    >
+                      {boardinghouse?.amenities?.map((key, index) => (
+                        <Text
+                          key={index}
+                          style={[
+                            s.text_generic_medium,
+                            {
+                              backgroundColor: Colors.PrimaryLight[8],
+                              padding: 5,
+                              borderRadius: BorderRadius.md,
+                            },
+                          ]}
+                        >
+                          {key.replace(/([a-z])([A-Z])/g, "$1 $2")}
+                        </Text>
+                      ))}
+                    </VStack>
                   </VStack>
                 </VStack>
-              </VStack>
-            </>
-          )}
+              </>
+            )}
 
-          <ReviewSection boardingHouseId={boardinghouse?.id} />
+            <ReviewSection boardingHouseId={boardinghouse?.id} />
+          </VStack>
         </VStack>
-      </VStack>
+      </Container>
     </StaticScreenWrapper>
   );
 }
@@ -188,8 +205,7 @@ const s = StyleSheet.create({
     marginBottom: 10,
     gap: 10,
   },
-  body: {
-  },
+  body: {},
 
   text_title: {
     color: Colors.TextInverse[1],
