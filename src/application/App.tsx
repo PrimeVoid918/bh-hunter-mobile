@@ -12,7 +12,8 @@ import { GlobalImageFullScreenProvider } from "../components/ui/ImageComponentUt
 import { PortalProvider, PortalHost } from "@gorhom/portal";
 import { GlobalEditStateContextSwitcherButtonsProvider } from "@/components/ui/Portals/GlobalEditStateContextSwitcherButtonsProvider";
 
-import { LogBox } from "react-native";
+import { Linking } from "react-native";
+// import * as Linking from "expo-linking";
 import GlobalDocumentFullScreenProvider from "@/components/ui/DocumentComponentUtilities/GlobalDocumentFullScreenProvider";
 
 export default function App() {
@@ -31,6 +32,17 @@ export default function App() {
   // }, []);
 
   // LogBox.ignoreAllLogs(true);
+  React.useEffect(() => {
+    const sub = Linking.addEventListener("url", (event) => {
+      console.log("Deep link received:", event.url);
+
+      if (event.url.includes("payment-success")) {
+        // Refetch booking state here
+      }
+    });
+
+    return () => sub.remove();
+  }, []);
 
   return (
     <PortalProvider>

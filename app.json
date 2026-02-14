@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "BH_View",
-    "slug": "BH_View",
+    "name": "bhhunter",
+    "slug": "bhhunter",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/logo/1_1/light/light-512.png",
-    "scheme": "myapp",
+    "scheme": "bhhunter",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": ["@react-native-community/netinfo"],
@@ -20,7 +20,7 @@
         "foregroundImage": "./src/assets/logo/1_1/light/light-512.png",
         "backgroundColor": "#071625"
       },
-      "package": "com.anonymous.BH_View"
+      "package": "com.anonymous.bhhunter"
     },
     "extra": {
       "api": {

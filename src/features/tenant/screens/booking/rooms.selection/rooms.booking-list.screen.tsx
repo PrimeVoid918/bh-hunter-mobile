@@ -36,19 +36,21 @@ export default function RoomsBookingListScreen() {
   } = useGetOneBoardingHouse(paramsId);
   const rooms = React.useMemo(
     () => boardingHouseData?.rooms ?? [],
-    [boardingHouseData]
+    [boardingHouseData],
   ); // * to prevent creating a new empty array every render
 
   const gotoDetails = (roomId: number, bhId: number) => {
     navigate.navigate("RoomsDetailsScreen", {
       roomId: roomId,
       boardingHouseId: bhId,
+      ownerId: boardingHouseData?.ownerId,
     });
   };
 
   const gotoBooking = (roomId: number) => {
     navigate.navigate("RoomsCheckoutScreen", {
       roomId: roomId,
+      ownerId: boardingHouseData?.ownerId,
     });
   };
 
@@ -69,18 +71,16 @@ export default function RoomsBookingListScreen() {
         <Lists
           list={rooms}
           renderItem={({ item }) => (
-              <RoomsItems data={item} key={item.id.toString()}>
-                <Pressable
-                  onPress={() => gotoDetails(item.id, item.boardingHouseId)}
-                >
-                  <Text style={[s.textColor, s.item_cta_buttons]}>Details</Text>
-                </Pressable>
-                <Pressable onPress={() => gotoBooking(item.id)}>
-                  <Text style={[s.textColor, s.item_cta_buttons]}>
-                    Book Now
-                  </Text>
-                </Pressable>
-              </RoomsItems>
+            <RoomsItems data={item} key={item.id.toString()}>
+              <Pressable
+                onPress={() => gotoDetails(item.id, item.boardingHouseId)}
+              >
+                <Text style={[s.textColor, s.item_cta_buttons]}>Details</Text>
+              </Pressable>
+              <Pressable onPress={() => gotoBooking(item.id)}>
+                <Text style={[s.textColor, s.item_cta_buttons]}>Book Now</Text>
+              </Pressable>
+            </RoomsItems>
           )}
         />
       </VStack>

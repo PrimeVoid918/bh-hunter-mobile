@@ -76,7 +76,11 @@ export default function PressableImageFullscreen({
             alt={alt ?? "Image"}
           />
         ) : (
-          <Text style={{ color: errorImageMessageColor }}>Cant Load Image</Text>
+          <Text
+            style={[{ alignSelf: "center", color: errorImageMessageColor }]}
+          >
+            Cant Load Image
+          </Text>
         )}
       </Box>
 
@@ -115,7 +119,7 @@ const s = StyleSheet.create({
   },
   pickImageStyle: {
     width: "100%",
-    height: "auto",
+    height: "100%",
     borderRadius: 8,
     backgroundColor: "#f0f0f0",
     overflow: "hidden",

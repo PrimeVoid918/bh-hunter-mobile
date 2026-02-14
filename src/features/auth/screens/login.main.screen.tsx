@@ -55,22 +55,22 @@ export default function LoginMainScreen() {
   ] = useLoginMutation();
   const dispatch = useDispatch<AppDispatch>();
 
-  useEffect(() => {
-    setTimeout(() => {
-      onPressLogin();
-    }, 700);
-  }, []);
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     onPressLogin();
+  //   }, 700);
+  // }, []);
 
   const onPressLogin = async () => {
-    // const packageLoad = {
-    //   username: username.value,
-    //   password: password.value,
-    // };
-
     const packageLoad = {
-      username: "owner1",
-      password: "owner1",
+      username: username.value,
+      password: password.value,
     };
+
+    // const packageLoad = {
+    //   username: "tenant1",
+    //   password: "tenant1",
+    // };
     await logExpoSystemDir(["images", "documents"]);
     console.log("packageLoad: ", packageLoad);
     try {

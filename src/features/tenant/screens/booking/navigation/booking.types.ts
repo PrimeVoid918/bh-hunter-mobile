@@ -13,10 +13,12 @@ export type TenantBookingStackParamList = {
   RoomsDetailsScreen: {
     boardingHouseId: number | undefined;
     roomId: number | undefined;
+    ownerId: number | undefined;
     fromMaps?: boolean;
     [key: string]: any; // allow extra params if needed
   };
   RoomsCheckoutScreen: {
+    ownerId: number | undefined;
     roomId: number | undefined;
   };
 };

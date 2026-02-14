@@ -22,7 +22,9 @@ import {
   CreateRoomInput,
   CreateRoomInputSchema,
   RoomFurnishingType,
+  roomFurnishingTypeOptions,
   RoomType,
+  roomTypeOptions,
 } from "@/infrastructure/room/rooms.schema";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,7 +67,7 @@ export default function PropertiesRoomCreateModal({
   const defaultValues: CreateRoomInput = {
     roomNumber: "",
     description: "",
-    roomType: RoomType.SINGLE_PRIVATE,
+    roomType: RoomType.BED_SPACER,
     furnishingType: RoomFurnishingType.UNFURNISHED,
     maxCapacity: 0,
     price: 0,
@@ -99,15 +101,15 @@ export default function PropertiesRoomCreateModal({
     Array<string>
   >(
     ROOM_FEATURE_TAGS.filter(
-      (feature) => !defaultValues.tags?.includes(feature)
-    )
+      (feature) => !defaultValues.tags?.includes(feature),
+    ),
   );
   const selectedFeatureTags = watch("tags") ?? [];
   useEffect(() => {
     setAvailableFeatureTage(
       ROOM_FEATURE_TAGS.filter(
-        (feature) => !selectedFeatureTags.includes(feature)
-      )
+        (feature) => !selectedFeatureTags.includes(feature),
+      ),
     );
   }, [selectedFeatureTags]);
   const handleSelectFeatureTag = (item: string) => {
@@ -604,8 +606,8 @@ export default function PropertiesRoomCreateModal({
         </View>
         {/* </Modal> */}
       </Overlay>
-      <ButtomSheetSelector<RoomType>
-        values={Object.values(RoomType)}
+      <ButtomSheetSelector
+        options={roomTypeOptions}
         isOpen={isRoomTypeActionSheetOpen}
         onClose={() => setIsRoomTypeActionSheetOpen(false)}
         onSelect={(value) => {
@@ -613,8 +615,8 @@ export default function PropertiesRoomCreateModal({
           setIsRoomTypeActionSheetOpen(false);
         }}
       />
-      <ButtomSheetSelector<RoomFurnishingType>
-        values={Object.values(RoomFurnishingType)}
+      <ButtomSheetSelector
+        options={roomFurnishingTypeOptions}
         isOpen={isFurnishingActionSheetOpen}
         onClose={() => setIsFurnishingActionSheetOpen(false)}
         onSelect={(value) => {

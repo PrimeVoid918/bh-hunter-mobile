@@ -37,10 +37,10 @@ export default function RoomsDetailsScreen({
   const navigate =
     useNavigation<NativeStackNavigationProp<TenantBookingStackParamList>>();
 
-  const { boardingHouseId, roomId } = route.params;
+  const { boardingHouseId, roomId, ownerId } = route.params;
 
-  if (!boardingHouseId || !roomId) {
-    return <Text>Invalid room or boarding house</Text>;
+  if (!boardingHouseId || !roomId || !ownerId) {
+    return <Text>Could not load Information!</Text>;
   }
 
   //!
@@ -58,6 +58,7 @@ export default function RoomsDetailsScreen({
   const gotoBooking = (roomId: number) => {
     navigate.navigate("RoomsCheckoutScreen", {
       roomId: roomId,
+      ownerId: ownerId,
     });
   };
 
@@ -103,7 +104,7 @@ export default function RoomsDetailsScreen({
                 <Text style={[s.textColor]}>Book Now</Text>
               </Button>
             </Box>
-            
+
             <Box>
               <ScrollView
                 style={{ height: 150 }}

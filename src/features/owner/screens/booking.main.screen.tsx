@@ -20,6 +20,7 @@ export default function BookingMainScreen(){
       contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
     >
       <VStack
+      
         style={{
           // justifyContent: "center",
           // alignItems: "center",

@@ -41,7 +41,7 @@ export const bookingApi = createApi({
         const queryParams = new URLSearchParams(
           Object.entries(parsed.data)
             .filter(([_, v]) => v != null)
-            .map(([k, v]) => [k, String(v)])
+            .map(([k, v]) => [k, String(v)]),
         );
         return `${bookingApiRoute}?${queryParams.toString()}`;
       },
@@ -56,12 +56,29 @@ export const bookingApi = createApi({
 
       providesTags: ["Booking"],
     }),
-    getPaymentProof: builder.query<AppImageFile | null, number>({
-      query: (imageId) => `${bookingApiRoute}/${imageId}/payment-proof`,
-      transformResponse: (response: ApiResponseType<AppImageFile>) =>
+
+    getBookingPayment: builder.query<
+      {
+        id: number;
+        status: string;
+        amount: string;
+        currency: string;
+        paymentProofId?: string;
+      } | null,
+      number
+    >({
+      query: (bookingId) => `${bookingApiRoute}/${bookingId}/payment`,
+      transformResponse: (response: { results: any }) =>
         response.results ?? null,
       providesTags: ["Booking"],
     }),
+    // getPaymentProof: builder.query<AppImageFile | null, number>({
+    //   query: (imageId) => `${bookingApiRoute}/${imageId}/payment-proof`,
+    //   transformResponse: (response: ApiResponseType<AppImageFile>) =>
+    //     response.results ?? null,
+    //   providesTags: ["Booking"],
+    // }),
+
     createBooking: builder.mutation<
       GetBooking,
       { roomId: number; payload: CreateBookingInput }
@@ -75,6 +92,7 @@ export const bookingApi = createApi({
         response.results ?? null,
       invalidatesTags: ["Booking"],
     }),
+
     patchTenantBooking: builder.mutation<
       GetBooking,
       { id: number; payload: PatchTenantBookingInput }
@@ -120,37 +138,38 @@ export const bookingApi = createApi({
         response.results ?? null,
       invalidatesTags: ["Booking"],
     }),
-    createPaymentProof: builder.mutation<
-      GetBooking,
-      { id: number; payload: CreatePaymentProofInput }
-    >({
-      async queryFn({ id, payload }) {
-        try {
-          const result = await uploadPaymentProof(id, payload);
 
-          if (result.success) {
-            return {
-              data: result.results, // <-- map properly
-            };
-          }
+    // createPaymentProof: builder.mutation<
+    //   GetBooking,
+    //   { id: number; payload: CreatePaymentProofInput }
+    // >({
+    //   async queryFn({ id, payload }) {
+    //     try {
+    //       const result = await uploadPaymentProof(id, payload);
 
-          return {
-            error: {
-              status: "CUSTOM_ERROR",
-              error: result.error || "Server rejected",
-            },
-          };
-        } catch (err: any) {
-          return {
-            error: {
-              status: "CUSTOM_ERROR",
-              error: err.message || "Network error",
-            },
-          };
-        }
-      },
-      invalidatesTags: ["Booking"],
-    }),
+    //       if (result.success) {
+    //         return {
+    //           data: result.results, // <-- map properly
+    //         };
+    //       }
+
+    //       return {
+    //         error: {
+    //           status: "CUSTOM_ERROR",
+    //           error: result.error || "Server rejected",
+    //         },
+    //       };
+    //     } catch (err: any) {
+    //       return {
+    //         error: {
+    //           status: "CUSTOM_ERROR",
+    //           error: err.message || "Network error",
+    //         },
+    //       };
+    //     }
+    //   },
+    //   invalidatesTags: ["Booking"],
+    // }),
 
     patchVerifyPayment: builder.mutation<
       GetBooking,
@@ -184,18 +203,43 @@ export const bookingApi = createApi({
         response.results ?? null,
       invalidatesTags: ["Booking"],
     }),
+
+    // Paymongo integration
+    createPaymongoCheckout: builder.mutation<
+      {
+        paymentId: number;
+        clientKey: string;
+        checkoutUrl: string;
+      },
+      { bookingId: number }
+    >({
+      query: ({ bookingId }) => ({
+        url: `${bookingApiRoute}/${bookingId}/paymongo`,
+        method: "POST",
+      }),
+      transformResponse: (
+        response: ApiResponseType<{
+          paymentId: number;
+          clientKey: string;
+          checkoutUrl: string;
+        }>,
+      ) => response.results ?? null,
+      invalidatesTags: ["Booking"],
+    }),
   }),
 });
 
 export const {
   useGetAllQuery,
   useGetOneQuery,
-  useGetPaymentProofQuery,
+  useGetBookingPaymentQuery,
+  // useGetPaymentProofQuery,
   useCreateBookingMutation,
   usePatchTenantBookingMutation,
   usePatchApproveBookingMutation,
   usePatchRejectBookingMutation,
-  useCreatePaymentProofMutation,
+  // useCreatePaymentProofMutation,
   usePatchVerifyPaymentMutation,
   useCancelBookingMutation,
+  useCreatePaymongoCheckoutMutation,
 } = bookingApi;

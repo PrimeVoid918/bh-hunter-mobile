@@ -49,6 +49,7 @@ export default function VerificationViewScreen({ route }) {
   const [pickedDocument, setPickedDocument] = React.useState<AppDocumentFile>();
   const [pickedValidId, setPickedValidId] = React.useState<AppImageFile>();
   const handlePickThumbnailImage = React.useCallback((image: AppImageFile) => {
+    console.log("documnet", image);
     setPickedValidId(image);
   }, []);
   const [showPicker, setShowPicker] = React.useState(false);
@@ -67,6 +68,7 @@ export default function VerificationViewScreen({ route }) {
     usePatchVerificaitonDocumentMutation();
 
   // Early returns for user missing / error / loading
+
   if (!userId) {
     navigate.goBack();
     return <FullScreenErrorModal message="User Not Found!" />;
@@ -81,6 +83,10 @@ export default function VerificationViewScreen({ route }) {
   const fileFormat = documentData.fileFormat ?? "PDF";
   const isRejected = status === "REJECTED";
   const canResubmit = isRejected || status === "MISSING";
+
+  // React.useEffect(() => {
+  //   console.log("Fullscreen image prop:", documentData.url);
+  // }, [documentData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -139,6 +145,10 @@ export default function VerificationViewScreen({ route }) {
     const urlParts = url?.split("/");
     return decodeURIComponent(urlParts?.pop() || "");
   };
+
+  // console.log("url: ", documentData.url);
+  // const normalizedUrl = documentData.url.replace(/([^:]\/)\/+/g, "$1");
+  // console.log("url: ", normalizedUrl.url);
 
   return (
     <StaticScreenWrapper
@@ -241,13 +251,19 @@ export default function VerificationViewScreen({ route }) {
           ) : (
             <PressableImageFullscreen
               image={{
-                url: documentData?.url,
+                url: documentData?.url!,
                 name: "document",
                 type: "image",
-                uri: documentData?.url,
+                uri: documentData?.url!,
               }}
+              imageStyleConfig={
+                {
+                  // resizeMode: "cover",
+                }
+              }
               containerStyle={{
-                aspectRatio: 1,
+                aspectRatio: 2,
+                borderWidth: 2,
               }}
             />
           )}

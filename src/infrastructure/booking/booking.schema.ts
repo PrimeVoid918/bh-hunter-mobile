@@ -23,6 +23,62 @@ export const BookingStatusEnum = z.enum([
   "COMPLETED_BOOKING", //🟢
 ]);
 
+type BookingStatus = z.infer<typeof BookingStatusEnum>;
+
+interface StatusMetadata {
+  label: string;
+  color: string;
+  description: string;
+}
+
+const statusMap: Record<BookingStatus, StatusMetadata> = {
+  PENDING_REQUEST: {
+    label: "Pending Request",
+    color: "#EAB308", // Yellow
+    description: "Waiting for owner's response",
+  },
+  AWAITING_PAYMENT: {
+    label: "Awaiting Payment",
+    color: "#F97316", // Orange
+    description: "Owner approved! Please pay the fee",
+  },
+  PAYMENT_APPROVAL: {
+    label: "Verifying Payment",
+    color: "#F97316", // Orange
+    description: "We are confirming your payment",
+  },
+  CANCELLED_BOOKING: {
+    label: "Cancelled",
+    color: "#EF4444", // Red
+    description: "Booking was cancelled",
+  },
+  REJECTED_BOOKING: {
+    label: "Rejected",
+    color: "#EF4444", // Red
+    description: "Owner declined the request",
+  },
+  COMPLETED_BOOKING: {
+    label: "Booked",
+    color: "#22C55E", // Green
+    description: "Room is secured!",
+  },
+};
+
+/**
+ * Helper to get human-readable status metadata
+ */
+export const getBookingStatusDetails = (
+  status: string | BookingStatus,
+): StatusMetadata => {
+  return (
+    statusMap[status as BookingStatus] ?? {
+      label: "Unknown",
+      color: "#94A3B8",
+      description: "Status unknown",
+    }
+  );
+};
+
 export const bookingSchema = z.object({
   id: z.number(),
   reference: z.string(),
@@ -30,6 +86,9 @@ export const bookingSchema = z.object({
   roomId: z.number(),
   room: GetRoomSchema.pick({
     roomNumber: true,
+    availabilityStatus: true,
+    price: true,
+    thumbnail: true,
   }),
   bookingType: BookingTypeEnum,
   dateBooked: z
@@ -72,6 +131,7 @@ export const bookingSchema = z.object({
 export const BaseBookingSchema = bookingSchema; // reuse the schema you already have
 
 // For query / find one endpoints
+// Booking fetch schema
 export const GetBookingSchema = BaseBookingSchema.pick({
   id: true,
   reference: true,
@@ -91,22 +151,70 @@ export const GetBookingSchema = BaseBookingSchema.pick({
   tenantMessage: true,
   paymentProofId: true,
 }).extend({
-  tenant: GetTenantSchema.optional(), // include full tenant schema
+  tenant: GetTenantSchema.optional(), // full tenant info
+  boardingHouse: z
+    .object({
+      id: z.number(),
+      name: z.string(),
+      ownerId: z.number(),
+      thumbnail: z.array(
+        z.object({
+          id: z.number(),
+          url: z.string(),
+          fileFormat: z.string(),
+          type: z.string(),
+          quality: z.string(),
+          createdAt: z.string(),
+          isDeleted: z.boolean(),
+          deletedAt: z.string().nullable(),
+          entityType: z.string(),
+          entityId: z.number(),
+        }),
+      ),
+    })
+    .optional(), // optional boarding house at top-level
+  room: z.object({
+    id: z.number(),
+    roomNumber: z.string(),
+    availabilityStatus: z.boolean(),
+    price: z.union([z.string(), z.number()]), // price can be string or number
+    thumbnail: z.array(
+      z.object({
+        id: z.number(),
+        url: z.string(),
+        fileFormat: z.string(),
+        type: z.string(),
+        quality: z.string(),
+        createdAt: z.string(),
+        isDeleted: z.boolean(),
+        deletedAt: z.string().nullable(),
+        entityType: z.string(),
+        entityId: z.number(),
+      }),
+    ),
+    boardingHouse: z.object({
+      id: z.number(),
+      name: z.string(),
+      ownerId: z.number(),
+    }),
+  }),
 });
 export type GetBooking = z.infer<typeof GetBookingSchema>;
 
-// query
+//Query filteres
 export const QueryBookingSchema = z.object({
+  bookId: z.number().optional(),
   tenantId: z.number().optional(),
   roomId: z.number().optional(),
   boardingHouseId: z.number().optional(),
   status: BookingStatusEnum.optional(),
   bookingType: BookingTypeEnum.optional(),
-  fromCheckIn: z.string().optional(),
+  fromCheckIn: z.string().optional(), // ISO string
   toCheckIn: z.string().optional(),
   page: z.number().optional().default(1),
-  offset: z.number().optional().default(10),
+  limit: z.number().optional().default(10), // rename offset → limit to match backend
 });
+
 export type QueryBooking = z.infer<typeof QueryBookingSchema>;
 
 //* Create Booking DTO

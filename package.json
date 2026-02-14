@@ -8,6 +8,7 @@
     "start-eas": "ts-node scripts/backendConfig.ts && eas build --profile development --platform android",
     "start-eas-clean": "ts-node scripts/backendConfig.ts && eas build --profile development --platform android --clear-cache",
     "start-eas-local": "ts-node scripts/backendConfig.ts && eas build --profile development --platform android --local",
+    "build-prod-apk": "ts-node scripts/backendConfig.ts && eas build --profile production --platform android",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",

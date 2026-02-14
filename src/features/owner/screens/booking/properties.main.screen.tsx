@@ -8,7 +8,7 @@ import {
   GlobalStyle,
   Spacing,
 } from "@/constants";
-import { Box, Image, Spinner, VStack } from "@gluestack-ui/themed";
+import { Box, Button, Image, Spinner, VStack } from "@gluestack-ui/themed";
 import { useGetAllQuery as useGetAllBoardingHouses } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import {
   GetBoardingHouse,
@@ -24,13 +24,18 @@ import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import { useSelector } from "react-redux";
 import { RootState } from "@/application/store/stores";
 import ScreenHeaderComponent from "@/components/layout/ScreenHeaderComponent";
+import { Lists } from "@/components/layout/Lists/Lists";
+import BoardingHouseBookingItem from "@/components/ui/Bookings/BoardingHouseBookingItem";
+import Container from "@/components/layout/Container/Container";
 
 export default function PropertiesMainScreen() {
   const ownerId = useSelector(
-    (state: RootState) => state.owners.selectedUser?.id
+    (state: RootState) => state.owners.selectedUser?.id,
   );
   const navigation =
     useNavigation<BottomTabNavigationProp<OwnerTabsParamList>>();
+
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const [filters, setFilters] = useState<QueryBoardingHouse>({
     minPrice: 1500,
@@ -42,99 +47,51 @@ export default function PropertiesMainScreen() {
     data: boardinghouses,
     isLoading: isBoardingHousesLoading,
     isError: isBoardingHousesError,
+    refetch,
   } = useGetAllBoardingHouses(filters);
 
-  const handleGotoPress = (id: number) => {
-    console.log("handleGotoPress", id);
-    navigation.navigate("Booking", {
-      screen: "PropertiesBookingListsScreen",
-      params: { bhId: id, fromMaps: true },
-    });
+  const handlePageRefresh = () => {
+    setRefreshing(true);
+    refetch();
+    setRefreshing(false);
   };
   return (
     <StaticScreenWrapper
       style={[GlobalStyle.GlobalsContainer, styles.GlobalsContainer]}
       contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
+      refreshing={refreshing}
+      onRefresh={handlePageRefresh}
     >
-      {isBoardingHousesLoading && <FullScreenLoaderAnimated />}
-      {isBoardingHousesError && <FullScreenErrorModal />}
-      <ScreenHeaderComponent text={{ textValue: "Bookings" }} />
-      <ScrollView
-        style={{ backgroundColor: Colors.PrimaryLight[8], flex: 1 }}
-        contentContainerStyle={{
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          gap: 10, // optional, RN 0.71+
-          padding: 10,
-        }}
-      >
-        {boardinghouses &&
-          boardinghouses.map((boardinghouse: BoardingHouse, index) => {
-            // boardinghouses.map((boardinghouse: GetBoardingHouse, index) => {
-            return (
-              <VStack
-                key={index}
-                style={{
-                  backgroundColor: Colors.PrimaryLight[9],
-                  padding: 10,
-                  borderRadius: BorderRadius.md,
-                  gap: 10,
-                  flexDirection: "row",
+      <Container>
+        {isBoardingHousesLoading && <FullScreenLoaderAnimated />}
+        {isBoardingHousesError && <FullScreenErrorModal />}
+        <ScreenHeaderComponent text={{ textValue: "Bookings" }} />
+        {boardinghouses && (
+          <Lists
+            list={boardinghouses}
+            renderItem={({ item, index }) => (
+              <BoardingHouseBookingItem
+                data={item}
+                goToDetails={() => {
+                  // console.log("handleGotoPress", item.id);
+                  navigation.navigate("Booking", {
+                    screen: "PropertiesBookingListsScreen",
+                    params: { bhId: item.id },
+                    // params: { bhId: id, fromMaps: true },
+                  });
                 }}
               >
-                <Box>
-                  <Image
-                    source={
-                      boardinghouse?.thumbnail?.[0]?.url
-                        ? { uri: boardinghouse.thumbnail[0].url }
-                        : require("@/assets/static/no-image.jpg")
-                    }
-                    style={{
-                      height: 150,
-                      aspectRatio: 4 / 3,
-                      borderRadius: BorderRadius.md,
-                    }}
-                  />
-                </Box>
-                <VStack style={{ flex: 1 }}>
-                  <VStack style={{ flex: 1 }}>
-                    <Text
-                      style={[styles.Item_Label]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {boardinghouse.name}
-                    </Text>
-                    <Text style={[styles.Item_SubLabel]}>
-                      {boardinghouse.address}
-                    </Text>
-                  </VStack>
-                  <VStack>
-                    <Text style={[styles.Item_SubLabel]}>
-                      {boardinghouse.capacity.currentCapacity}/
-                      {boardinghouse.capacity.totalCapacity}
-                    </Text>
-                    <Pressable
-                      onPress={() => handleGotoPress(boardinghouse.id)}
-                      style={{
-                        borderRadius: BorderRadius.sm,
-                        padding: 8,
-                        backgroundColor: Colors.PrimaryLight[6],
-                        marginLeft: "auto",
-                      }}
-                    >
-                      <View>
-                        <Text style={[styles.Item_Normal]}>
-                          View Booking Requests
-                        </Text>
-                      </View>
-                    </Pressable>
-                  </VStack>
-                </VStack>
-              </VStack>
-            );
-          })}
-      </ScrollView>
+                <Button>
+                  <Text>Show Bookings</Text>
+                </Button>
+              </BoardingHouseBookingItem>
+            )}
+            contentContainerStyle={{
+              gap: Spacing.base,
+            }}
+          ></Lists>
+        )}
+      </Container>
     </StaticScreenWrapper>
   );
 }

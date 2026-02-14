@@ -9,11 +9,13 @@ import { TenantDashboardBookingStackParamList } from "./navigation/bookings.stac
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import { VStack, Box, Button } from "@gluestack-ui/themed";
 import { GetBooking } from "@/infrastructure/booking/booking.schema";
-import { Fontsize, GlobalStyle } from "@/constants";
+import { Fontsize, GlobalStyle, Spacing } from "@/constants";
 import { Lists } from "@/components/layout/Lists/Lists";
 import RoomsItems from "@/components/ui/RoomsItems/RoomsItems";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
+import Container from "@/components/layout/Container/Container";
+import BookingListItem from "./navigation/BookingListItem";
 
 //For approved or ongoing stays
 
@@ -30,6 +32,14 @@ export default function DashboardBookingsScreen() {
     };
   }
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    refetch?.();
+    setTimeout(() => setRefreshing(false), 1000);
+  };
+
+  const [refreshing, setRefreshing] = React.useState(false);
+
   //! apply search in here
   const [search, setSearch] = React.useState<number | undefined>(undefined);
 
@@ -38,7 +48,8 @@ export default function DashboardBookingsScreen() {
     isLoading: isBookingArraysLoading,
     isError: isBookingArraysError,
     refetch,
-  } = useGetAllQuery({ tenantId: user.id, page: 1, offset: 10 });
+  } = useGetAllQuery({ tenantId: user.id, page: 1, limit: 15});
+  const books = React.useMemo(() => bookingArrays ?? [], [bookingArrays]);
   //! currently working for tenant side booking
   return (
     <StaticScreenWrapper
@@ -50,41 +61,33 @@ export default function DashboardBookingsScreen() {
       //!   <RefreshControl refreshing={isBookingArraysLoading} onRefresh={refetch} />
       //! }
     >
-      {isBookingArraysLoading && <FullScreenLoaderAnimated />}
-      {isBookingArraysError && <FullScreenErrorModal />}
-      <VStack>
-        <VStack
-          style={{
-            padding: 10,
-          }}
-        >
-          {bookingArrays &&
-            bookingArrays.map((book: GetBooking, id) => {
-              return (
-                <Box
-                  key={id}
-                  style={{
-                    borderWidth: 4,
-                    borderColor: "black",
-                  }}
-                >
-                  <Box>
-                    <Text>Room No.{book.room.roomNumber}</Text>
-                  </Box>
-                  <Button
-                    onPress={() =>
-                      navigate.navigate("DashboardBookingDetailsScreen", {
-                        bookId: book.id,
-                      })
-                    }
-                  >
-                    <Text>Details</Text>
-                  </Button>
-                </Box>
-              );
-            })}
+      <Container refreshing={refreshing} onRefresh={onRefresh}>
+        {isBookingArraysLoading && <FullScreenLoaderAnimated />}
+        {isBookingArraysError && <FullScreenErrorModal />}
+        <VStack>
+          <View
+            style={{
+              padding: 10,
+            }}
+          >
+            <Lists
+              list={books}
+              renderItem={({ item }) => (
+                <BookingListItem
+                  data={item}
+                  goToDetails={() =>
+                    navigate.navigate("DashboardBookingStatusScreen", {
+                      // bookId: book.id,
+                      bookId: item.id,
+                    })
+                  }
+                ></BookingListItem>
+              )}
+              contentContainerStyle={[{ gap: Spacing.base }]}
+            />
+          </View>
         </VStack>
-      </VStack>
+      </Container>
     </StaticScreenWrapper>
   );
 }

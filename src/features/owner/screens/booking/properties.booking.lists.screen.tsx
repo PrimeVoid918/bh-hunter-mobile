@@ -30,14 +30,20 @@ export default function PropertiesBookingListsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<OwnerBookingStackParamList>>();
   const route = useRoute<RouteProps>();
-  if (!route.params?.bhId) throw new Error("Missing required parameter: bhId");
+  if (!route.params?.bhId) {
+    <Text>Error getting Information</Text>;
+  }
   const { bhId } = route.params;
+
+  if (!bhId) {
+    Alert.alert("Something went wrong when fetching the data!");
+  }
 
   const [refreshing, setRefreshing] = useState(false);
   const [bookingFilters, setBookingFilters] = useState<QueryBooking>({
-    offset: 50,
+    limit: 20,
     page: 1,
-    boardingHouseId: bhId,
+    boardingHouseId: bhId!,
   });
 
   const { data: bookingList, isLoading: isBookingListLoading } =
@@ -51,7 +57,7 @@ export default function PropertiesBookingListsScreen() {
       return;
     }
 
-    navigation.navigate("PropertiesDetailsScreen", { bookId: bookId });
+    navigation.navigate("BookingStatusScreen", { bookId: bookId });
   };
 
   const handlePageRefresh = () => {
@@ -81,6 +87,7 @@ export default function PropertiesBookingListsScreen() {
           {item.room.roomNumber}
         </Text>
       </Box>
+
       <Box style={[styles.body]}>
         <Box style={[styles.infoBox]}>
           <Text style={[styles.textColor]}>Status: {item.status}</Text>

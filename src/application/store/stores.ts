@@ -45,6 +45,7 @@ export const store = configureStore({
       .concat(boardingHouseApi.middleware)
       .concat(roomApi.middleware)
       // .concat(bHAndRoomShareAp+i.middleware)
+      .concat(bookingApi.middleware)
       .concat(verificationDocumentsApi.middleware)
       .concat(reviewsApi.middleware),
 });
