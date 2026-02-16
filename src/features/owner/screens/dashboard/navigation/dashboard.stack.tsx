@@ -11,6 +11,7 @@ import RoomsListMainScreen from "../rooms/rooms.list.main.screen";
 import { OwnerDashboardStackParamList } from "./dashboard.types";
 import RoomsDetailsScreen from "../rooms/rooms.details.screen";
 import RoomsAddScreen from "@/features/shared/rooms/rooms.add";
+import MenuUserEditScreen from "@/features/shared/menu/menu.user-edit.main.screen";
 
 const Stack = createNativeStackNavigator<OwnerDashboardStackParamList>();
 
@@ -57,6 +58,11 @@ export default function DashboardStack() {
         name="VerificationViewScreen"
         options={backButtonConfig}
         component={VerificationViewScreen}
+      />
+      <Stack.Screen
+        name="ProfileEditScreen"
+        options={backButtonConfig}
+        component={MenuUserEditScreen}
       />
     </Stack.Navigator>
   );

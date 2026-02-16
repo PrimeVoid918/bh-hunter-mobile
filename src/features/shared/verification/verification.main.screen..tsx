@@ -36,13 +36,20 @@ import {
   VerificationListItem,
   verificationRole,
 } from "./verificationConfig";
+import { Lists } from "@/components/layout/Lists/Lists";
+import VerificationCardComponent from "./VerificationCardComponent";
+import VerificationStatusHeader from "./VerificationStatusHeaderComponent";
+import { MenuStackParamList } from "../menu/navigation/menu.stack.types";
 
-type VerificationMainNavigationProp = NativeStackNavigationProp<
-  OwnerDashboardStackParamList,
-  "VerificationMainScreen"
->;
+type VerificationMainNavigationProp =
+  NativeStackNavigationProp<OwnerDashboardStackParamList>;
+// type RootStackParamList = {
+//   DashboardStack: undefined;
+//   MenuStack: undefined;
+// };
 
 export default function VerificationMainScreen() {
+  // const navigation = useNavigation<RootStackParamList>();
   const navigation = useNavigation<VerificationMainNavigationProp>();
 
   const { id, role } = useDynamicUserApi();
@@ -149,7 +156,6 @@ export default function VerificationMainScreen() {
     });
   }, [verificationTypes, verificationStatusData]);
 
-
   return (
     <StaticScreenWrapper
       refreshing={isFetching}
@@ -167,80 +173,37 @@ export default function VerificationMainScreen() {
           <FullScreenErrorModal message="Failed to load data" />
         ))}
       {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "center",
-          alignItems: "center",
-          paddingBottom: Spacing.lg,
-        }}
-      >
-        <Ionicons
-          name={
-            verificationStatusData?.verified
-              ? "checkmark-circle"
-              : "close-circle"
-          }
-          color={verificationStatusData?.verified ? "#34A853" : "red"}
-          size={65}
-        />
-        <Text style={{ color: "white", fontSize: 43 }}>
-          {verificationStatusData?.verified ? "Verified" : "Not Verified"}
-        </Text>
-      </View>
+      <VerificationStatusHeader
+        verified={verificationStatusData?.verified}
+        verificationList={verificationList}
+        onCompleteProfile={() => navigation.navigate("ProfileEditScreen")}
+      />
 
       <VStack style={s.cardHolder}>
-        {verificationList.map((doc, index) => {
-          const status = doc.status;
-          const colors = statusStylesConfig[status] ?? {
-            bg: "#666",
-            icon: "#999",
-          };
-
-          return (
-            <View
-              key={index}
-              style={[s.cardContainer, { backgroundColor: colors.bg }]}
-            >
-              <Ionicons
-                name={
-                  status === "APPROVED"
-                    ? "checkmark-circle"
-                    : status === "REJECTED"
-                      ? "close-circle"
-                      : "time"
+        <Lists
+          list={verificationList}
+          contentContainerStyle={{ gap: Spacing.md }}
+          renderItem={({ item }) => (
+            <VerificationCardComponent
+              title={item.meta.displayName ?? item.type}
+              status={item.status}
+              onPress={() => {
+                if (item.status === "MISSING" || item.status === "REJECTED") {
+                  navigation.navigate("VerificationSubmitScreen", {
+                    userId,
+                    meta: { ...item.meta, type: item.type, role },
+                  });
+                } else {
+                  navigation.navigate("VerificationViewScreen", {
+                    userId,
+                    docId: item.document!.id,
+                    meta: { ...item.meta, type: item.type, role },
+                  });
                 }
-                color={colors.icon}
-                size={50}
-              />
-              <View>
-                <Text style={s.cardText}>{doc.type}</Text>
-                <Text style={s.cardTextSub}>{status}</Text>
-              </View>
-              <Button
-                style={s.cardCta}
-                onPress={() => {
-                  if (status === "MISSING") {
-                    navigation.navigate("VerificationSubmitScreen", {
-                      userId,
-                      meta: { ...doc.meta, type: doc.type, role: role },
-                    });
-                  } else {
-                    navigation.navigate("VerificationViewScreen", {
-                      userId,
-                      docId: doc.document!.id,
-                      meta: { ...doc.meta, type: doc.type, role: role },
-                    });
-                  }
-                }}
-              >
-                <Text style={{ color: "white" }}>
-                  {status === "MISSING" ? "Submit" : "View"}
-                </Text>
-              </Button>
-            </View>
-          );
-        })}
+              }}
+            />
+          )}
+        />
       </VStack>
 
       {/* THIS IS WHERE THE TRUTH IS REVEALED */}

@@ -42,9 +42,21 @@ export const VerificationStatusSchema = z.enum([
   "APPROVED",
   "REJECTED",
   "EXPIRED",
+  "MISSING",
 ]);
 
+export const VerificationLevelSchema = z.enum([
+  "UNVERIFIED",
+  "PROFILE_ONLY",
+  "FULLY_VERIFIED",
+]);
+export const RegistrationStatusSchema = z.enum(["PENDING", "COMPLETED"]);
+
 export const UserRoleSchema = z.enum(["TENANT", "OWNER", "ADMIN"]);
+export const VerificationLevelEnum = VerificationLevelSchema.enum;
+export const RegistrationStatusEnum = RegistrationStatusSchema.enum;
+export type VerificationLevel = z.infer<typeof VerificationLevelSchema>;
+export type RegistrationStatus = z.infer<typeof RegistrationStatusSchema>;
 
 /** Full record for admin listing */
 export const VerificationDocumentMetaDataSchema = z
@@ -94,6 +106,8 @@ export const UpdateVerificationDocumentSchema = z
 
 export const VerificationDocumentStatusSchema = z.object({
   verified: z.boolean(),
+  registrationStatus: VerificationLevelSchema.optional(),
+  verificationLevel: RegistrationStatusSchema.optional(),
   missingVerificationDocuments: z.array(VerificationTypeSchema),
   verificationDocuments: z.array(
     z.object({

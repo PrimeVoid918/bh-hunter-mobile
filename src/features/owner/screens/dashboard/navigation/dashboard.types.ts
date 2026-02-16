@@ -29,24 +29,5 @@ export type OwnerDashboardStackParamList = {
     docId: number;
     meta: VerificationSubmitScreenMeta;
   };
+  ProfileEditScreen: undefined;
 };
-
-/**
- * {
- *  type: "BIR",
- *  meta: {
- *    displayName: "BIR Permit",
- *    description: "...",
- *    applicableFor: "All business types"
- *  },
- *  submitted: true,
- *  document: {
- *    id: 1,
- *    verificationType: "BIR",
- *    verificationStatus: "APPROVED",
- *    expiresAt: "...",
- *    fileFormat: "PDF"
- *  },
- *  status: "APPROVED" // or "PENDING" or "MISSING"
- *}
- */

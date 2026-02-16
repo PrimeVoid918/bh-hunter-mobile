@@ -16,7 +16,7 @@ export const BaseUserSchema = z.object({
   hasAcceptedLegitimacyConsent: z.boolean().optional(),
   consentAcceptedAt: z.string().datetime({ offset: true }).optional(),
   isActive: z.boolean().optional(),
-  isVerified: z.boolean().optional(),
+
   createdAt: z.string().datetime({ offset: true }).optional(),
   updatedAt: z.string().datetime({ offset: true }).optional(),
   age: z.number().int().optional(),
