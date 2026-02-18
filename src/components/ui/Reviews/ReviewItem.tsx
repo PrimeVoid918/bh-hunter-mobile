@@ -6,7 +6,7 @@ import ImageUserPFP from "../ImageComponentUtilities/ImageUserPFP";
 import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
 import RatingsStarStatic from "../Ratings/RatingsStarStatic";
 import { Review } from "@/infrastructure/reviews/reviews.schema";
-import { parseIsoDate } from "@/infrastructure/utils/parseISODate.util";
+import { parseIsoDate } from "@/infrastructure/utils/date-and-time/parseISODate.util";
 
 interface ReviewItemInterface {
   review: Review;

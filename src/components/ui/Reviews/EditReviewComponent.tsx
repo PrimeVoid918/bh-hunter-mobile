@@ -109,7 +109,6 @@ export default function EditReviewComponent({
             marginTop: Spacing.md,
             width: "100%",
             minHeight: 150,
-            borderColor: Colors.PrimaryLight[8],
             borderRadius: BorderRadius.md,
           }}
         />

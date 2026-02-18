@@ -47,16 +47,12 @@ const TextInput = ({
   const variantStyles: Record<string, StyleProp<ViewStyle>> = {
     primary: {
       backgroundColor: 'transparent',
-      // borderWidth: BorderWidth.hairline,
-      // borderColor: Colors.Primary[3],
       borderRadius: BorderRadius.lg,
       // ...ShadowLight.xxl,
       padding: Spacing.xs,
       alignSelf: "stretch",
     },
     secondary: {
-      backgroundColor: Colors.Primary[3],
-      borderColor: Colors.PrimaryLight[2],
       borderWidth: BorderWidth.hairline,
       borderRadius: BorderRadius.lg,
       ...ShadowLight.xxl,

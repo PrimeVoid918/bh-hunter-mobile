@@ -413,7 +413,6 @@ export default function PropertiesRoomCreateModal({
               <VStack
                 style={{
                   gap: Spacing.md,
-                  borderColor: Colors.PrimaryLight[4],
                   borderWidth: 1,
                   padding: Spacing.sm,
                   borderRadius: BorderRadius.md,
@@ -442,7 +441,6 @@ export default function PropertiesRoomCreateModal({
                         style={{
                           borderRadius: BorderRadius.md,
                           padding: 5,
-                          backgroundColor: Colors.PrimaryLight[6],
                         }}
                       >
                         <Text style={[s.generic_text]}>{item}</Text>
@@ -459,7 +457,6 @@ export default function PropertiesRoomCreateModal({
                   contentContainerStyle={{
                     gap: 10,
                     padding: Spacing.sm,
-                    backgroundColor: Colors.PrimaryLight[7],
                   }}
                   nestedScrollEnabled={true} // important when inside another scrollable parent
                   keyboardShouldPersistTaps="handled" // helps with form fields
@@ -474,7 +471,6 @@ export default function PropertiesRoomCreateModal({
                           style={{
                             borderRadius: BorderRadius.md,
                             padding: 5,
-                            backgroundColor: Colors.PrimaryLight[6],
                           }}
                         >
                           <Text style={[s.generic_text]}>{item}</Text>
@@ -493,7 +489,6 @@ export default function PropertiesRoomCreateModal({
                       style={{
                         padding: Spacing.sm,
                         alignSelf: "flex-start",
-                        backgroundColor: Colors.PrimaryLight[6],
                         borderRadius: BorderRadius.md,
                       }}
                     >
@@ -578,7 +573,6 @@ export default function PropertiesRoomCreateModal({
                   style={{
                     alignItems: "center",
                     borderRadius: BorderRadius.md,
-                    backgroundColor: Colors.PrimaryLight[4],
                     padding: 10,
                     justifyContent: "center",
                   }}
@@ -663,13 +657,11 @@ const modalStyles = StyleSheet.create({
   container: {
     width: "100%",
     maxHeight: "90%",
-    backgroundColor: Colors.PrimaryLight[8],
     borderRadius: 10,
     padding: 20,
     elevation: 4,
   },
   closeButton: {
-    backgroundColor: Colors.PrimaryLight[3],
     borderRadius: BorderRadius.circle,
     position: "absolute",
     right: 10,

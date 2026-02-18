@@ -30,7 +30,6 @@ export default function BookingBHCard({ data }: BookingBHCardInterface) {
           <Ionicons
             name="home"
             size={Fontsize.h1}
-            color={Colors.PrimaryLight[1]}
           />
           <Text style={[s.text_color, s.boardingHouse_name]}>
             {boardingHouse?.name}

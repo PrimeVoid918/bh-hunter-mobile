@@ -26,7 +26,10 @@ export default function UserInformationCard({ user, title }: Props) {
     };
 
     const status = {
-      isVerified: user.isVerified ?? user.verificationStatus ?? null,
+      isVerified:
+        (user.registrationStatus == "COMPLETED" &&
+          user.verificationLevel == "FULLY_VERIFIED") ??
+        null,
     };
 
     console.log("user data in UserInformation: ", user);
@@ -108,7 +111,6 @@ export default function UserInformationCard({ user, title }: Props) {
 const s = StyleSheet.create({
   container: {
     gap: 12,
-    backgroundColor: Colors.PrimaryLight[7],
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
   },
@@ -120,7 +122,5 @@ const s = StyleSheet.create({
     gap: Spacing.sm,
   },
 
-  textColor: {
-    color: Colors.TextInverse[2],
-  },
+  textColor: {},
 });

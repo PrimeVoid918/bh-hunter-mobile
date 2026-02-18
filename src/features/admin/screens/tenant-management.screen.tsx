@@ -174,7 +174,6 @@ const AdminTenantManagementScreen = () => {
                 // borderWidth: 3,
                 padding: Spacing.md,
                 borderRadius: BorderRadius.md,
-                backgroundColor: Colors.PrimaryLight[6],
               }}
             >
               <VStack>
@@ -199,7 +198,6 @@ const AdminTenantManagementScreen = () => {
                   </ButtonRN>
                 )} */}
                 <ButtonRN
-                  style={{ backgroundColor: Colors.PrimaryLight[2] }}
                   onPress={() => {
                     setEditModal(true);
                     // setSelectedUser(tenant);
@@ -239,7 +237,6 @@ const AdminTenantManagementScreen = () => {
               width: "90%",
               padding: Spacing.lg,
               borderRadius: BorderRadius.md,
-              backgroundColor: Colors.PrimaryLight[7],
             }}
           >
             <Heading>
@@ -424,7 +421,6 @@ const AdminTenantManagementScreen = () => {
           right: 25,
           width: 50,
 
-          backgroundColor: Colors.PrimaryLight[1],
         }}
       >
         <Ionicons name="add-outline" size={20} color={Colors.PrimaryLight[7]} />
@@ -448,12 +444,10 @@ const AdminTenantManagementScreen = () => {
               width: "90%",
               padding: Spacing.lg,
               borderRadius: BorderRadius.md,
-              backgroundColor: Colors.PrimaryLight[7],
             }}
           >
             <Pressable
               style={{
-                backgroundColor: Colors.PrimaryLight[3],
                 position: "absolute",
                 top: 0,
                 right: 0,
@@ -624,20 +618,16 @@ const AdminTenantManagementScreen = () => {
 const s = StyleSheet.create({
   FormLabel: {
     fontSize: Fontsize.base,
-    color: Colors.TextInverse[1],
     paddingTop: Spacing.sm,
   },
   FormTextInput: {
     fontSize: Fontsize.base,
     padding: Spacing.xs,
-    backgroundColor: Colors.PrimaryLight[2],
     margin: 0,
   },
   Text: {
-    color: Colors.TextInverse[2],
   },
   TextInput: {
-    color: Colors.TextInverse[3],
   },
   TextButton: {
     color: "black",

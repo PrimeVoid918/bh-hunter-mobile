@@ -79,7 +79,7 @@ export default function PropertiesGetLocationScreen() {
             <Text>Latitude: {location[1].toFixed(5)}</Text>
             <Text>Longitude: {location[0].toFixed(5)}</Text>
             <Pressable onPress={handleConfirmLocation} style={s.button}>
-              <Text style={{ color: Colors.PrimaryLight[1] }}>
+              <Text >
                 Set Location
               </Text>
             </Pressable>
@@ -106,7 +106,6 @@ const s = StyleSheet.create({
   button: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: Colors.PrimaryLight[8],
     borderRadius: BorderRadius.md,
   },
 });

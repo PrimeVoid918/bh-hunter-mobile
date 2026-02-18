@@ -47,8 +47,6 @@ export default function ImageCarousel({
   const variantStyle: Record<string, any> = {
     primary: {
       container: {
-        borderColor: Colors.PrimaryLight[6],
-        backgroundColor: Colors.PrimaryLight[7],
         borderWidth: BorderWidth.lg,
         borderRadius: BorderRadius.xl,
         overflow: "hidden",
@@ -66,16 +64,12 @@ export default function ImageCarousel({
       carousel_orientation: "row",
       carousel_item_definition: {
         borderRadius: BorderRadius.md,
-        borderColorSelected: Colors.PrimaryLight[2],
-        borderColorNotSelected: Colors.PrimaryLight[9],
       },
       thumbnailSize: 80,
     },
     secondary: {
       container: {
         height: 250,
-        borderColor: Colors.PrimaryLight[6],
-        backgroundColor: Colors.PrimaryLight[7],
         borderWidth: BorderWidth.lg,
         borderRadius: BorderRadius.xl,
         flexDirection: "row",
@@ -92,8 +86,6 @@ export default function ImageCarousel({
       carousel_orientation: "column",
       carousel_item_definition: {
         borderRadius: BorderRadius.md,
-        borderColorSelected: Colors.PrimaryLight[2],
-        borderColorNotSelected: Colors.PrimaryLight[9],
       },
       thumbnailSize: 80,
     },

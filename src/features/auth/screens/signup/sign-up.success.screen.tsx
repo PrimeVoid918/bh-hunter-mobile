@@ -62,7 +62,6 @@ export default function SignUpSuccessScreen() {
 
 const s = StyleSheet.create({
   StaticScreenWrapper: {
-    backgroundColor: Colors.PrimaryLight[8],
   },
   container: {
     width: "90%",

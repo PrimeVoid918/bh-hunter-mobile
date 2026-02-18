@@ -97,7 +97,6 @@ export default function PropertiesRoomCreate({
         <View style={{ alignItems: "flex-start", marginBottom: Spacing.lg }}>
           <Pressable
             style={({ pressed }) => ({
-              backgroundColor: Colors.PrimaryLight[6],
               padding: 10,
               borderRadius: 10,
               opacity: pressed ? 0.8 : 1,

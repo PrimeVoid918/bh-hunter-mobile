@@ -20,8 +20,6 @@ export default function VerificationIndicatorComponent({
     unverifiedIcon: "#e5383b", // fallback to red
     bgVerified: "#386641", // fallback to green
     bgUnverified: "#841416", // fallback to red
-    text: Colors.TextInverse[2],
-    border: Colors.PrimaryLight[6],
   };
 
   return (

@@ -404,7 +404,6 @@ const s = StyleSheet.create({
   header_titleText: {
     fontSize: Fontsize.h1,
     fontWeight: "900",
-    color: Colors.TextInverse[2],
   },
 
   text_container: {
@@ -413,21 +412,17 @@ const s = StyleSheet.create({
   text_title: {
     fontSize: Fontsize.xxl,
     fontWeight: "900",
-    color: Colors.TextInverse[1],
   },
   text_address: {
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[2],
   },
   text_description: {
     fontSize: Fontsize.lg,
-    color: Colors.TextInverse[2],
     lineHeight: 26,
   },
   rating: {
     fontSize: Fontsize.sm,
     fontWeight: "600",
-    color: Colors.TextInverse[1],
   },
   viewRoomsBtn: {
     marginTop: 10,
@@ -437,24 +432,20 @@ const s = StyleSheet.create({
   sectionTitle: {
     fontSize: Fontsize.lg,
     fontWeight: "600",
-    color: Colors.TextInverse[1],
   },
   amenitiesContainer: {
-    backgroundColor: Colors.PrimaryLight[7],
     padding: 16,
     borderRadius: BorderRadius.md,
   },
   amenityChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: Colors.PrimaryLight[6],
     borderRadius: BorderRadius.md,
   },
   amenityChipSelected: {
     backgroundColor: "#10b981",
   },
   amenityText: {
-    color: Colors.TextInverse[1],
     fontSize: Fontsize.sm,
   },
   amenityTextSelected: {
@@ -462,11 +453,9 @@ const s = StyleSheet.create({
     fontWeight: "600",
   },
   amenityDisplay: {
-    backgroundColor: Colors.PrimaryLight[8],
     padding: 10,
     borderRadius: BorderRadius.md,
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[1],
   },
   errorText: {
     color: "red",

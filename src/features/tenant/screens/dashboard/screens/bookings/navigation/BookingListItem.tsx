@@ -79,7 +79,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "flex-start",
-    backgroundColor: Colors.PrimaryLight[7],
+    // backgroundColor: Colors.
     borderRadius: BorderRadius.md,
     height: 100,
   },

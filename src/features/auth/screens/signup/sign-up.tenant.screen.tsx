@@ -230,10 +230,8 @@ export default function SignUpTenantScreen() {
               containerStyle={{
                 backgroundColor: "white",
                 padding: 10,
-                // borderColor: Colors.Primary[7],
               }}
               textStyle={{
-                color: Colors.Primary[9],
               }}
             />
           </HStack>
@@ -259,7 +257,6 @@ export default function SignUpTenantScreen() {
               width: "90%",
               padding: Spacing.lg,
               borderRadius: BorderRadius.md,
-              backgroundColor: Colors.PrimaryLight[7],
             }}
           >
             <Heading>
@@ -303,7 +300,6 @@ export default function SignUpTenantScreen() {
 
 const s = StyleSheet.create({
   StaticScreenWrapper: {
-    backgroundColor: Colors.PrimaryLight[8],
   },
   container: {
     width: "90%",
@@ -311,20 +307,16 @@ const s = StyleSheet.create({
   },
   FormLabel: {
     fontSize: Fontsize.base,
-    color: Colors.TextInverse[1],
     padding: Spacing.sm,
   },
   FormTextInput: {
     fontSize: Fontsize.base,
     padding: Spacing.xs,
-    backgroundColor: Colors.PrimaryLight[2],
     margin: 0,
   },
   Text: {
-    color: Colors.TextInverse[2],
   },
   TextInput: {
-    color: Colors.TextInverse[3],
   },
   TextButton: {
     color: "black",

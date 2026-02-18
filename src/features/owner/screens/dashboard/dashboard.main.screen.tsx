@@ -83,8 +83,6 @@ export default function DashboardMainScreen() {
       <HStack
         style={{
           width: "100%",
-          backgroundColor: Colors.PrimaryLight[6],
-          borderColor: Colors.PrimaryLight[4],
           borderWidth: 1,
           borderRadius: BorderRadius.lg,
           justifyContent: "space-between",
@@ -100,7 +98,6 @@ export default function DashboardMainScreen() {
         <Button
           onPressAction={() => setIsGrid(!isGrid)}
           containerStyle={{
-            backgroundColor: Colors.PrimaryLight[9],
             aspectRatio: 1,
             height: 50,
             // width: 10,
@@ -181,9 +178,7 @@ export default function DashboardMainScreen() {
                       paddingLeft: Spacing.sm,
                       paddingRight: Spacing.sm,
                       borderWidth: 2,
-                      borderColor: Colors.PrimaryLight[5],
                       borderRadius: BorderRadius.md,
-                      backgroundColor: Colors.PrimaryLight[6],
                     }}
                   >
                     <Text style={{ color: "white" }}>Details</Text>
@@ -209,7 +204,6 @@ const s = StyleSheet.create({
   Hero_text1: {
     fontSize: Fontsize.h2,
     fontWeight: "bold",
-    color: Colors.TextInverse[2],
   },
   Widget: {
     // borderColor: 'red',
@@ -229,19 +223,15 @@ const s = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     width: "auto",
-    backgroundColor: Colors.PrimaryLight[9],
   },
 
   generic_text_sm: {
     fontSize: Fontsize.sm,
-    color: Colors.TextInverse[1],
   },
   generic_text_md: {
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[1],
   },
   generic_text_lg: {
     fontSize: Fontsize.lg,
-    color: Colors.TextInverse[2],
   },
 });

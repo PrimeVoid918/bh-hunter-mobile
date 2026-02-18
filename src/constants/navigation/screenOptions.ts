@@ -7,5 +7,5 @@ export const backButtonConfig: NativeStackNavigationOptions = {
   headerStyle: {
     backgroundColor: GlobalStyle.GlobalsContainer.backgroundColor,
   },
-  headerTintColor: Colors.PrimaryLight[1],
+  // headerTintColor: Colors.PrimaryLight[1],
 };

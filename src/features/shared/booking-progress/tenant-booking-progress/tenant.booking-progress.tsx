@@ -187,8 +187,8 @@ const s = StyleSheet.create({
     overflow: "scroll", // Ensure scrollbar appears
   },
   Form_Input_Placeholder: {
-    backgroundColor: Colors.PrimaryLight[6],
-    color: Colors.TextInverse[2],
+    // backgroundColor: Colors.
+    // color: Colors.
     fontSize: Fontsize.md,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.sm,
@@ -208,7 +208,7 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
   removeImageStyle: {
-    backgroundColor: Colors.PrimaryLight[8],
+    // backgroundColor: Colors.
     position: "absolute",
     top: 10,
     left: 10,
@@ -217,7 +217,7 @@ const s = StyleSheet.create({
   },
   buttonStyle: {
     paddingVertical: Spacing.xs,
-    backgroundColor: Colors.PrimaryLight[6],
+    // backgroundColor: Colors.
   },
 
   textColor: {

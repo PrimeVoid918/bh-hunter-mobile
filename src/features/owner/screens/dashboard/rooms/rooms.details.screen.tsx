@@ -386,30 +386,24 @@ const s = StyleSheet.create({
   },
 
   textColor: {
-    color: Colors.TextInverse[1],
   },
   text_title: {
     fontSize: Fontsize.h1,
     fontWeight: "900",
-    color: Colors.TextInverse[2],
   },
   text_subTitle: {
     fontSize: Fontsize.h3,
     fontWeight: "900",
-    color: Colors.TextInverse[2],
   },
   text_address: {
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[2],
   },
   text_description: {
     fontSize: Fontsize.lg,
-    color: Colors.TextInverse[2],
     lineHeight: 26,
   },
   rating: {
     fontSize: Fontsize.sm,
-    color: Colors.TextInverse[1],
   },
   viewRoomsBtn: {
     marginTop: 10,
@@ -419,24 +413,20 @@ const s = StyleSheet.create({
   sectionTitle: {
     fontSize: Fontsize.lg,
     fontWeight: "600",
-    color: Colors.TextInverse[1],
   },
   tagsContainer: {
-    backgroundColor: Colors.PrimaryLight[7],
     padding: 16,
     borderRadius: BorderRadius.md,
   },
   tagsChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: Colors.PrimaryLight[6],
     borderRadius: BorderRadius.md,
   },
   tagsChipSelected: {
     backgroundColor: "#10b981",
   },
   tagsText: {
-    color: Colors.TextInverse[1],
     fontSize: Fontsize.sm,
   },
   tagsTextSelected: {
@@ -444,11 +434,9 @@ const s = StyleSheet.create({
     fontWeight: "600",
   },
   tagsDisplay: {
-    backgroundColor: Colors.PrimaryLight[8],
     padding: 10,
     borderRadius: BorderRadius.md,
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[1],
   },
   errorText: {
     color: "red",

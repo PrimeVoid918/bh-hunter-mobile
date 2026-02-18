@@ -50,7 +50,6 @@ export default function BookingMainScreen(){
 
 const s = StyleSheet.create({
   StaticScreenWrapper: {
-    // backgroundColor: Colors.PrimaryLight[8],
     padding: 10,
   },
   Hero: {
@@ -60,7 +59,6 @@ const s = StyleSheet.create({
   Hero_text1: {
     fontSize: Fontsize.h1,
     fontWeight: "bold",
-    color: Colors.TextInverse[2],
   },
   Widget: {
     // borderColor: 'red',
@@ -78,19 +76,15 @@ const s = StyleSheet.create({
     padding: 10,
     height: 50,
     width: "100%",
-    backgroundColor: Colors.PrimaryLight[9],
   },
 
   generic_text_sm: {
     fontSize: Fontsize.sm,
-    color: Colors.TextInverse[2],
   },
   generic_text_md: {
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[2],
   },
   generic_text_lg: {
     fontSize: Fontsize.lg,
-    color: Colors.TextInverse[2],
   },
 });

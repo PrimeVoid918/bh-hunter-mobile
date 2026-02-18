@@ -8,7 +8,7 @@ import { BorderRadius, Colors } from '@/constants'
 import DashboardMainScreen from '../screens/dashboard.main.screen'
 import TenantManagementMainScreen from '../screens/tenant-management.screen'
 import OwnerManagementMainScreen from '../screens/owner-management.main.screen'
-import NotificationMainScreen from '@/features/shared/notification.main.screen'
+import NotificationMainScreen from '@/features/shared/notification/notification.main.screen'
 import MenuMainScreen from '@/features/shared/menu/menu.main.screen'
 
 //layout component

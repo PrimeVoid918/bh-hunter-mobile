@@ -11,16 +11,14 @@ import OwnerTabs from "@/features/owner/navigation/owner.tabs";
 
 import { RootStackParamList } from "../../features/types/navigation";
 import { Colors } from "@/constants";
+import { navigationRef } from "./navigationRef";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigation = () => {
   return (
-    <NavigationContainer>
-      <StatusBar
-        barStyle={"light-content"}
-        backgroundColor={Colors.PrimaryLight[8]}
-      />
+    <NavigationContainer ref={navigationRef}>
+      <StatusBar barStyle={"light-content"} />
       <RootStack.Navigator
         initialRouteName="Auth"
         screenOptions={{

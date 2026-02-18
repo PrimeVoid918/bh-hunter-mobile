@@ -55,7 +55,6 @@ const s = StyleSheet.create({
     minWidth: 100,
   },
   primary: {
-    backgroundColor: Colors.PrimaryLight[3],
   },
   danger: {
     backgroundColor: "#ef4444", // standard red
@@ -63,7 +62,6 @@ const s = StyleSheet.create({
   outline: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: Colors.PrimaryLight[1],
   },
   pressed: {
     opacity: 0.7,
@@ -80,6 +78,5 @@ const s = StyleSheet.create({
     color: "#ffffff",
   },
   textOutline: {
-    color: Colors.PrimaryLight[1],
   },
 });

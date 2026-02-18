@@ -102,7 +102,7 @@ export default function MenuUserEditScreen() {
       }
       const result = await patchUser(
         id,
-        cleanForm as Partial<Tenant> | Partial<Owner> | Partial<Admin>
+        cleanForm as Partial<Tenant> | Partial<Owner> | Partial<Admin>,
       );
       await fetchAndSelect(id);
       // console.log("clanForm", cleanForm);
@@ -255,6 +255,32 @@ export default function MenuUserEditScreen() {
         <Box>
           <FormControl>
             <FormControl.Label>
+              <Text style={[s.Text]}>Age</Text>
+            </FormControl.Label>
+            <Input>
+              <InputField
+                style={[s.TextInput]}
+                value={form.age?.toString()}
+                readOnly
+                onChangeText={(text: string) => {
+                  if (text === "") {
+                    setForm({ ...form, age: undefined });
+                    return;
+                  }
+
+                  const parsed = Number(text);
+
+                  if (!Number.isNaN(parsed)) {
+                    setForm({ ...form, age: parsed });
+                  }
+                }}
+              />
+            </Input>
+          </FormControl>
+        </Box>
+        <Box>
+          <FormControl>
+            <FormControl.Label>
               <Text style={[s.Text]}>Address</Text>
             </FormControl.Label>
             <Input>
@@ -329,7 +355,7 @@ export default function MenuUserEditScreen() {
               width: "90%",
               padding: Spacing.lg,
               borderRadius: BorderRadius.md,
-              backgroundColor: Colors.PrimaryLight[7],
+              // backgroundColor: Colors
             }}
           >
             <Heading>

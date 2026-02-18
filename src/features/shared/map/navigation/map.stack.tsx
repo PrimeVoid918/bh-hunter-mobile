@@ -11,9 +11,9 @@ export default function MapStack() {
     headerShown: true,
     title: "",
     headerStyle: {
-      backgroundColor: Colors.PrimaryLight[8],
+      // backgroundColor: Colors.
     },
-    headerTintColor: Colors.PrimaryLight[1],
+    // headerTintColor: Colors.
   };
 
   return (

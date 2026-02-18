@@ -15,6 +15,7 @@ import { bookingApi } from "@/infrastructure/booking/booking.redux.api";
 import { verificationDocumentsApi } from "@/infrastructure/valid-docs/verification-document/verification-document.redux.api";
 import { bHAndRoomShareApi } from "@/infrastructure/shared/redux.api";
 import { reviewsApi } from "@/infrastructure/reviews/reviews.redux.api";
+import { notificationApi } from "@/infrastructure/notifications/notifications.redux.api";
 
 export const store = configureStore({
   reducer: {
@@ -29,7 +30,7 @@ export const store = configureStore({
     boardingHouses: boardingHouseSlice,
     [boardingHouseApi.reducerPath]: boardingHouseApi.reducer,
     [roomApi.reducerPath]: roomApi.reducer,
-    // [bHAndRoomShareApi.reducerPath]: bHAndRoomShareApi.reducer,
+    [notificationApi.reducerPath]: notificationApi.reducer,
     [bookingApi.reducerPath]: bookingApi.reducer,
     [verificationDocumentsApi.reducerPath]: verificationDocumentsApi.reducer,
     [reviewsApi.reducerPath]: reviewsApi.reducer,
@@ -44,7 +45,7 @@ export const store = configureStore({
       .concat(ownerApi.middleware)
       .concat(boardingHouseApi.middleware)
       .concat(roomApi.middleware)
-      // .concat(bHAndRoomShareAp+i.middleware)
+      .concat(notificationApi.middleware)
       .concat(bookingApi.middleware)
       .concat(verificationDocumentsApi.middleware)
       .concat(reviewsApi.middleware),

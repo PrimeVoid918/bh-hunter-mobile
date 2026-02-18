@@ -313,7 +313,7 @@ export default function RoomsAddScreen({ route }: any) {
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    backgroundColor: Colors.PrimaryLight[8],
+    // backgroundColor: Colors.
     padding: Spacing.md,
   },
   label: {
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     fontSize: Fontsize.xl,
   },
   input: {
-    borderColor: Colors.PrimaryLight[2],
+    // borderColor: Colors.
     borderWidth: 1,
     borderRadius: BorderRadius.md,
     padding: Spacing.xs,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   pickButton: {
     padding: Spacing.sm,
     alignSelf: "flex-start",
-    backgroundColor: Colors.PrimaryLight[6],
+    // backgroundColor: Colors.
     borderRadius: BorderRadius.md,
   },
   pickText: {

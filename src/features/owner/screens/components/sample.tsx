@@ -358,7 +358,6 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
                         padding: 10,
                         borderColor: "green",
                         borderWidth: 2,
-                        backgroundColor: Colors.PrimaryLight[7],
                         borderRadius: BorderRadius.md,
                       }}
                       onChangeText={onChange}
@@ -377,7 +376,6 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
             {/* Amenities */}
             <VStack
               style={{
-                backgroundColor: Colors.PrimaryLight[7],
                 padding: 10,
                 borderRadius: BorderRadius.md,
               }}
@@ -404,7 +402,6 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
                         style={{
                           borderRadius: BorderRadius.md,
                           padding: 5,
-                          backgroundColor: Colors.PrimaryLight[6],
                         }}
                       >
                         <Text style={s.generic_text}>{item}</Text>
@@ -420,7 +417,6 @@ export default function BoardingHouseDetailsScreen({ bhID }: { bhID: number }) {
                       style={[
                         s.text_generic_medium,
                         {
-                          backgroundColor: Colors.PrimaryLight[8],
                           padding: 5,
                           borderRadius: BorderRadius.md,
                         },

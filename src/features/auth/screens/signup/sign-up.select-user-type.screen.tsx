@@ -81,12 +81,10 @@ export default function SignUpSelectUserTypeScreen() {
 
 const s = StyleSheet.create({
   button: {
-    backgroundColor: Colors.PrimaryLight[5],
     borderWidth: 1,
     padding: 10,
     width: 200,
   },
   button_text:{
-    color: Colors.TextInverse[1],
   }
 });

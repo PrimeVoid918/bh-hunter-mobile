@@ -211,8 +211,6 @@ const s = StyleSheet.create({
     height: 300,
     width: "90%",
 
-    backgroundColor: Colors.PrimaryLight[7],
-    borderColor: Colors.PrimaryLight[5],
     borderWidth: BorderWidth.lg,
     borderRadius: BorderRadius.xl,
 
@@ -229,12 +227,8 @@ const s = StyleSheet.create({
     width: "100%",
     gap: 12,
   },
-  Form_InputContainer: {
-    backgroundColor: Colors.PrimaryLight[2],
-  },
-  Form_InputIcon: {
-    color: Colors.PrimaryLight[8],
-  },
+  Form_InputContainer: {},
+  Form_InputIcon: {},
   Form_InputText: {
     fontSize: Fontsize.lg,
     padding: Spacing.xs,

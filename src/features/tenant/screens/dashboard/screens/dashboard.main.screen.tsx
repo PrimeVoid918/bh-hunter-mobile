@@ -78,7 +78,7 @@ export default function DashboardMainScreen() {
 
 const s = StyleSheet.create({
   StaticScreenWrapper: {
-    // backgroundColor: Colors.PrimaryLight[8],
+    // backgroundColor: Colors.
     padding: 10,
   },
   Hero: {
@@ -104,7 +104,7 @@ const s = StyleSheet.create({
     padding: 10,
     height: 50,
     width: "100%",
-    backgroundColor: Colors.PrimaryLight[9],
+    // backgroundColor: Colors.
   },
 
   generic_text_sm: {

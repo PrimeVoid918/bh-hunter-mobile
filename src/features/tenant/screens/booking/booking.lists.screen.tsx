@@ -38,10 +38,10 @@ export default function BookingListsScreen() {
 
   const dispatch = useDispatch();
   const searchQuery = useSelector(
-    (state: RootState) => state.genericSearch.query
+    (state: RootState) => state.genericSearch.query,
   );
   const searchResults = useSelector(
-    (state: RootState) => state.genericSearch.results
+    (state: RootState) => state.genericSearch.results,
   );
 
   const [filters, setFilters] = useState<QueryBoardingHouse>({
@@ -74,7 +74,7 @@ export default function BookingListsScreen() {
     const query = (debouncedQuery || "").toLowerCase();
 
     const filtered = allBoardingHouses.filter((bh) =>
-      bh.name?.toLowerCase().includes(query)
+      bh.name?.toLowerCase().includes(query),
     );
 
     dispatch(setResults(filtered));
@@ -103,7 +103,7 @@ export default function BookingListsScreen() {
             dispatch(setQuery(val));
           }}
           containerStyle={{
-            backgroundColor: Colors.PrimaryLight[7],
+            // backgroundColor: Colors.
             borderRadius: 10,
             paddingLeft: 5,
             paddingRight: 5,
@@ -122,9 +122,9 @@ export default function BookingListsScreen() {
                 style={{
                   padding: Spacing.sm,
                   borderWidth: 2,
-                  borderColor: Colors.PrimaryLight[5],
+                  // borderColor: Colors.
                   borderRadius: BorderRadius.lg,
-                  backgroundColor: Colors.PrimaryLight[6],
+                  // backgroundColor: Colors.
                 }}
               >
                 <Text style={{ color: "white" }}>Details</Text>
@@ -138,7 +138,7 @@ export default function BookingListsScreen() {
                 onPress={() => setPage((prev) => prev + 1)}
                 style={{
                   padding: 12,
-                  backgroundColor: Colors.PrimaryLight[6],
+                  // backgroundColor: Colors.
                   borderRadius: BorderRadius.md,
                   alignItems: "center",
                   marginVertical: 10,

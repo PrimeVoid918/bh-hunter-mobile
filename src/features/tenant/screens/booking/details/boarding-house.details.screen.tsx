@@ -142,7 +142,7 @@ export default function BoardingHouseDetailsScreen() {
                 </Text>
                 <VStack
                   style={{
-                    backgroundColor: Colors.PrimaryLight[7],
+                    // backgroundColor: Colors.
                     padding: 10,
                     borderRadius: BorderRadius.md,
                   }}
@@ -167,7 +167,7 @@ export default function BoardingHouseDetailsScreen() {
                           style={[
                             s.text_generic_medium,
                             {
-                              backgroundColor: Colors.PrimaryLight[8],
+                              // backgroundColor: Colors.
                               padding: 5,
                               borderRadius: BorderRadius.md,
                             },

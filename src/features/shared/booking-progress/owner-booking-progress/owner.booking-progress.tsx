@@ -252,8 +252,8 @@ export default function OwnerBookingProgress({
 
 const s = StyleSheet.create({
   container: {
-    backgroundColor: Colors.PrimaryLight[9],
-    shadowColor: Colors.PrimaryLight[10],
+    // backgroundColor: Colors.,
+    // shadowColor: Colors.,
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 4.15,
     shadowRadius: 20,
@@ -264,7 +264,7 @@ const s = StyleSheet.create({
     padding: Spacing.sm,
   },
   Form_Input_Placeholder: {
-    backgroundColor: Colors.PrimaryLight[6],
+    // backgroundColor: Colors.
     color: Colors.TextInverse[2],
     fontSize: Fontsize.md,
     paddingVertical: Spacing.sm,
@@ -277,7 +277,7 @@ const s = StyleSheet.create({
   },
   buttonStyle: {
     paddingVertical: Spacing.xs,
-    backgroundColor: Colors.PrimaryLight[6],
+    // backgroundColor: Colors.
   },
 
   textColor: {

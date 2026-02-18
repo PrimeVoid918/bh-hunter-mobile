@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  RegistrationStatusSchema,
+  VerificationLevelSchema,
+} from "../valid-docs/verification-document/verification-document.schema";
 
 /** Shared UserRole enum */
 export const UserRoleSchema = z.enum(["TENANT", "OWNER", "ADMIN", "GUEST"]);
@@ -16,7 +20,8 @@ export const BaseUserSchema = z.object({
   hasAcceptedLegitimacyConsent: z.boolean().optional(),
   consentAcceptedAt: z.string().datetime({ offset: true }).optional(),
   isActive: z.boolean().optional(),
-
+  registrationStatus: VerificationLevelSchema.optional(),
+  verificationLevel: RegistrationStatusSchema.optional(),
   createdAt: z.string().datetime({ offset: true }).optional(),
   updatedAt: z.string().datetime({ offset: true }).optional(),
   age: z.number().int().optional(),

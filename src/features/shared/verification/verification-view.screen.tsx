@@ -187,7 +187,7 @@ export default function VerificationViewScreen({ route }) {
                   borderWidth: 1,
                   borderRadius: 6,
                   marginTop: 8,
-                  borderColor: Colors.PrimaryLight[9],
+                  // borderColor: Colors.
                 }}
               >
                 <Text style={s.textColor}>
@@ -296,7 +296,7 @@ const s = StyleSheet.create({
   },
   borderLine: {
     borderWidth: 2,
-    borderColor: Colors.PrimaryLight[9],
+    // borderColor: Colors.
     marginTop: 12,
   },
   datePicker: { padding: 12, borderWidth: 1, borderRadius: 6, marginTop: 8 },

@@ -12,7 +12,7 @@ import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import DashboardStack from "../screens/dashboard/navigation/dashboard.stack";
 import BookingStack from "../screens/booking/navigation/booking.stack";
 import MapStack from "@/features/shared/map/navigation/map.stack";
-import NotificationMainScreen from "@/features/shared/notification.main.screen";
+import NotificationMainScreen from "@/features/shared/notification/notification.main.screen";
 import MenuStack from "@/features/shared/menu/navigation/menu.stack";
 import { MenuStackParamListArrayName } from "@/features/shared/menu/navigation/menu.stack.types";
 import { GlobalBottomNavigationStyles } from "@/constants/GlobalStyle";
@@ -28,6 +28,7 @@ export default function TenantTabs() {
         console.log("Troute:", routeName);
 
         return {
+          lazy: false,
           tabBarStyle: {
             backgroundColor:
               GlobalBottomNavigationStyles.containerBackgroundColor,

@@ -244,7 +244,6 @@ export default function PropertiesCreateScreen() {
           <Pressable
             onPress={handleRemoveThumbnailImage}
             style={{
-              backgroundColor: Colors.PrimaryLight[8],
               position: "absolute",
               top: 10,
               left: 10,
@@ -407,7 +406,6 @@ export default function PropertiesCreateScreen() {
               style={{
                 padding: Spacing.sm,
                 alignSelf: "flex-start",
-                backgroundColor: Colors.PrimaryLight[6],
                 borderRadius: BorderRadius.md,
               }}
             >
@@ -489,7 +487,6 @@ export default function PropertiesCreateScreen() {
         <VStack
           style={{
             gap: Spacing.md,
-            borderColor: Colors.PrimaryLight[4],
             borderWidth: 1,
             padding: Spacing.sm,
             borderRadius: BorderRadius.md,
@@ -516,7 +513,6 @@ export default function PropertiesCreateScreen() {
                   style={{
                     borderRadius: BorderRadius.md,
                     padding: 5,
-                    backgroundColor: Colors.PrimaryLight[6],
                   }}
                 >
                   <Text style={[s.generic_text]}>{item}</Text>
@@ -535,7 +531,6 @@ export default function PropertiesCreateScreen() {
             contentContainerStyle={{
               gap: 10,
               padding: Spacing.sm,
-              backgroundColor: Colors.PrimaryLight[7],
             }}
           >
             {selectedAmenities.length ? (
@@ -548,7 +543,6 @@ export default function PropertiesCreateScreen() {
                     style={{
                       borderRadius: BorderRadius.md,
                       padding: 5,
-                      backgroundColor: Colors.PrimaryLight[6],
                     }}
                   >
                     <Text style={[s.generic_text]}>{item}</Text>
@@ -571,7 +565,6 @@ export default function PropertiesCreateScreen() {
                 style={{
                   borderRadius: BorderRadius.md,
                   padding: 5,
-                  backgroundColor: Colors.PrimaryLight[6],
                 }}
                 onPress={() => {
                   propertyNavigation.navigate("PropertyLocationPicker", {

@@ -142,7 +142,6 @@ export default function OwnerManagementMainScreen() {
               style={{
                 padding: Spacing.md,
                 borderRadius: BorderRadius.md,
-                backgroundColor: Colors.PrimaryLight[6],
               }}
             >
               <VStack>
@@ -171,7 +170,6 @@ export default function OwnerManagementMainScreen() {
                   </ButtonRN>
                 )}
                 <ButtonRN
-                  style={{ backgroundColor: Colors.PrimaryLight[2] }}
                   onPress={() => {
 
                   }}
@@ -181,169 +179,6 @@ export default function OwnerManagementMainScreen() {
           ))}
         </Box>
       </ScrollView>
-      {/* {reviewModal */}
-      {/* {reviewModal && (
-        <Alert
-          style={{
-            position: "absolute",
-            top: "65%",
-            left: "50%",
-            transform: `translate(-50%, -50%)`,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(0, 0, 0, 0)",
-          }}
-        >
-          <VStack
-            style={{
-              gap: Spacing.lg,
-              // alignItems: 'stretch',
-              height: 500,
-              width: "90%",
-              padding: Spacing.lg,
-              borderRadius: BorderRadius.md,
-              backgroundColor: Colors.PrimaryLight[7],
-            }}
-          >
-            <Pressable
-              style={{
-                backgroundColor: Colors.PrimaryLight[3],
-                position: "absolute",
-                top: 0,
-                right: 0,
-                borderRadius: "10%",
-                aspectRatio: 1 / 1,
-                height: 30,
-                padding: 0,
-
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-              onPress={() => setReviewModal(false)}
-            >
-              <Ionicons name="close" size={30} />
-            </Pressable>
-            <Heading>
-              <Text style={[s.Text, { fontSize: Fontsize.h1 }]}>
-                Review Application
-              </Text>
-            </Heading>
-            <ScrollView>
-              <FormControl>
-                <FormControl.Label>
-                  <Text style={[s.FormLabel]}>Username</Text>
-                </FormControl.Label>
-                <Input>
-                  <InputField
-                    value={selectedUser?.username}
-                    onChangeText={(text: string) =>
-                      setSelectedUser({ ...selectedUser, username: text })
-                    }
-                    style={[s.FormTextInput]}
-                  />
-                </Input>
-              </FormControl>
-              <FormControl>
-                <FormControl.Label>
-                  <Text style={[s.FormLabel]}>Firstname</Text>
-                </FormControl.Label>
-                <Input>
-                  <InputField
-                    value={selectedUser?.firstname}
-                    onChangeText={(text: string) =>
-                      setSelectedUser({ ...selectedUser, firstname: text })
-                    }
-                    style={[s.FormTextInput]}
-                  />
-                </Input>
-              </FormControl>
-              <FormControl>
-                <FormControl.Label>
-                  <Text style={[s.FormLabel]}>Lastname</Text>
-                </FormControl.Label>
-                <Input>
-                  <InputField
-                    value={selectedUser?.lastname}
-                    onChangeText={(text: string) =>
-                      setSelectedUser({ ...selectedUser, lastname: text })
-                    }
-                    style={[s.FormTextInput]}
-                  />
-                </Input>
-              </FormControl>
-              <FormControl>
-                <FormControl.Label>
-                  <Text style={[s.FormLabel]}>Email</Text>
-                </FormControl.Label>
-                <Input>
-                  <InputField
-                    value={selectedUser?.email}
-                    onChangeText={(text: string) =>
-                      setSelectedUser({ ...selectedUser, email: text })
-                    }
-                    style={[s.FormTextInput]}
-                  />
-                </Input>
-              </FormControl>
-              <FormControl>
-                <FormControl.Label>
-                  <Text style={[s.FormLabel]}>Age</Text>
-                </FormControl.Label>
-                <Input>
-                  <InputField
-                    value={String(selectedUser?.age)}
-                    keyboardType="numeric"
-                    onChangeText={(text: string) =>
-                      setSelectedUser({ ...selectedUser, age: text })
-                    }
-                    style={[s.FormTextInput]}
-                  />
-                </Input>
-              </FormControl>
-              <FormControl>
-                <FormControl.Label>
-                  <Text style={[s.FormLabel]}>Phone Number</Text>
-                </FormControl.Label>
-                <Input>
-                  <InputField
-                    value={selectedUser?.phone_number}
-                    onChangeText={(text: string) =>
-                      setSelectedUser({ ...selectedUser, phone_number: text })
-                    }
-                    style={[s.FormTextInput]}
-                  />
-                </Input>
-              </FormControl>
-              <FormControl>
-                <FormControl.Label>
-                  <Text style={[s.FormLabel]}>Home Address</Text>
-                </FormControl.Label>
-                <Input>
-                  <InputField
-                    value={selectedUser?.address}
-                    onChangeText={(text: string) =>
-                      setSelectedUser({ ...selectedUser, address: text })
-                    }
-                    style={[s.FormTextInput]}
-                  />
-                </Input>
-              </FormControl>
-            </ScrollView>
-            <VStack>
-              <Button
-                variant="primary"
-                onPressAction={() => {
-                  setReviewModal(false);
-                  handleUpdateUser(selectedUser?.id);
-                }}
-                containerStyle={{ backgroundColor: Colors.Alert }}
-              >
-                <Text style={[s.TextButton]}>Edit</Text>
-              </Button>
-            </VStack>
-          </VStack>
-        </Alert>
-      )} */}
       {/* -----------------Add Owner ------------------------------------------------------------------------------------------------------------ */}
       <Button
         variant="primary"
@@ -356,7 +191,6 @@ export default function OwnerManagementMainScreen() {
           right: 25,
           width: 50,
 
-          backgroundColor: Colors.PrimaryLight[1],
         }}
       >
         <Ionicons name="add-outline" size={20} color={Colors.PrimaryLight[7]} />
@@ -380,12 +214,10 @@ export default function OwnerManagementMainScreen() {
               width: "90%",
               padding: Spacing.lg,
               borderRadius: BorderRadius.md,
-              backgroundColor: Colors.PrimaryLight[7],
             }}
           >
             <Pressable
               style={{
-                backgroundColor: Colors.PrimaryLight[3],
                 position: "absolute",
                 top: 0,
                 right: 0,
@@ -524,7 +356,6 @@ export default function OwnerManagementMainScreen() {
                 onPressAction={() => {
                   handleAddOwner();
                 }}
-                containerStyle={{ backgroundColor: Colors.PrimaryLight[3] }}
               >
                 <Text style={[s.TextButton]}>Add Owner</Text>
               </Button>
@@ -540,20 +371,16 @@ export default function OwnerManagementMainScreen() {
 const s = StyleSheet.create({
   FormLabel: {
     fontSize: Fontsize.base,
-    color: Colors.TextInverse[1],
     paddingTop: Spacing.sm,
   },
   FormTextInput: {
     fontSize: Fontsize.base,
     padding: Spacing.xs,
-    backgroundColor: Colors.PrimaryLight[2],
     margin: 0,
   },
   Text: {
-    color: Colors.TextInverse[2],
   },
   TextInput: {
-    color: Colors.TextInverse[3],
   },
   TextButton: {
     color: "black",

@@ -16,7 +16,7 @@ import { QueryBooking } from "../../../../infrastructure/booking/booking.schema"
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { OwnerBookingStackParamList } from "./navigation/booking.types";
 import { useGetOneQuery } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
-import { parseIsoDate } from "@/infrastructure/utils/parseISODate.util";
+import { parseIsoDate } from "@/infrastructure/utils/date-and-time/parseISODate.util";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Container from "@/components/layout/Container/Container";
 import { Lists } from "@/components/layout/Lists/Lists";
@@ -116,7 +116,7 @@ export default function PropertiesBookingListsScreen() {
     <StaticScreenWrapper
       style={[GlobalStyle.GlobalsContainer]}
       contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-      wrapInScrollView={false}
+      // wrapInScrollView={false}
     >
       {boardingHouseData && (
         <Box>
@@ -148,7 +148,6 @@ export default function PropertiesBookingListsScreen() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "column",
-    backgroundColor: Colors.PrimaryLight[9],
     borderRadius: 10,
     padding: Spacing.md,
     gap: Spacing.sm,
@@ -160,7 +159,7 @@ const styles = StyleSheet.create({
     borderColor: "red",
     flex: 1,
   },
-  textColor: { color: Colors.TextInverse[2] },
+  textColor: {},
   item_header: { fontSize: Fontsize.h1 },
   center_item: { justifyContent: "center", alignContent: "center" },
   cta: { marginLeft: "auto" },

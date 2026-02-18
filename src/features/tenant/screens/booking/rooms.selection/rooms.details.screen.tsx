@@ -124,7 +124,7 @@ export default function RoomsDetailsScreen({
                     style={{
                       borderRadius: BorderRadius.md,
                       padding: 5,
-                      backgroundColor: Colors.PrimaryLight[6],
+                      // backgroundColor: Colors.
                     }}
                   >
                     <Text style={[s.generic_text, s.textColor]}>{item}</Text>

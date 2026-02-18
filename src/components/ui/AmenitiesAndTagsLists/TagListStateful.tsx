@@ -51,21 +51,18 @@ export function TagListStateful<T extends string, TForm extends FieldValues>({
 
 const s = StyleSheet.create({
   amenitiesContainer: {
-    backgroundColor: Colors.PrimaryLight[7],
     padding: 16,
     borderRadius: BorderRadius.md,
   },
   amenityChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: Colors.PrimaryLight[6],
     borderRadius: BorderRadius.md,
   },
   amenityChipSelected: {
     backgroundColor: "#10b981",
   },
   amenityText: {
-    color: Colors.TextInverse[1],
     fontSize: Fontsize.sm,
   },
   amenityTextSelected: {
@@ -73,10 +70,8 @@ const s = StyleSheet.create({
     fontWeight: "600",
   },
   amenityDisplay: {
-    backgroundColor: Colors.PrimaryLight[8],
     padding: 10,
     borderRadius: BorderRadius.md,
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[1],
   },
 });

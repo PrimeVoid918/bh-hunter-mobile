@@ -34,7 +34,6 @@ export default function BookingRoomCard({ data }: BookingRoomCardInterface) {
           <Ionicons
             name="home"
             size={Fontsize.h1}
-            color={Colors.PrimaryLight[1]}
           />
           <Text style={[s.text_color, s.boardingHouse_name]}>
             {room?.roomNumber}

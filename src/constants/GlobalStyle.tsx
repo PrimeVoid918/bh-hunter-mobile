@@ -5,18 +5,16 @@ import { BorderWidth } from "./themes/border";
 export const GlobalStyle = StyleSheet.create({
   GlobalsContainer: {
     flex: 1,
-    backgroundColor: Colors.PrimaryLight[6],
   },
   GlobalsContentContainer: {
     justifyContent: "flex-start",
     alignItems: "stretch",
   },
   GlobalsColor: {
-    backgroundColor: Colors.PrimaryLight[6],
   },
 
   fontColor: {
-    color: Colors.Text[2],
+    // color: Colors.Text[2],
   },
   HeadingsFont: {
     fontFamily: "Baloo2",
@@ -33,11 +31,11 @@ export const GlobalStyle = StyleSheet.create({
 });
 
 export const GlobalBottomNavigationStyles = {
-  containerBackgroundColor: Colors.PrimaryLight[6],
-  containerIconColor: Colors.PrimaryLight[6],
-  containerIconActiveColor: Colors.PrimaryLight[2],
-  containerIconInactiveColor: Colors.PrimaryLight[3],
-  containerIconContainerColor: Colors.PrimaryLight[6],
+  // containerBackgroundColor: Colors.PrimaryLight[6],
+  // containerIconColor: Colors.PrimaryLight[6],
+  // containerIconActiveColor: Colors.PrimaryLight[2],
+  // containerIconInactiveColor: Colors.PrimaryLight[3],
+  // containerIconContainerColor: Colors.PrimaryLight[6],
   // containerIconHeightFromBottom: 0,
   containerIconHeightFromBottom: 40,
 
@@ -45,9 +43,9 @@ export const GlobalBottomNavigationStyles = {
   containerIconHeight: 60,
 
   iconBorderWidth: BorderWidth.xs,
-  iconBackgroundColor: Colors.PrimaryLight[7],
-  iconColorFocused: Colors.PrimaryLight[2],
-  iconColorNotFucused: Colors.PrimaryLight[5],
+  // iconBackgroundColor: Colors.PrimaryLight[7],
+  // iconColorFocused: Colors.PrimaryLight[2],
+  // iconColorNotFucused: Colors.PrimaryLight[5],
   iconHeight: 50,
   iconLiftHeightWhenFocused: -10,
   iconLiftHeightWhenNotFocused: 0,

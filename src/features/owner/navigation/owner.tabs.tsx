@@ -16,7 +16,7 @@ import { CustomTabIcon } from "@/components/layout/BottomNavBarStyleIcon";
 import PropertiesStack from "../screens/properties/navigation/properties.stack";
 import BookingStack from "@/features/owner/screens/booking/navigation/booking.stack";
 import DashboardStack from "../screens/dashboard/navigation/dashboard.stack";
-import NotificationMainScreen from "@/features/shared/notification.main.screen";
+import NotificationMainScreen from "@/features/shared/notification/notification.main.screen";
 import MenuStack from "@/features/shared/menu/navigation/menu.stack";
 import { MenuStackParamListArrayName } from "@/features/shared/menu/navigation/menu.stack.types";
 import { GlobalBottomNavigationStyles } from "@/constants/GlobalStyle";
@@ -32,6 +32,7 @@ export default function OwnerTabs() {
         console.log("Troute:", routeName);
 
         return {
+          lazy: false,
           tabBarStyle: {
             backgroundColor:
               GlobalBottomNavigationStyles.containerBackgroundColor,

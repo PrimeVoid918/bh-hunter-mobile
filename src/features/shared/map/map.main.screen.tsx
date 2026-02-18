@@ -105,7 +105,6 @@ export default function MapMainScreen() {
         enablePanDownToClose
         onClose={() => setDataSheet(null)} // 👈 reset
         enableDynamicSizing={false}
-        backgroundStyle={{ backgroundColor: Colors.PrimaryLight[8] }}
         style={
           {
             // zIndex: 20,
@@ -116,7 +115,7 @@ export default function MapMainScreen() {
           <View
             style={{
               // padding: Global,
-              backgroundColor: Colors.PrimaryLight[8],
+              // backgroundColor: Colors.
               flex: 1,
               alignItems: "flex-start",
             }}
@@ -153,7 +152,7 @@ export default function MapMainScreen() {
                     alignItems: "center",
                     justifyContent: "space-evenly",
                     gap: 10,
-                    backgroundColor: Colors.PrimaryLight[7],
+                    // backgroundColor: Colors.
                     borderRadius: 10,
                     padding: 10,
                   }}
@@ -178,7 +177,7 @@ export default function MapMainScreen() {
                     // borderWidth: 1,
                     padding: 10,
                     borderRadius: BorderRadius.md,
-                    backgroundColor: Colors.PrimaryLight[7],
+                    // backgroundColor: Colors.
                   }}
                 >
                   <Text style={[s.text_white, { marginBottom: 20 }]}>
@@ -205,7 +204,7 @@ const s = StyleSheet.create({
     position: "absolute",
     width: "90%",
     height: 50,
-    backgroundColor: Colors.PrimaryLight[7],
+    // backgroundColor: Colors.
     top: "5%",
     left: "5%",
     borderRadius: 10,
@@ -217,7 +216,7 @@ const s = StyleSheet.create({
   search_headerText: {
     // backgroundColor: "red",
     fontSize: Fontsize.lg,
-    color: Colors.PrimaryLight[8],
+    // color: Colors.
   },
   callout: {
     padding: 10,

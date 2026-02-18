@@ -68,7 +68,6 @@ export default function DecisionModal({
             height: 400,
             padding: Spacing.lg,
             borderRadius: BorderRadius.md,
-            backgroundColor: Colors.PrimaryLight[7],
           },
           containerStyle,
         ]}

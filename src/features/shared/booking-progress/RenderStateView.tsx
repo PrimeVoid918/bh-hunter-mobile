@@ -139,7 +139,7 @@ const s = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
 
-    backgroundColor: Colors.PrimaryLight[1],
+    // backgroundColor: Colors.
     shadowColor: "black",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 1,
@@ -150,10 +150,10 @@ const s = StyleSheet.create({
     flexDirection: "column",
     gap: Spacing.sm,
     padding: Spacing.sm,
-    backgroundColor: Colors.PrimaryLight[1],
+    // backgroundColor: Colors.
     borderRadius: BorderRadius.md,
 
-    shadowColor: Colors.PrimaryLight[10],
+    // shadowColor: Colors.
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 4.15,
     shadowRadius: 20,
@@ -175,12 +175,12 @@ const s = StyleSheet.create({
     alignSelf: "flex-start", // makes it shrink to text width
     paddingHorizontal: Spacing.sm, // your custom spacing
     paddingVertical: Spacing.xs,
-    backgroundColor: Colors.PrimaryLight[6],
+    // backgroundColor: Colors.
     justifyContent: "flex-end",
   },
 
   textColor: {
-    color: Colors.TextInverse[2],
+    // color: Colors.
     fontWeight: "900",
   },
 });

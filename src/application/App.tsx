@@ -11,6 +11,7 @@ import { GlobalDecisionModalProvider } from "@/components/ui/FullScreenDecisionM
 import { GlobalImageFullScreenProvider } from "../components/ui/ImageComponentUtilities/GlobalImageFullScreenProvider";
 import { PortalProvider, PortalHost } from "@gorhom/portal";
 import { GlobalEditStateContextSwitcherButtonsProvider } from "@/components/ui/Portals/GlobalEditStateContextSwitcherButtonsProvider";
+import { Provider as PaperProvider } from "react-native-paper";
 
 import { Linking } from "react-native";
 // import * as Linking from "expo-linking";
@@ -49,18 +50,20 @@ export default function App() {
       <GestureHandlerRootView style={{ flex: 1, position: "relative" }}>
         <Provider store={store}>
           <GluestackUIProvider config={config}>
-            <GlobalDecisionModalProvider>
-              <GlobalImageFullScreenProvider>
-                <GlobalDocumentFullScreenProvider>
-                  <GlobalEditStateContextSwitcherButtonsProvider>
-                    <RootNavigation />
-                    <PortalHost name="EditContextSwitchingPortal" />
-                    <PortalHost name="ImageFullScreenPortalRoot" />
-                    <PortalHost name="DocumentFullScreenPortalRoot" />
-                  </GlobalEditStateContextSwitcherButtonsProvider>
-                </GlobalDocumentFullScreenProvider>
-              </GlobalImageFullScreenProvider>
-            </GlobalDecisionModalProvider>
+            <PaperProvider>
+              <GlobalDecisionModalProvider>
+                <GlobalImageFullScreenProvider>
+                  <GlobalDocumentFullScreenProvider>
+                    <GlobalEditStateContextSwitcherButtonsProvider>
+                      <RootNavigation />
+                      <PortalHost name="EditContextSwitchingPortal" />
+                      <PortalHost name="ImageFullScreenPortalRoot" />
+                      <PortalHost name="DocumentFullScreenPortalRoot" />
+                    </GlobalEditStateContextSwitcherButtonsProvider>
+                  </GlobalDocumentFullScreenProvider>
+                </GlobalImageFullScreenProvider>
+              </GlobalDecisionModalProvider>
+            </PaperProvider>
           </GluestackUIProvider>
         </Provider>
       </GestureHandlerRootView>

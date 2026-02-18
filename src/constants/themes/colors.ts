@@ -25,6 +25,19 @@ export const Colors = {
     "#0A5054", // 9 - Very dark cyan
     "#052B2F", // 10 - Near-black cyan
   ],
+  whiteToBlack: [
+    "#FFFFFF", // 0 - pure white
+    "#E5E5E5", // 1 - very light gray
+    "#CCCCCC", // 2 - light gray
+    "#B2B2B2", // 3 - mid-light gray
+    "#999999", // 4 - medium gray
+    "#808080", // 5 - neutral gray
+    "#666666", // 6 - medium-dark gray
+    "#4D4D4D", // 7 - dark gray
+    "#333333", // 8 - very dark gray
+    "#1A1A1A", // 9 - near black
+    "#000000", // 10 - pure black
+  ],
 
   Secondary: "#FDD85D",
   SecondaryLight: "#FFF2C2",

@@ -95,9 +95,9 @@ const s = StyleSheet.create({
     paddingLeft: Spacing.sm,
     paddingRight: Spacing.sm,
     borderWidth: 2,
-    borderColor: Colors.PrimaryLight[5],
+    // borderColor: Colors.
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.PrimaryLight[6],
+    // backgroundColor: Colors.
   },
 
   textColor: {

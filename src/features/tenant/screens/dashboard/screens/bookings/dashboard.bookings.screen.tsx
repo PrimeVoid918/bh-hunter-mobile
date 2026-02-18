@@ -48,7 +48,7 @@ export default function DashboardBookingsScreen() {
     isLoading: isBookingArraysLoading,
     isError: isBookingArraysError,
     refetch,
-  } = useGetAllQuery({ tenantId: user.id, page: 1, limit: 15});
+  } = useGetAllQuery({ tenantId: user.id, page: 1, limit: 100});
   const books = React.useMemo(() => bookingArrays ?? [], [bookingArrays]);
   //! currently working for tenant side booking
   return (

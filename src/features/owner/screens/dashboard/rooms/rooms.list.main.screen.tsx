@@ -67,7 +67,6 @@ export default function RoomsListMainScreen({ route }) {
             }
             style={{
               marginLeft: "auto",
-              backgroundColor: Colors.PrimaryLight[2],
               borderRadius: BorderRadius.md,
               width: "15%",
               height: 60, // need some height to center vertically
@@ -103,9 +102,7 @@ const s = StyleSheet.create({
     paddingLeft: Spacing.sm,
     paddingRight: Spacing.sm,
     borderWidth: 2,
-    borderColor: Colors.PrimaryLight[1],
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.PrimaryLight[6],
   },
   item_cta_buttons: {
     paddingTop: Spacing.xs,
@@ -113,9 +110,7 @@ const s = StyleSheet.create({
     paddingLeft: Spacing.sm,
     paddingRight: Spacing.sm,
     borderWidth: 2,
-    borderColor: Colors.PrimaryLight[5],
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.PrimaryLight[6],
   },
 
   textColor: {

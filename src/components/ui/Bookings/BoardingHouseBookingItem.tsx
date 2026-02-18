@@ -87,7 +87,6 @@ const s = StyleSheet.create({
     overflow: "hidden",
     flexDirection: "row", // since you use HStack
     borderRadius: Spacing.md,
-    backgroundColor: Colors.PrimaryLight[8],
     // optional: height: 180,
   },
 
@@ -101,7 +100,6 @@ const s = StyleSheet.create({
     gap: 2,
   },
   ameneity_style_item: {
-    backgroundColor: Colors.PrimaryLight[100],
     borderRadius: Spacing.xs,
     paddingTop: Spacing.xs,
     paddingBottom: Spacing.xs,
@@ -111,24 +109,19 @@ const s = StyleSheet.create({
 
   generic_text_xs: {
     fontSize: Fontsize.xs,
-    color: Colors.TextInverse[1],
   },
   generic_text_sm: {
     fontSize: Fontsize.sm,
-    color: Colors.TextInverse[1],
   },
   generic_text_md: {
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[1],
     fontWeight: "900",
   },
   generic_text_lg: {
     fontSize: Fontsize.lg,
-    color: Colors.TextInverse[2],
   },
 
   textColor: {
-    color: Colors.TextInverse[2],
   },
 });
 

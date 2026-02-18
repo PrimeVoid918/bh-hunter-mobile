@@ -114,7 +114,7 @@ export const bookingApi = createApi({
         id,
         payload,
       }): { url: string; method: string; body: PatchApproveBookingInput } => ({
-        url: `${bookingApiRoute}/${id}/owner/approve`,
+        url: `${bookingApiRoute}/${id}/owners/approve`,
         method: "PATCH",
         body: payload,
       }),
@@ -130,7 +130,7 @@ export const bookingApi = createApi({
         id,
         payload,
       }): { url: string; method: string; body: PatchRejectBookingInput } => ({
-        url: `${bookingApi}/${id}/owner/reject`,
+        url: `${bookingApiRoute}/${id}/owners/reject`,
         method: "PATCH",
         body: payload,
       }),
@@ -179,7 +179,7 @@ export const bookingApi = createApi({
         id,
         payload,
       }): { url: string; method: string; body: PatchVerifyPaymentInput } => ({
-        url: `${bookingApiRoute}/${id}/owner/verify-payment`,
+        url: `${bookingApiRoute}/${id}/owners/verify-payment`,
         method: "PATCH",
         body: payload,
       }),

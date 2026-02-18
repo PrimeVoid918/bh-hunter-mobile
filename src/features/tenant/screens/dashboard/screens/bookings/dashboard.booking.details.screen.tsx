@@ -131,7 +131,7 @@ const s = StyleSheet.create({
   },
 
   Form_Input_Placeholder: {
-    backgroundColor: Colors.PrimaryLight[6],
+    // backgroundColor: Colors
     color: Colors.TextInverse[2],
     height: 200,
     fontSize: Fontsize.md,

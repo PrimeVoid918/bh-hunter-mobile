@@ -86,7 +86,6 @@ const s = StyleSheet.create({
     width: "100%",
     overflow: "hidden",
     flexDirection: "row",
-    backgroundColor: Colors.PrimaryLight[9],
     borderRadius: BorderRadius.md,
     height: 150,
   },
@@ -112,7 +111,6 @@ const s = StyleSheet.create({
   },
 
   textColor: {
-    color: Colors.TextInverse[2],
   },
   textSm: { fontSize: Fontsize.xs },
   textBold: {

@@ -266,7 +266,6 @@ export default function SignUpOwnerScreen() {
               width: "90%",
               padding: Spacing.lg,
               borderRadius: BorderRadius.md,
-              backgroundColor: Colors.PrimaryLight[7],
             }}
           >
             <Heading>
@@ -310,7 +309,6 @@ export default function SignUpOwnerScreen() {
 
 const s = StyleSheet.create({
   StaticScreenWrapper: {
-    backgroundColor: Colors.PrimaryLight[8],
   },
   container: {
     width: "90%",
@@ -324,13 +322,11 @@ const s = StyleSheet.create({
   },
   FormLabel: {
     fontSize: Fontsize.base,
-    color: Colors.TextInverse[1],
     padding: Spacing.sm,
   },
   FormTextInput: {
     fontSize: Fontsize.base,
     padding: Spacing.xs,
-    backgroundColor: Colors.PrimaryLight[2],
     margin: 0,
   },
 });
