@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { Button } from "@gluestack-ui/themed";
-import { Spacing } from "@/constants";
+import { View, StyleSheet } from "react-native";
+import { Text, Surface, Button, useTheme } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { BorderRadius, Spacing } from "@/constants";
 import {
   VerificationStatus,
   VerificationDocumentMetaData,
@@ -26,43 +26,16 @@ interface Props {
   onCompleteProfile?: () => void;
 }
 
-const statusConfig = {
-  VERIFIED: {
-    icon: "checkmark-circle",
-    color: "#34A853",
-    title: "Fully Verified",
-    subtitle: "Your account is fully verified.",
-  },
-  UNDER_REVIEW: {
-    icon: "time",
-    color: "#4285F4",
-    title: "Under Review",
-    subtitle: "Your documents are being reviewed.",
-  },
-  ACTION_REQUIRED: {
-    icon: "alert-circle",
-    color: "#FB8C00",
-    title: "Action Required",
-    subtitle: "Some documents need attention.",
-  },
-  INCOMPLETE: {
-    icon: "close-circle",
-    color: "#D93025",
-    title: "Incomplete",
-    subtitle: "Complete your verification to unlock full access.",
-  },
-};
-
 export default function VerificationStatusHeader({
   verified,
   verificationList,
   onCompleteProfile,
 }: Props) {
+  const theme = useTheme();
+
   const globalStatus: GlobalVerificationStatus = React.useMemo(() => {
     if (!verificationList) return "LOADING";
-
     const statuses = verificationList.map((d) => d.status);
-
     const hasMissing = statuses.includes("MISSING");
     const hasRejected = statuses.includes("REJECTED");
     const hasPending = statuses.includes("PENDING");
@@ -71,45 +44,123 @@ export default function VerificationStatusHeader({
     if (hasMissing) return "INCOMPLETE";
     if (hasPending) return "UNDER_REVIEW";
     if (verified) return "VERIFIED";
-
     return "INCOMPLETE";
   }, [verified, verificationList]);
 
-  if (globalStatus === "LOADING") return null;
+  const statusConfig = {
+    VERIFIED: {
+      icon: "check-decagram",
+      color: "#80CFA9", // Your Success color
+      bg: "#F0F9F4",
+      title: "Account Verified",
+      subtitle: "You have full access to BH-Hunter features.",
+    },
+    UNDER_REVIEW: {
+      icon: "clock-fast",
+      color: theme.colors.secondary,
+      bg: "#FFFBE6",
+      title: "Review in Progress",
+      subtitle: "We're checking your documents. Hang tight!",
+    },
+    ACTION_REQUIRED: {
+      icon: "alert-octagon",
+      color: theme.colors.error,
+      bg: theme.colors.errorContainer,
+      title: "Action Required",
+      subtitle: "Some documents were rejected. Please re-upload.",
+    },
+    INCOMPLETE: {
+      icon: "file-plus-outline",
+      color: theme.colors.outline,
+      bg: theme.colors.surfaceVariant,
+      title: "Verification Required",
+      subtitle: "Upload your ID to start matchmaking in Ormoc.",
+    },
+    LOADING: { icon: "", color: "", bg: "", title: "", subtitle: "" },
+  };
 
-  const header = statusConfig[globalStatus];
+  if (globalStatus === "LOADING") return null;
+  const config = statusConfig[globalStatus];
 
   return (
-    <View style={styles.container}>
-      <Ionicons name={header.icon} color={header.color} size={65} />
+    <Surface
+      elevation={0}
+      style={[
+        s.container,
+        { backgroundColor: config.bg, borderColor: config.color + "40",  },
+      ]}
+    >
+      <View style={[s.iconCircle, { backgroundColor: config.color + "20" }]}>
+        <MaterialCommunityIcons
+          name={config.icon as any}
+          color={config.color}
+          size={42}
+        />
+      </View>
 
-      <Text style={styles.title}>{header.title}</Text>
+      <Text
+        variant="headlineSmall"
+        style={[s.title, { color: theme.colors.onSurface }]}
+      >
+        {config.title}
+      </Text>
 
-      <Text style={styles.subtitle}>{header.subtitle}</Text>
+      <Text
+        variant="bodyMedium"
+        style={[s.subtitle, { color: theme.colors.onSurfaceVariant }]}
+      >
+        {config.subtitle}
+      </Text>
 
       {globalStatus === "INCOMPLETE" && onCompleteProfile && (
-        <Button style={{ marginTop: Spacing.sm }} onPress={onCompleteProfile}>
-          <Text style={{ color: "white" }}>Complete Profile</Text>
+        <Button
+          mode="contained-tonal"
+          onPress={onCompleteProfile}
+          style={s.button}
+          labelStyle={s.buttonLabel}
+          icon="account-edit-outline"
+        >
+          Complete Profile
         </Button>
       )}
-    </View>
+    </Surface>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     alignItems: "center",
-    paddingBottom: Spacing.lg,
-    gap: Spacing.sm,
+    padding: 24,
+    borderRadius: BorderRadius.md, // MD3 Large radius
+    borderWidth: 1,
+    marginBottom: 24,
+    marginHorizontal: 4,
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
   },
   title: {
-    color: "white",
-    fontSize: 26,
-    fontWeight: "600",
+    fontFamily: "Poppins-SemiBold",
+    textAlign: "center",
+    marginBottom: 4,
   },
   subtitle: {
-    color: "white",
-    opacity: 0.7,
+    fontFamily: "Poppins-Regular",
     textAlign: "center",
+    paddingHorizontal: 10,
+    lineHeight: 20,
+  },
+  button: {
+    marginTop: 16,
+    borderRadius: 12,
+  },
+  buttonLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 14,
   },
 });

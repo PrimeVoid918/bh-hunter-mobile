@@ -14,18 +14,17 @@ import {
   usePatchApproveBookingMutation,
   usePatchRejectBookingMutation,
 } from "@/infrastructure/booking/booking.redux.api";
-import Header from "@/components/ui/Header";
-import ScreenHeaderComponent from "../../../components/layout/ScreenHeaderComponent";
 import UserInformationCard from "@/components/ui/Information/UserInformatioCard";
 import { useGetOneQuery as useGetOneTenantQuery } from "@/infrastructure/tenants/tenant.redux.api";
 import { useGetOneQuery as useGetOneOwnerQuery } from "@/infrastructure/owner/owner.redux.api";
-import Container from "@/components/layout/Container/Container";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import BookingBHCard from "./BookingBHCard";
 import BookingRoomCard from "./BookingRoomCard";
-import Markdown from "react-native-markdown-display";
-import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import { GetBooking } from "@/infrastructure/booking/booking.schema";
+import { Icon, Surface, useTheme } from "react-native-paper";
+import PayMongoWebView from "./PaymongoWebView";
+import PlatformGuidelines from "./PlatformGuidelines";
+import BookingInfoBar from "./BookingInfoBar";
 
 type Role = "TENANT" | "OWNER";
 
@@ -46,8 +45,9 @@ export default function BookingStatusScreen({ route }) {
 
   const {
     data: bookingData,
-    isLoading: bookingLoading,
-    refetch: refetchBooking,
+    isLoading,
+    isError,
+    refetch,
   } = useGetAllQuery({ page: 1, bookId: bookId, limit: 15 });
   const booking = bookingData?.[0] as GetBooking;
 
@@ -73,103 +73,125 @@ export default function BookingStatusScreen({ route }) {
   const [createCheckout, { isLoading: isCheckOutLoading }] =
     useCreatePaymongoCheckoutMutation();
 
+  const [checkoutUrl, setCheckoutUrl] = React.useState<string | null>(null);
+  const [showWebView, setShowWebView] = React.useState(false);
   const handlePayNow = async () => {
     try {
       const response = await createCheckout({
         bookingId: booking!.id,
       }).unwrap();
-      const { checkoutUrl } = response;
 
-      // Redirect tenant to PayMongo checkout in WebView / external browser
-      console.log("check: ", checkoutUrl);
-      Linking.openURL(checkoutUrl);
+      // Instead of Linking.openURL, we trigger the WebView
+      setCheckoutUrl(response.checkoutUrl);
+      setShowWebView(true);
     } catch (error) {
       console.error("Failed to create PayMongo checkout:", error);
     }
   };
+  // const handlePayNow = async () => {
+  //   try {
+  //     const response = await createCheckout({
+  //       bookingId: booking!.id,
+  //     }).unwrap();
+  //     const { checkoutUrl } = response;
 
-  if (bookingLoading || !booking) {
-    return <FullScreenLoaderAnimated />;
-  }
-  console.log("bookinf data: ", booking);
+  //     // Redirect tenant to PayMongo checkout in WebView / external browser
+  //     console.log("check: ", checkoutUrl);
+  //     Linking.openURL(checkoutUrl);
+  //   } catch (error) {
+  //     console.error("Failed to create PayMongo checkout:", error);
+  //   }
+  // };
 
   const handlePageRefresh = () => {
     setRefreshing(true);
-    refetchBooking();
+    refetch();
     setRefreshing(false);
   };
 
+  const theme = useTheme();
+  if (isLoading || !booking) {
+    return <FullScreenLoaderAnimated />;
+  }
+
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-      wrapInScrollView={false}
+      variant="list"
+      style={
+        (GlobalStyle.GlobalsContainer,
+        {
+          paddingLeft: Spacing.md,
+          paddingRight: Spacing.md,
+          paddingTop: Spacing.md,
+          paddingBottom: 200,
+        })
+      }
+      contentContainerStyle={GlobalStyle.GlobalsContentContainer}
+      refreshing={refreshing}
+      onRefresh={handlePageRefresh}
+      loading={isLoading}
+      error={[isError ? "" : null]}
     >
-      {isCheckOutLoading && <FullScreenLoaderAnimated />}
-      <Container refreshing={refreshing} onRefresh={handlePageRefresh}>
-        <VStack style={[s.container]}>
-          <Text
-            style={[
-              s.text_color,
-              { fontSize: Fontsize.h1, fontWeight: "900", textAlign: "center" },
-            ]}
-          >
-            Reservation Status
-          </Text>
-          <BookingBHCard data={booking}></BookingBHCard>
-          <BookingRoomCard data={booking}></BookingRoomCard>
-          <Box
-            style={{ padding: 12, borderRadius: 8, backgroundColor: "#f0f0f0" }}
-          >
-            <Text style={{ fontWeight: "600" }}>
-              Booking Reference: {booking.reference}
-            </Text>
-            <Text>Status: {booking.status}</Text>
-            <Text>
-              Date Booked: {new Date(booking.checkInDate).toLocaleDateString()}
-            </Text>
-          </Box>
+      <VStack style={[s.container]}>
+        <Text
+          style={[
+            s.text_color,
+            { fontSize: Fontsize.h1, fontWeight: "900", textAlign: "center" },
+          ]}
+        >
+          Reservation Status
+        </Text>
+        <BookingBHCard data={booking}></BookingBHCard>
+        <BookingRoomCard data={booking}></BookingRoomCard>
 
-          <UserInformationCard user={userData} />
+        <BookingInfoBar data={booking} />
 
-          <Markdown style={customStyles}>
-            {`This platform is a matchmaking tool connecting tenants and boarding house owners.
-- Tenants compete to secure rooms and owners compete to attract tenants.
-- Booking through this system **only logs a reservation intent**.
-- Final arrangements, payments, and agreements occur directly between the tenant and owner.
-- Advance payments or guarantees can be done via the system (optional), but users may also transact externally at their discretion.`}
-          </Markdown>
-          <BookingDecisionBlock
-            booking={booking}
-            viewerRole={role}
-            onApprove={(message: string) =>
-              approveBooking({
-                id: bookId,
-                payload: { ownerId: userId, message: message },
-              }).then(refetchBooking)
-            }
-            onReject={(reason: string) =>
-              rejectBooking({
-                id: bookId,
-                payload: { ownerId: userId, reason: reason },
-              }).then(refetchBooking)
-            }
-            onCancel={(reason: string) =>
-              cancelBooking({
-                id: bookId,
-                payload: { userId, role: role, reason: reason },
-              }).then(refetchBooking)
-            }
-          />
-          <BookingPaymentBlock
-            booking={booking}
-            viewerRole={role}
-            // onUploadProof={handleUploadProof}
-            onPayNow={handlePayNow}
-            // onVerifyPayment={handleVerifyPayment}
-          />
-        </VStack>
-      </Container>
+        <UserInformationCard user={userData} />
+
+        <PlatformGuidelines />
+
+        <BookingDecisionBlock
+          booking={booking}
+          viewerRole={role}
+          onApprove={(message: string) =>
+            approveBooking({
+              id: bookId,
+              payload: { ownerId: userId, message: message },
+            }).then(refetch)
+          }
+          onReject={(reason: string) =>
+            rejectBooking({
+              id: bookId,
+              payload: { ownerId: userId, reason: reason },
+            }).then(refetch)
+          }
+          onCancel={(reason: string) =>
+            cancelBooking({
+              id: bookId,
+              payload: { userId, role: role, reason: reason },
+            }).then(refetch)
+          }
+        />
+        <BookingPaymentBlock
+          booking={booking}
+          viewerRole={role}
+          // onUploadProof={handleUploadProof}
+          onPayNow={handlePayNow}
+          // onVerifyPayment={handleVerifyPayment}
+        />
+      </VStack>
+      {checkoutUrl && (
+        <PayMongoWebView
+          visible={showWebView}
+          checkoutUrl={checkoutUrl}
+          onClose={() => setShowWebView(false)}
+          onSuccess={() => {
+            setShowWebView(false);
+            refetch(); // Refresh booking status immediately
+          }}
+          onCancel={() => setShowWebView(false)}
+        />
+      )}
     </StaticScreenWrapper>
   );
 }
@@ -179,32 +201,26 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignContent: "center",
     // borderWidth: 3,
-    padding: Spacing.base,
     gap: Spacing.base,
   },
 
   text_color: {
     color: Colors.TextInverse[2],
   },
+  infoSurface: {
+    padding: 16,
+    borderRadius: 20,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+  },
+  infoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
 });
-
-const customStyles = {
-  body: { color: "white" },
-  paragraph: { color: "white", lineHeight: 20 },
-  heading1: { color: "white", fontSize: 24 },
-  heading2: { color: "white", fontSize: 22 },
-  heading3: { color: "white", fontSize: 20 },
-  heading4: { color: "white", fontSize: 18 },
-  heading5: { color: "white", fontSize: 16 },
-  heading6: { color: "white", fontSize: 14 },
-  link: { color: "white", textDecorationLine: "underline" },
-  blockquote: { color: "white", fontStyle: "italic" },
-  list_item: { color: "white" },
-  strong: { color: "white", fontWeight: "bold" },
-  em: { color: "white", fontStyle: "italic" },
-  code_inline: { color: "white", backgroundColor: "#333" },
-  code_block: { color: "white", backgroundColor: "#333" },
-};
 
 // Two states
 //  ├ StatefulElement        #1 → Booking Decision

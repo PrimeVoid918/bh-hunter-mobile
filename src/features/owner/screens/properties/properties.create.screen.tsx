@@ -1,687 +1,311 @@
-import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
-import React, { useEffect } from "react";
-
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import {
-  Box,
-  Button,
-  FormControl,
-  Image,
-  Input,
-  InputField,
-  VStack,
-} from "@gluestack-ui/themed";
-import {
-  BorderRadius,
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-} from "@/constants";
-
+import React, { useEffect, useState, useCallback } from "react";
+import { View, StyleSheet, Alert, Pressable, ScrollView } from "react-native";
+import { Text, Button, useTheme, Divider, Chip } from "react-native-paper";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "@gluestack-ui/themed";
 
-// * Redux
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import { FormField } from "@/components/ui/FormFields/FormField";
+import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
+import PropertiesRoomCreate from "./components/properties.room.create";
+import PressableImagePicker from "@/components/ui/ImageComponentUtilities/PressableImagePicker";
+
+import { Spacing, BorderRadius, Fontsize } from "@/constants";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 import { useCreateMutation } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import {
-  BackendOccupancyType,
   CreateBoardingHouseInput,
   CreateBoardingHouseInputSchema,
   CreateBoardingHouseSchema,
-  OccupancyType,
   occupancyTypeOptions,
+  BackendOccupancyType,
 } from "@/infrastructure/boarding-houses/boarding-house.schema";
-
-import {
-  AMENITIES,
-  Amenity,
-} from "@/infrastructure/boarding-houses/boarding-house.constants";
-
-// * Routing
-import { usePropertyNavigation } from "./navigation/properties.navigation.hooks";
-import PropertiesRoomCreate from "./components/properties.room.create";
-import { ScrollView } from "react-native-gesture-handler";
-
+import { AMENITIES } from "@/infrastructure/boarding-houses/boarding-house.constants";
 import { pickImageExpo } from "@/infrastructure/image/image.service";
 import { expoStorageCleaner } from "@/infrastructure/utils/expo-utils/expo-utils.service";
-import { Ionicons } from "@expo/vector-icons";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
+import { usePropertyNavigation } from "./navigation/properties.navigation.hooks";
+import { AppImageFile } from "@/infrastructure/image/image.schema";
 
 export default function PropertiesCreateScreen() {
-  useEffect(() => {
-    return () => {
-      expoStorageCleaner(["images", "documents"]);
-    };
-  }, []);
-
+  const theme = useTheme();
   const propertyNavigation = usePropertyNavigation();
+  const { selectedUser } = useDynamicUserApi();
+  const [createBh, { isLoading }] = useCreateMutation();
+  const [isOccupancyOpen, setIsOccupancyOpen] = useState(false);
 
-  const [isActionSheetOpen, setIsActionSheetOpen] = React.useState(false);
-
-  const { selectedUser: data } = useDynamicUserApi();
-  const user = data;
-
-  const [createBh, { isLoading, isError: isCreateBhError }] =
-    useCreateMutation();
-  const [currentHeight, setCurrentHeight] = React.useState<number>(0);
-
-  // TODO: Abstract this later
-  const initialDefaultValues: Partial<CreateBoardingHouseInput> = {
-    name: "",
-    address: "",
-    description: "",
-    ownerId: user?.id ?? 0,
-    availabilityStatus: true,
-    occupancyType: "MIXED",
-    amenities: [],
-    thumbnail: [],
-    gallery: [],
-    location: {
-      type: "Point",
-      coordinates: [1, 1],
-    },
-    rooms: [],
-  };
+  useEffect(() => {
+    return () => expoStorageCleaner(["images", "documents"]);
+  }, []);
 
   const {
     control,
     handleSubmit,
     setValue,
-    watch,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<CreateBoardingHouseInput>({
     resolver: zodResolver(CreateBoardingHouseInputSchema) as any,
-    defaultValues: initialDefaultValues,
+    defaultValues: {
+      ownerId: selectedUser?.id ?? 0,
+      occupancyType: "MIXED",
+      availabilityStatus: false,
+      amenities: [],
+      thumbnail: [],
+      gallery: [],
+      location: { type: "Point", coordinates: [1, 1] },
+      rooms: [],
+    },
   });
-  const [availableAmenities, setAvailableAmenities] = React.useState<
-    Array<string>
-  >(
-    AMENITIES.filter(
-      (amenity) => !initialDefaultValues.amenities?.includes(amenity)
-    )
-  );
-  const selectedAmenities = watch("amenities") ?? [];
-  useEffect(() => {
-    setAvailableAmenities(
-      AMENITIES.filter((amenity) => !selectedAmenities.includes(amenity))
-    );
-  }, [selectedAmenities]);
 
-  const handleSelectAmenity = (item: string) => {
-    const update = [...(selectedAmenities || []), item] as Amenity[];
-    setValue("amenities", update);
-    setAvailableAmenities((prev) => prev.filter((a) => a !== item));
+  const selectedAmenities = watch("amenities") || [];
+  const thumbnailImage = watch("thumbnail")?.[0] as AppImageFile;
+
+  /* ------------------------- Image Logic ------------------------- */
+  const handlePickThumbnail = useCallback(
+    (image: AppImageFile) => {
+      setValue("thumbnail", [image], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    },
+    [setValue],
+  );
+
+  const handlePickGalleryImages = async () => {
+    const pick = await pickImageExpo(10);
+    if (pick?.length) setValue("gallery", pick);
   };
 
-  const handleRemoveAmenity = (item: string) => {
-    const update = (selectedAmenities || []).filter((a) => a !== item);
-    setValue("amenities", update as Amenity[]);
-    setAvailableAmenities((prev) => [...prev, item]);
+  const handleRemoveGalleryImage = (index: number) => {
+    const gallery = [...(getValues("gallery") ?? [])];
+    gallery.splice(index, 1);
+    setValue("gallery", gallery);
+  };
+
+  const toggleAmenity = (amenity: string) => {
+    const current = [...selectedAmenities];
+    const index = current.indexOf(amenity as any);
+    if (index > -1) current.splice(index, 1);
+    else current.push(amenity as any);
+    setValue("amenities", current);
   };
 
   const onSubmit = async (data: CreateBoardingHouseInput) => {
-    console.log("Submitting....");
-    if (!data.location.coordinates) {
-      alert("User ID is missing. Please log in.");
-      return;
-    }
-    if (
-      data.location.coordinates[0] === 1 &&
-      data.location.coordinates[1] === 1
-    ) {
-      alert("Please set valid location coordinates.");
-      return;
-    }
-
-    try {
-      const transformedData = CreateBoardingHouseSchema.parse({
-        ...data,
-        rooms:
-          data.rooms?.map((room) => ({
-            ...room,
-            maxCapacity: Number(room.maxCapacity),
-            price: Number(room.price),
-            tags: room.tags ?? [],
-            gallery: room.gallery ?? [],
-          })) || [],
-      });
-
-      await createBh(transformedData).unwrap();
-      propertyNavigation.navigate("PropertiesHome");
-    } catch (error) {
-      console.error("Submission error:", error);
-      alert(
-        "Failed to create boarding house: " + (error?.error || "Unknown error")
+    console.log("hit");
+    if (data.location.coordinates[0] === 1) {
+      return Alert.alert(
+        "Location Required",
+        "Please pin your property on the map.",
       );
     }
-  };
-
-  const handlePickThumbnailImage = async () => {
     try {
-      const picked = await pickImageExpo(1);
-      console.log("Picked images:", picked); // 👈 log this
-      if (picked && picked.length > 0) {
-        setValue("thumbnail", [picked[0]], { shouldValidate: true });
-      }
-    } catch (err) {
-      console.log("Pick error:", err);
-      Alert.alert("Error", "Invalid image file");
-    }
-  };
-  const handleRemoveThumbnailImage = () => {
-    setValue("thumbnail", []);
-  };
-
-  const handleRemoveGalleryImage = (indexToRemove: number) => {
-    const newGallery = [...(getValues("gallery") ?? [])]; // get current value
-    newGallery.splice(indexToRemove, 1); // remove item by index
-    setValue("gallery", newGallery); // update the form
-  };
-  const handlePickGalleryImages = async () => {
-    try {
-      const pick = await pickImageExpo(10);
-      if (pick && pick.length > 0) {
-        setValue("gallery", pick);
-      }
-    } catch (err) {
-      console.log(err);
-      Alert.alert("Error", "Invalid image file");
+      const transformed = CreateBoardingHouseSchema.parse({
+        ...data,
+        rooms:
+          data.rooms?.map((r) => ({
+            ...r,
+            maxCapacity: Number(r.maxCapacity),
+            price: Number(r.price),
+          })) || [],
+      });
+      await createBh(transformed).unwrap();
+      propertyNavigation.navigate("PropertiesHome");
+    } catch (e: any) {
+      Alert.alert("Error", e?.data?.message || "Check all required fields.");
     }
   };
 
   return (
-    <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer, s.main_container_style]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-    >
-      {isLoading && <FullScreenLoaderAnimated />}
-      <VStack space="md">
-        <Box>
-          <Pressable onPress={handlePickThumbnailImage}>
-            <Box
-              style={{
-                width: "75%",
-                height: 200,
-                borderRadius: 8,
-                backgroundColor: "#f0f0f0",
-                overflow: "hidden",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Controller
-                control={control}
-                name="thumbnail"
-                render={({ field: { value } }) => {
-                  const thumbnailImage =
-                    value && value.length > 0 ? value[0] : null;
-
-                  return (
-                    <>
-                      {thumbnailImage ? (
-                        <Image
-                          source={{
-                            uri: thumbnailImage.uri.startsWith("file://")
-                              ? thumbnailImage.uri
-                              : `file://${thumbnailImage.uri}`,
-                          }}
-                          style={{ width: "100%", height: "100%" }}
-                          alt="Thumbnail"
-                        />
-                      ) : (
-                        <Text style={{ color: "#888" }}>Tap to upload</Text>
-                      )}
-                    </>
-                  );
-                }}
-              />
-            </Box>
-          </Pressable>
-          <Pressable
-            onPress={handleRemoveThumbnailImage}
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 10,
-              borderRadius: BorderRadius.circle,
-              padding: 2,
-            }}
-          >
-            <Box>
-              <Ionicons name="close" color="white" size={15} />
-            </Box>
-          </Pressable>
-        </Box>
-
-        {/* Name */}
-        <FormControl isInvalid={!!errors.name}>
-          <FormControl.Label>
-            <Text style={[s.Form_Label]}>Property Name</Text>
-          </FormControl.Label>
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input borderColor="$coolGray400">
-                <InputField
-                  placeholder="Enter property name"
-                  onChangeText={onChange}
-                  style={[s.Form_Input_Placeholder]}
-                  onBlur={onBlur}
-                  value={value}
-                />
-              </Input>
-            )}
-          />
-          {errors.name && (
-            <Text style={{ color: "red" }}>{errors.name.message}</Text>
-          )}
-        </FormControl>
-
-        {/* Address */}
-        <FormControl isInvalid={!!errors.address}>
-          <FormControl.Label>
-            <Text style={[s.Form_Label]}>Address</Text>
-          </FormControl.Label>
-          <Controller
-            control={control}
-            name="address"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input borderColor="$coolGray400">
-                <InputField
-                  placeholder="Enter address"
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                  style={[s.Form_Input_Placeholder]}
-                />
-              </Input>
-            )}
-          />
-          {errors.address && (
-            <Text style={{ color: "red" }}>{errors.address.message}</Text>
-          )}
-        </FormControl>
-
-        {/* Description */}
-        <VStack>
-          <FormControl>
-            <FormControl.Label>
-              <Text style={[s.Form_Label]}>Description:</Text>
-            </FormControl.Label>
-            <Controller
-              control={control}
-              name="description"
-              rules={{
-                maxLength: {
-                  value: 500,
-                  message: "Description must be 500 characters or less",
-                },
-              }}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
-                <Input
-                  borderColor="$coolGray400"
-                  style={{
-                    height: currentHeight >= 0 ? "auto" : currentHeight, // Dynamic height
-                    // height: "auto", // Dynamic height
-                    paddingTop: 10,
-                    paddingBottom: 10,
-                    overflow: "scroll", // Ensure scrollbar appears
-                  }}
-                >
-                  <InputField
-                    numberOfLines={5}
-                    multiline={true}
-                    onContentSizeChange={(e) => {
-                      const newHeight = Math.min(
-                        e.nativeEvent.contentSize.height,
-                        120
-                      );
-                      setCurrentHeight(newHeight);
-                    }}
-                    style={[s.Form_Input_Placeholder]}
-                    placeholder="Enter Description of your property"
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    value={value}
-                  />
-                </Input>
-              )}
-            />
-          </FormControl>
-        </VStack>
-        {/* Occupancy Type */}
-        <VStack>
-          <FormControl isInvalid={!!errors.occupancyType}>
-            <FormControl.Label>
-              <Text style={[s.Form_SubLabel]}>OccupancyType Type</Text>
-            </FormControl.Label>
-
-            <Controller
-              control={control}
-              name="occupancyType"
-              rules={{ required: "BH Occupancy Type is required" }}
-              render={({ field: { onChange, value } }) => (
-                <View style={{ marginBottom: 10 }}>
-                  <Button onPress={() => setIsActionSheetOpen(true)}>
-                    <Text>{value || "Select Room Type"}</Text>
-                  </Button>
-
-                  {errors?.occupancyType && (
-                    <Text style={{ color: "red", marginTop: 4 }}>
-                      {errors.occupancyType.message}
-                    </Text>
-                  )}
-
-                  {value && (
-                    <Text
-                      style={{
-                        color: Colors.TextInverse[2],
-                        fontSize: Fontsize.md,
-                        marginTop: 6,
-                        textAlign: "center",
-                      }}
-                    >
-                      Selected: {value}
-                    </Text>
-                  )}
-                </View>
-              )}
-            />
-          </FormControl>
-        </VStack>
-
-        {/* image selection */}
-        <VStack>
-          <VStack>
-            <Pressable
-              onPress={handlePickGalleryImages}
-              style={{
-                padding: Spacing.sm,
-                alignSelf: "flex-start",
-                borderRadius: BorderRadius.md,
-              }}
-            >
-              <Text style={[s.generic_text, { fontSize: Fontsize.md }]}>
-                Select Images
-              </Text>
-            </Pressable>
-            <Controller
-              control={control}
-              name="gallery"
-              render={({ field: { value } }) => {
-                const galleryImage = value || [];
-
-                return (
-                  <>
-                    <ScrollView
-                      horizontal
-                      style={{
-                        width: "100%",
-                        height: 100,
-                        marginTop: 10,
-                        marginBottom: 10,
-                      }}
-                      contentContainerStyle={{
-                        marginTop: 10,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 8,
-                      }}
-                    >
-                      {galleryImage.length > 0 ? (
-                        galleryImage.map((image, index) => (
-                          <View key={index}>
-                            <Image
-                              source={{
-                                uri: image.uri.startsWith("file://")
-                                  ? image.uri
-                                  : `file://${image.uri}`,
-                              }}
-                              style={{
-                                width: 100,
-                                height: 100,
-                                borderRadius: 8,
-                                marginRight: 8,
-                                backgroundColor: "#ccc",
-                              }}
-                              alt={`Gallery image ${index + 1}`}
-                            />
-                            <Pressable
-                              onPress={() => handleRemoveGalleryImage(index)}
-                              style={{
-                                position: "absolute",
-                                top: "0%",
-                                right: "9%",
-                              }}
-                            >
-                              <Ionicons
-                                name="close-circle"
-                                size={20}
-                                color="white"
-                              />
-                            </Pressable>
-                          </View>
-                        ))
-                      ) : (
-                        <Text style={{ color: "white" }}>
-                          No Images Selected
-                        </Text>
-                      )}
-                    </ScrollView>
-                  </>
-                );
-              }}
-            />
-          </VStack>
-        </VStack>
-
-        {/* Amenities */}
-        <VStack
-          style={{
-            gap: Spacing.md,
-            borderWidth: 1,
-            padding: Spacing.sm,
-            borderRadius: BorderRadius.md,
-          }}
-        >
-          {/* Section Title */}
-          <Text style={[s.Form_Label]}>Amenities</Text>
-
-          {/* Available Amenities Label */}
-          <Text style={[s.Form_SubLabel]}>Tap to select:</Text>
-          <ScrollView
-            style={{ height: 150 }}
-            contentContainerStyle={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-start",
-              alignContent: "flex-start",
-            }}
-          >
-            {availableAmenities.map((item, index) => (
-              <Pressable key={index} onPress={() => handleSelectAmenity(item)}>
-                <Box
-                  style={{
-                    borderRadius: BorderRadius.md,
-                    padding: 5,
-                  }}
-                >
-                  <Text style={[s.generic_text]}>{item}</Text>
-                </Box>
-              </Pressable>
-            ))}
-          </ScrollView>
-
-          {/* Selected Amenities Label */}
-          <Text style={[s.Form_SubLabel, { marginTop: Spacing.md }]}>
-            Selected Amenities:
-          </Text>
-
-          <ScrollView
-            style={{ height: 150 }}
-            contentContainerStyle={{
-              gap: 10,
-              padding: Spacing.sm,
-            }}
-          >
-            {selectedAmenities.length ? (
-              selectedAmenities.map((item, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => handleRemoveAmenity(item)}
-                >
-                  <Box
-                    style={{
-                      borderRadius: BorderRadius.md,
-                      padding: 5,
-                    }}
-                  >
-                    <Text style={[s.generic_text]}>{item}</Text>
-                  </Box>
-                </Pressable>
-              ))
-            ) : (
-              <Text style={[s.generic_text]}>No amenities selected</Text>
-            )}
-          </ScrollView>
-        </VStack>
-
-        {/* Location */}
-        <VStack>
-          <Controller
-            control={control}
-            name="location.coordinates"
-            render={({ field: { value } }) => (
-              <Pressable
-                style={{
-                  borderRadius: BorderRadius.md,
-                  padding: 5,
-                }}
-                onPress={() => {
-                  propertyNavigation.navigate("PropertyLocationPicker", {
-                    onSelect: (coords: {
-                      latitude: number;
-                      longitude: number;
-                    }) => {
-                      setValue(
-                        "location.coordinates",
-                        [coords.longitude, coords.latitude],
-                        { shouldValidate: true }
-                      );
-                    },
-                  });
-                }}
-              >
-                <Text style={[s.Form_Label]}>Set Location</Text>
-                {value && value[0] !== 1 && value[1] !== 1 ? (
-                  <Text style={[s.generic_text]}>
-                    {value[0]}, {value[1]}
-                  </Text>
-                ) : (
-                  <Text style={[s.generic_text]}>No location selected</Text>
-                )}
-              </Pressable>
-            )}
-          />
-          {errors.location?.coordinates && (
-            <Text style={{ color: "red" }}>
-              {errors.location.coordinates.message}
-            </Text>
-          )}
-        </VStack>
-
-        {/* Rooms */}
-        <Controller
-          name="rooms"
-          control={control}
-          render={({ field }) => (
-            <PropertiesRoomCreate
-              rooms={field.value || []}
-              setRooms={(newRooms) => {
-                setValue("rooms", newRooms, { shouldValidate: true });
-              }}
-            />
-          )}
+    <StaticScreenWrapper variant="form" loading={isLoading}>
+      <View style={s.root}>
+        {/* 1. HERO THUMBNAIL (Using your stable Picker) */}
+        <PressableImagePicker
+          image={thumbnailImage}
+          pickImage={handlePickThumbnail}
+          removeImage={() => setValue("thumbnail", [])}
         />
 
-        {/* Submit Button */}
-        <View style={{ marginBottom: Spacing.xxl }}>
-          <FormControl>
-            <Pressable
-              onPress={() => {
-                console.log("Clicked the submit...");
-                console.log("Current form rooms:", watch("rooms"));
-                console.log("Current form errors:", errors);
-                handleSubmit(onSubmit)();
-              }}
-              style={{
-                backgroundColor: "#1E90FF",
-                padding: 12,
-                borderRadius: 8,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: "white", fontWeight: "bold" }}>
-                Submit -
-              </Text>
-            </Pressable>
-          </FormControl>
+        {/* 2. TITLE SECTION */}
+        <View style={s.headerMeta}>
+          <View style={{ flex: 1 }}>
+            <FormField
+              name="name"
+              control={control}
+              isEditing={true}
+              placeholder="Property Name"
+              textStyle={s.titleText}
+              inputStyle={s.titleText}
+            />
+          </View>
         </View>
-        <BottomSheetSelector<BackendOccupancyType>
-          options={occupancyTypeOptions}
-          isOpen={isActionSheetOpen}
-          onClose={() => setIsActionSheetOpen(false)}
-          onSelect={(value) => {
-            setValue("occupancyType", value);
-            setIsActionSheetOpen(false);
-          }}
+
+        <Divider />
+
+        {/* 3. CORE DETAILS */}
+        <View style={s.section}>
+          <FormField
+            name="address"
+            control={control}
+            isEditing
+            label="Street Address"
+            prefix="📍 "
+          />
+          <FormField
+            name="description"
+            control={control}
+            isEditing
+            inputType="paragraph"
+            label="About Property"
+          />
+
+          <View style={s.rowGap}>
+            <Button
+              mode="outlined"
+              icon="account-multiple"
+              style={s.selector}
+              onPress={() => setIsOccupancyOpen(true)}
+            >
+              Tenant: {watch("occupancyType")}
+            </Button>
+            <Button
+              mode="outlined"
+              icon="map-search"
+              style={s.selector}
+              onPress={() =>
+                propertyNavigation.navigate("PropertyLocationPicker", {
+                  onSelect: (c) =>
+                    setValue("location.coordinates", [c.longitude, c.latitude]),
+                })
+              }
+            >
+              Update Map Pin
+            </Button>
+          </View>
+        </View>
+
+        {/* 4. GALLERY SECTION */}
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <Text variant="titleMedium" style={s.sectionTitle}>
+              Gallery
+            </Text>
+            <Pressable onPress={handlePickGalleryImages}>
+              <Text style={{ color: theme.colors.primary, fontWeight: "bold" }}>
+                Add Images
+              </Text>
+            </Pressable>
+          </View>
+
+          <Controller
+            control={control}
+            name="gallery"
+            render={({ field: { value } }) => (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {value?.map((image, index) => (
+                  <View key={index} style={s.galleryItem}>
+                    <Image
+                      source={{ uri: image.uri }}
+                      style={s.galleryImage}
+                      alt="Gallery"
+                    />
+                    <Pressable
+                      onPress={() => handleRemoveGalleryImage(index)}
+                      style={s.galleryRemove}
+                    >
+                      <Ionicons name="close-circle" size={22} color="white" />
+                    </Pressable>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          />
+        </View>
+
+        {/* 5. AMENITIES */}
+        <View style={s.section}>
+          <Text variant="titleMedium" style={s.sectionTitle}>
+            Amenities
+          </Text>
+          <View style={s.chipGroup}>
+            {AMENITIES.map((item) => (
+              <Chip
+                key={item}
+                selected={selectedAmenities.includes(item as any)}
+                onPress={() => toggleAmenity(item)}
+                style={s.chip}
+                showSelectedCheck
+                mode="outlined"
+              >
+                {item}
+              </Chip>
+            ))}
+          </View>
+        </View>
+
+        <Divider />
+
+        {/* 6. ROOMS SUB-FORM */}
+        <PropertiesRoomCreate
+          rooms={watch("rooms") || []}
+          setRooms={(val) => setValue("rooms", val, { shouldValidate: true })}
         />
-      </VStack>
+
+        <Button
+          mode="contained"
+          onPress={handleSubmit(onSubmit, (err) => {
+            console.log("❌ Validation Failed:", JSON.stringify(err, null, 2));
+            Alert.alert(
+              "Form Error",
+              "Please check all fields and ensure at least one image is selected.",
+            );
+          })}
+          style={s.submitBtn}
+          loading={isLoading}
+        >
+          Publish Boarding House
+        </Button>
+      </View>
+
+      <BottomSheetSelector<BackendOccupancyType>
+        options={occupancyTypeOptions}
+        isOpen={isOccupancyOpen}
+        onClose={() => setIsOccupancyOpen(false)}
+        onSelect={(v) => {
+          setValue("occupancyType", v);
+          setIsOccupancyOpen(false);
+        }}
+      />
     </StaticScreenWrapper>
   );
 }
 
 const s = StyleSheet.create({
-  main_container_style: {
-    padding: Spacing.md,
-  },
-  generic_text: {
-    color: Colors.TextInverse[2],
-  },
-  Form_Label: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.xxl,
-    marginBottom: 6,
-  },
-  Form_SubLabel: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.xl,
-    marginBottom: 6,
-  },
-  Form_Input_Placeholder: {
-    color: Colors.TextInverse[2],
-    fontSize: Fontsize.md,
-  },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    height: "100%",
-    width: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // semi-transparent dark background
-    justifyContent: "center",
+  root: { padding: Spacing.md, gap: Spacing.lg },
+  headerMeta: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
+  titleText: { fontSize: Fontsize.h1, fontWeight: "900" },
+  locationRow: {
+    flexDirection: "row",
     alignItems: "center",
-    zIndex: 1000, // ensure it's above everything
+    gap: 4,
+    marginTop: -4,
   },
+  section: { gap: Spacing.md },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  sectionTitle: { fontWeight: "bold" },
+  rowGap: { gap: Spacing.sm },
+  selector: { borderRadius: BorderRadius.md, justifyContent: "flex-start" },
+  chipGroup: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: { borderRadius: BorderRadius.pill },
+  galleryItem: { marginRight: 12, position: "relative" },
+  galleryImage: { width: 120, height: 120, borderRadius: BorderRadius.md },
+  galleryRemove: { position: "absolute", top: 4, right: 4 },
+  submitBtn: { marginTop: Spacing.xl, borderRadius: BorderRadius.pill },
+  submitContent: { paddingVertical: 10 },
 });

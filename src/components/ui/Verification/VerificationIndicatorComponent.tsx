@@ -1,73 +1,118 @@
-import { View, Text, StyleSheet } from "react-native";
 import React from "react";
-import { VStack } from "@gluestack-ui/themed";
-import { Ionicons } from "@expo/vector-icons";
-import { BorderRadius, Colors, Spacing } from "@/constants";
+import { StyleSheet, View, Platform } from "react-native";
+import {
+  Text,
+  Surface,
+  TouchableRipple,
+  Icon,
+  useTheme,
+} from "react-native-paper";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback"; // Added
+import { BorderRadius, Spacing, BorderWidth } from "@/constants";
+import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 
-interface VerificationIndicatorComponentProps {
+interface Props {
   isVerified: boolean;
+  onPress: () => void;
 }
 
-export default function VerificationIndicatorComponent({
-  isVerified,
-}: VerificationIndicatorComponentProps) {
-  // const [isVerified, setIsVerified] = React.useState(false);
+export default function VerificationIndicator({ isVerified, onPress }: Props) {
+  const theme = useTheme();
+  const { selectedUser } = useDynamicUserApi();
+  if (!selectedUser) {
+    return <Text>Loading user...</Text>;
+  }
+  const role = selectedUser.role;
 
-  const iconFontSize = 35;
-
-  const colorConfig = {
-    verifiedIcon: "#6a994e", // fallback to green
-    unverifiedIcon: "#e5383b", // fallback to red
-    bgVerified: "#386641", // fallback to green
-    bgUnverified: "#841416", // fallback to red
+  const handlePress = () => {
+    ReactNativeHapticFeedback.trigger("impactLight", {
+      enableVibrateFallback: true,
+      ignoreAndroidSystemSettings: false,
+    });
+    onPress();
   };
 
+  const config = isVerified
+    ? {
+        bg: theme.colors.primaryContainer,
+        text: theme.colors.onPrimaryContainer,
+        icon: "shield-check",
+        label: `Verified ${role == "OWNER" ? "Tenant" : "Owner"}`,
+        desc: "Identity confirmed",
+      }
+    : {
+        bg: theme.colors.errorContainer,
+        text: theme.colors.error,
+        icon: "shield-alert-outline",
+        label: "Unverified Account",
+        desc: "Tap to verify identity",
+      };
+
   return (
-    <View
+    <Surface
+      elevation={isVerified ? 0 : 1}
       style={[
-        s.container,
+        s.surface,
         {
-          backgroundColor: isVerified
-            ? colorConfig.bgVerified
-            : colorConfig.bgUnverified,
+          backgroundColor: config.bg,
+          borderRadius: BorderRadius.md,
+          borderWidth: isVerified ? 0 : BorderWidth.xs,
+          borderColor: theme.colors.error,
         },
       ]}
     >
-      <Ionicons
-        name={isVerified ? "checkmark-circle" : "close-circle"}
-        size={iconFontSize}
-        color={
-          isVerified ? colorConfig.verifiedIcon : colorConfig.unverifiedIcon
-        }
-      />
-      <VStack>
-        <Text
-          style={[
-            s.text,
-            { fontSize: iconFontSize * 0.6, color: colorConfig.text },
-          ]}
-        >
-          {isVerified ? "Verified" : "Unverified"}
-        </Text>
-      </VStack>
-    </View>
+      <TouchableRipple
+        onPress={handlePress}
+        style={s.ripple}
+        rippleColor="rgba(0,0,0,0.08)"
+        borderless={true}
+      >
+        <View style={s.content}>
+          <Icon source={config.icon} size={28} color={config.text} />
+
+          <View style={s.textContainer}>
+            <Text
+              variant="labelLarge"
+              style={[s.title, { color: config.text }]}
+            >
+              {config.label}
+            </Text>
+            <Text
+              variant="bodySmall"
+              style={[s.subtitle, { color: config.text }]}
+            >
+              {config.desc}
+            </Text>
+          </View>
+
+          <Icon source="chevron-right" size={20} color={config.text} />
+        </View>
+      </TouchableRipple>
+    </Surface>
   );
 }
 
 const s = StyleSheet.create({
-  container: {
-    // borderWidth: 5,
-    borderRadius: BorderRadius.md,
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.sm,
-    paddingLeft: Spacing.md,
-    paddingRight: Spacing.md,
-    gap: Spacing.sm,
+  surface: {
+    marginVertical: Spacing.sm,
+    overflow: "hidden",
   },
-  text: {
-    color: Colors.TextInverse[2],
+  ripple: {
+    padding: Spacing.base,
+  },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  title: {
+    fontFamily: "Poppins-Medium",
+  },
+  subtitle: {
+    fontFamily: "Poppins-Regular",
+    opacity: 0.8,
   },
 });

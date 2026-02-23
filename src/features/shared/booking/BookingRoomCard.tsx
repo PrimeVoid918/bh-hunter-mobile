@@ -1,68 +1,45 @@
-import { View, Text, StyleSheet } from "react-native";
 import React from "react";
+import { View, StyleSheet } from "react-native";
+import { Text, Surface, Avatar, useTheme } from "react-native-paper";
 import { GetBooking } from "@/infrastructure/booking/booking.schema";
-import { BorderRadius, Colors, Fontsize } from "@/constants";
-import ImageFullScreenModal from "@/components/ui/ImageComponentUtilities/ImageFullScreenModal";
-import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
-import { Ionicons } from "@expo/vector-icons";
-import { HStack } from "@gluestack-ui/themed";
+import { BorderRadius, Spacing } from "@/constants";
 
-interface BookingRoomCardInterface {
-  data: GetBooking;
-}
-
-export default function BookingRoomCard({ data }: BookingRoomCardInterface) {
+export default function BookingRoomCard({ data }: { data: GetBooking }) {
+  const theme = useTheme();
   const { room } = data;
 
-  if (!room) {
-    return <Text>Loading...</Text>;
-  }
   return (
-    <View style={[s.container]}>
-      <View>
-        <PressableImageFullscreen
-          image={room?.thumbnail?.[0] ?? null}
-          containerStyle={{ width: "100%", aspectRatio: 2 }}
-          imageStyleConfig={{
-            resizeMode: "cover",
-            containerStyle: { borderRadius: BorderRadius.md },
-          }}
-        />
+    <Surface style={s.container} elevation={0}>
+      <Avatar.Image
+        size={60}
+        source={{ uri: room?.thumbnail?.[0]?.uri }}
+        style={s.avatar}
+      />
+      <View style={s.content}>
+        <Text variant="labelLarge" style={{ color: theme.colors.primary }}>
+          Room Details
+        </Text>
+        <Text variant="titleLarge" style={s.roomNum}>
+          Room {room?.roomNumber}
+        </Text>
+        <Text variant="bodyMedium">
+          ₱{room?.price?.toLocaleString()} / month
+        </Text>
       </View>
-      <View style={[s.floating_container]}>
-        <HStack>
-          <Ionicons
-            name="home"
-            size={Fontsize.h1}
-          />
-          <Text style={[s.text_color, s.boardingHouse_name]}>
-            {room?.roomNumber}
-          </Text>
-        </HStack>
-      </View>
-    </View>
+    </Surface>
   );
 }
 
 const s = StyleSheet.create({
   container: {
-    borderWidth: 1,
-    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: "rgba(255,255,255,0.05)", // Tonal background
+    marginBottom: 16,
   },
-
-  floating_container: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    borderWidth: 2,
-  },
-
-  boardingHouse_name: {
-    fontSize: Fontsize.h2,
-    fontWeight: "900",
-  },
-
-  text_color: {
-    color: Colors.TextInverse[2],
-  },
+  avatar: { backgroundColor: "#ccc" },
+  content: { marginLeft: 16 },
+  roomNum: { fontWeight: "bold" },
 });

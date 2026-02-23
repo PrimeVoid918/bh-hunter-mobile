@@ -3,7 +3,6 @@ import React from "react";
 import { Box, Button, VStack } from "@gluestack-ui/themed";
 import {
   useGetOneQuery,
-  useGetPaymentProofQuery,
   usePatchApproveBookingMutation,
   usePatchRejectBookingMutation,
   usePatchVerifyPaymentMutation,
@@ -13,8 +12,6 @@ import { BorderRadius, Colors, Fontsize, Spacing } from "@/constants";
 import RenderStateView from "../RenderStateView";
 import useOwnertBookingProgress from "./config";
 import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
-import DecisionModal from "@/components/ui/DecisionModal";
-import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
 import FullScreenLoaderAnimated from "../../../../components/ui/FullScreenLoaderAnimated";
 
@@ -65,7 +62,6 @@ export default function OwnerBookingProgress({
   const [rejectAction] = usePatchRejectBookingMutation();
   const [verifyPaymentAction, { isLoading: isVerifyPaymentActionLoading }] =
     usePatchVerifyPaymentMutation(); // ← MUST be here
-  const { showModal } = useDecisionModal();
   // const {} = use
 
   if (!completedState) {
@@ -176,7 +172,6 @@ export default function OwnerBookingProgress({
   // 4. RENDER
   return (
     <View style={[s.container]}>
-      <DecisionModal visible={isMessageBoxVisible} />
       {isIMageDataLoading &&
         isApproveActionLoading &&
         isVerifyPaymentActionLoading &&

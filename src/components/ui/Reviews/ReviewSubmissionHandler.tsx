@@ -1,19 +1,23 @@
-import { View, Text, Pressable, Alert } from "react-native";
 import React from "react";
-import { Box, HStack, VStack } from "@gluestack-ui/themed";
-import { StyleSheet } from "react-native";
-import { BorderRadius, Colors, Fontsize, Spacing } from "@/constants";
+import { View, StyleSheet, Alert } from "react-native";
+import {
+  Text,
+  Button,
+  useTheme,
+  Surface,
+  IconButton,
+} from "react-native-paper";
+import { Spacing, Colors, Fontsize, BorderRadius } from "@/constants";
 import { Review } from "@/infrastructure/reviews/reviews.schema";
 import { ReviewInputMode } from "./types";
 import { CreateReviewComponent } from "./CraeteReviewComponent";
 import EditReviewComponent from "./EditReviewComponent";
-import FormStateActionsButton from "../Buttons/FormStateActionsButton";
 import ReviewItem from "./ReviewItem";
 import { useDeleteMutation } from "@/infrastructure/reviews/reviews.redux.api";
 
 interface ReviewSubmissionHandlerInterface {
   boardingHouseId?: number;
-  myReview?: Review; // undefined = no review yet
+  myReview?: Review;
   starFilledColor: string;
   starHollowedColor: string;
   onReviewChange?: () => void;
@@ -26,204 +30,156 @@ export default function ReviewSubmissionHandler({
   starHollowedColor,
   onReviewChange,
 }: ReviewSubmissionHandlerInterface) {
+  const theme = useTheme();
   const [mode, setMode] = React.useState<ReviewInputMode>("creating");
+  const [deleteReview] = useDeleteMutation();
 
   React.useEffect(() => {
-    if (myReview) {
-      setMode("viewing");
-    } else {
-      // If there is no review, we should be in creating mode
-      setMode("creating");
-    }
+    setMode(myReview ? "viewing" : "creating");
   }, [myReview]);
 
-  console.log("mode: ", mode);
-
-  const [rating, setRating] = React.useState(myReview?.rating ?? 0);
-  const [comment, setComment] = React.useState(myReview?.comment ?? "");
-
-  const [deleteReview, { isLoading: isDeleting }] = useDeleteMutation();
-
-  function handleDelete() {
+  const handleDelete = () => {
     if (!myReview?.id) return;
-
     Alert.alert(
       "Delete Review?",
-      "This will permanently remove your feedback. Are you sure?",
+      "This feedback will be removed permanently.",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
-          style: "destructive", // On iOS, this turns the button text red
+          style: "destructive",
           onPress: async () => {
             try {
-              // 2. Execute the mutation
               await deleteReview({
                 id: myReview.id,
                 boardingHouseId: myReview.boardingHouseId,
               }).unwrap();
-
-              Alert.alert("Deleted", "Your review has been removed.", [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    // 3. Switch back to creating mode so they can write a new one
-                    setMode("creating");
-                    onReviewChange?.();
-                  },
-                },
-              ]);
+              onReviewChange?.();
             } catch (e: any) {
-              const errorMessage =
-                e?.data?.message || "Could not delete review.";
-              Alert.alert("Delete Failed", errorMessage);
+              Alert.alert("Error", e?.data?.message || "Failed to delete.");
             }
           },
         },
       ],
     );
-  }
+  };
 
   return (
-    <VStack style={[s.container]}>
+    <View style={s.root}>
       {mode === "creating" && (
-        <VStack style={{ gap: Spacing.lg }}>
-          <VStack style={[s.creating]}>
-            <Text style={[s.text_color, s.state_header]}>
-              Your feedback helps others choose the right place.
-            </Text>
-            <Text style={[s.text_color, s.state_subHeader]}>
-              Write a quick review.
-            </Text>
-          </VStack>
-          <CreateReviewComponent
-            boardingHouseId={boardingHouseId!}
-            starFilledColor={starFilledColor}
-            starHollowedColor={starHollowedColor}
-            onSubmitSuccess={() => {
-              setMode("viewing");
-              onReviewChange?.();
-            }}
-            onCancel={() => setMode("creating")}
-          />
-        </VStack>
+        <View style={s.centerContent}>
+          <Text variant="titleMedium" style={s.headerText}>
+            How was your stay?
+          </Text>
+          <Text variant="bodyMedium" style={s.subHeaderText}>
+            Share your experience to help others find a home.
+          </Text>
+          <View style={s.formWrapper}>
+            <CreateReviewComponent
+              boardingHouseId={boardingHouseId!}
+              starFilledColor={starFilledColor}
+              starHollowedColor={starHollowedColor}
+              onSubmitSuccess={() => {
+                setMode("viewing");
+                onReviewChange?.();
+              }}
+              onCancel={() => setMode("creating")}
+            />
+          </View>
+        </View>
       )}
 
       {mode === "editing" && myReview && (
-        <VStack style={{ gap: Spacing.lg }}>
-          <VStack style={[s.editing]}>
-            <VStack style={[s.editing]}>
-              <Text style={[s.text_color, s.state_header]}>
-                Modify your review.
-              </Text>
-              <Text style={[s.text_color, s.state_subHeader]}>
-                Your updates help keep the community informed.
-              </Text>
-            </VStack>
-
+        <View style={s.centerContent}>
+          <Text variant="titleMedium" style={s.headerText}>
+            Update your review
+          </Text>
+          <View style={s.formWrapper}>
             <EditReviewComponent
               initialReview={myReview}
               onCancel={() => setMode("viewing")}
-              onSubmitSuccess={() => setMode("viewing")}
+              onSubmitSuccess={() => {
+                setMode("viewing");
+                onReviewChange?.();
+              }}
               starFilledColor={starFilledColor}
               starHollowedColor={starHollowedColor}
             />
-          </VStack>
-        </VStack>
+          </View>
+        </View>
       )}
 
       {mode === "viewing" && myReview && (
-        <VStack style={[s.view]}>
-          <Text
-            style={[s.text_color, { fontSize: Fontsize.lg, fontWeight: "900" }]}
-          >
-            Your Review
-          </Text>
-          <View style={{ gap: 12 }}>
-            <ReviewItem
-              review={myReview}
-              starFilledColor={starFilledColor}
-              starHollowedColor={starHollowedColor}
-            />
-
-            {/* Actions */}
-            <HStack style={{ gap: Spacing.md, marginLeft: "auto" }}>
-              <FormStateActionsButton
-                label="Edit"
-                variant="primary"
-                onPress={() => setMode("editing")}
-              />
-
-              <FormStateActionsButton
-                label="Delete"
-                variant="danger"
+        <Surface
+          mode="flat" // Forces the MD3 engine to stop adding tinted overlays
+          elevation={4}
+          style={s.userReviewCard}
+        >
+          <View style={s.cardHeader}>
+            <Text variant="labelLarge" style={{ color: theme.colors.primary }}>
+              Your Review
+            </Text>
+            <View style={s.actionRow}>
+              <Button compact mode="text" onPress={() => setMode("editing")}>
+                Edit
+              </Button>
+              <Button
+                compact
+                mode="text"
+                textColor={theme.colors.error}
                 onPress={handleDelete}
-              />
-            </HStack>
+              >
+                Delete
+              </Button>
+            </View>
           </View>
-        </VStack>
+          <ReviewItem
+            review={myReview}
+            starFilledColor={starFilledColor}
+            starHollowedColor={starHollowedColor}
+          />
+        </Surface>
       )}
-    </VStack>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  view: {},
-  editing: {
-    justifyContent: "center",
+  root: {
+    marginVertical: Spacing.md,
+  },
+  centerContent: {
     alignItems: "center",
+    paddingHorizontal: Spacing.md,
   },
-  creating: {
-    justifyContent: "center",
-    alignItems: "center",
-    // borderWidth: 3,
-  },
-
-  state_header: {
-    // borderWidth: 3,
-    fontSize: Fontsize.h2,
-    fontWeight: "900",
-    textAlign: "center",
-    width: "90%",
-  },
-
-  state_subHeader: {
-    fontSize: Fontsize.md,
-    fontWeight: "900",
-    textAlign: "center",
-  },
-
-  container: {
-    marginTop: Spacing.lg,
-    justifyContent: "center",
-    // align
-    borderRadius: BorderRadius.sm,
-    // padding: Spacing.sm,
-  },
-
-  text_color: {
+  headerText: {
+    fontWeight: "700",
     color: Colors.TextInverse[1],
+    textAlign: "center",
+  },
+  subHeaderText: {
+    color: Colors.TextInverse[1],
+    opacity: 0.7,
+    textAlign: "center",
+    marginBottom: Spacing.md,
+  },
+  formWrapper: {
+    width: "100%",
+  },
+  userReviewCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: "rgba(255,255,255,0.05)", // Subtle surface for dark mode
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
+  },
+  actionRow: {
+    flexDirection: "row",
   },
 });
-
-/**
- * (no review)
- *  └── idle
- *        └── tap "Write a review"
- *              └── creating
- *                    ├── submit → viewing
- *                    └── cancel → idle
- *
- *(has review)
- *  └── viewing
- *        ├── tap "Edit" → editing
- *        └── tap "Delete" → idle
- *
- *(editing)
- *  ├── save → viewing
- *  └── cancel → viewing
- *
- */

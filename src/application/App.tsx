@@ -6,63 +6,59 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { store } from "./store/stores";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
-import Purchases from "react-native-purchases";
-import { GlobalDecisionModalProvider } from "@/components/ui/FullScreenDecisionModal";
 import { GlobalImageFullScreenProvider } from "../components/ui/ImageComponentUtilities/GlobalImageFullScreenProvider";
 import { PortalProvider, PortalHost } from "@gorhom/portal";
 import { GlobalEditStateContextSwitcherButtonsProvider } from "@/components/ui/Portals/GlobalEditStateContextSwitcherButtonsProvider";
-import { Provider as PaperProvider } from "react-native-paper";
+import { Provider as PaperProvider, MD3LightTheme } from "react-native-paper";
 
 import { Linking } from "react-native";
 // import * as Linking from "expo-linking";
 import GlobalDocumentFullScreenProvider from "@/components/ui/DocumentComponentUtilities/GlobalDocumentFullScreenProvider";
+import theme from "./config/react-native-paper.config";
+import * as Font from "expo-font";
+import { useFonts } from "expo-font";
+import fonts from "@/constants/themes/fonts";
 
 export default function App() {
-  // Initialize RevenukeCat
-  // useEffect(() => {
-  //   Purchases.configure({
-  //     apiKey: "YOUR_REVENUECAT_PUBLIC_API_KEY",
-  //     appUserID: null, // optional
-  //   });
-
-  //   // Enable debug logs in dev builds
-  //   if (__DEV__) {
-  //     Purchases.setDebugLogsEnabled(true);
-  //     console.log("RevenueCat debug logs enabled");
-  //   }
-  // }, []);
+  const [fontsLoaded] = useFonts(fonts);
 
   // LogBox.ignoreAllLogs(true);
   React.useEffect(() => {
     const sub = Linking.addEventListener("url", (event) => {
-      console.log("Deep link received:", event.url);
+      console.log("Returned to app with:", event.url);
 
       if (event.url.includes("payment-success")) {
-        // Refetch booking state here
+        console.log("Payment flow finished");
+        // Navigate or refetch booking
+      }
+
+      if (event.url.includes("payment-cancel")) {
+        console.log("Payment cancelled");
       }
     });
 
     return () => sub.remove();
   }, []);
 
+  if (!fontsLoaded) {
+    return null; // or splash screen
+  }
+
   return (
     <PortalProvider>
       <GestureHandlerRootView style={{ flex: 1, position: "relative" }}>
         <Provider store={store}>
           <GluestackUIProvider config={config}>
-            <PaperProvider>
-              <GlobalDecisionModalProvider>
-                <GlobalImageFullScreenProvider>
-                  <GlobalDocumentFullScreenProvider>
-                    <GlobalEditStateContextSwitcherButtonsProvider>
-                      <RootNavigation />
-                      <PortalHost name="EditContextSwitchingPortal" />
-                      <PortalHost name="ImageFullScreenPortalRoot" />
-                      <PortalHost name="DocumentFullScreenPortalRoot" />
-                    </GlobalEditStateContextSwitcherButtonsProvider>
-                  </GlobalDocumentFullScreenProvider>
-                </GlobalImageFullScreenProvider>
-              </GlobalDecisionModalProvider>
+            <PaperProvider theme={theme}>
+              <GlobalImageFullScreenProvider>
+                <GlobalDocumentFullScreenProvider>
+                  <GlobalEditStateContextSwitcherButtonsProvider>
+                    <RootNavigation />
+                    <PortalHost name="ImageFullScreenPortalRoot" />
+                    <PortalHost name="DocumentFullScreenPortalRoot" />
+                  </GlobalEditStateContextSwitcherButtonsProvider>
+                </GlobalDocumentFullScreenProvider>
+              </GlobalImageFullScreenProvider>
             </PaperProvider>
           </GluestackUIProvider>
         </Provider>

@@ -43,7 +43,6 @@ import {
   RoomTypeLabels,
   roomTypeOptions,
 } from "../../../../../infrastructure/room/rooms.schema";
-import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import {
   Box,
   FormControl,
@@ -72,7 +71,6 @@ export default function RoomsDetailsScreen({ route }) {
   const { boardingHouseId, roomId } = route.params;
 
   const isFocused = useIsFocused();
-  const { showModal } = useDecisionModal();
   const [isActionSheetRoomTypeOpen, setIsActionSheetRoomTypeOpen] =
     React.useState(false);
   const [isActionSheetFurnishingOpen, setIsActionSheetFurnishingOpen] =

@@ -1,187 +1,130 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
 import React, { useState } from "react";
-import { Box, VStack } from "@gluestack-ui/themed";
-import { ScrollView } from "react-native-gesture-handler";
-import z from "zod";
-
-// form hook
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { PropertiesRoomCreateProps } from "../types/property.types";
-import { Colors, Fontsize, Spacing } from "@/constants";
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import {
-  CreateRoomInput,
-  CreateRoomInputSchema,
-} from "../../../../../infrastructure/room/rooms.schema";
-import PropertiesRoomCreateModal from "./properties.room.create.modal";
+import { View, StyleSheet, Pressable, ScrollView } from "react-native";
+import { Text, Button, Card, Avatar, useTheme, IconButton } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
+
+import PropertiesRoomCreateModal from "./properties.room.create.modal";
+import { Spacing, BorderRadius, Fontsize } from "@/constants";
+import { CreateRoomInput } from "@/infrastructure/room/rooms.schema";
+import { PropertiesRoomCreateProps } from "../types/property.types";
 
 export default function PropertiesRoomCreate({
   rooms,
   setRooms,
 }: PropertiesRoomCreateProps) {
+  const theme = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingRoomIndex, setEditingRoomIndex] = useState<number | null>(null);
-  // const [editingRoomData, setEditingRoomData] =
-  //   useState<CreateRoomInput | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const initialDefaultValues: CreateRoomInput = {
-    roomNumber: "",
-    maxCapacity: 0,
-    price: 0.0,
-    tags: [],
-    gallery: [],
-    thumbnail: [],
+  const handleOpenAdd = () => {
+    setEditingIndex(null);
+    setModalVisible(true);
   };
 
-  const {
-    formState: { errors },
-  } = useForm<z.infer<typeof CreateRoomInputSchema>>({
-    resolver: zodResolver(CreateRoomInputSchema) as any,
-    defaultValues: initialDefaultValues,
-  });
+  const handleOpenEdit = (index: number) => {
+    setEditingIndex(index);
+    setModalVisible(true);
+  };
 
-  const normalizedRooms = rooms.map((room) => ({
-    ...room,
-    tags: room.tags ?? [], // ensure it's always an array
-    gallery: room.gallery ?? [], // ensure it's always an array
-  }));
+  const handleRemove = (index: number) => {
+    const updated = [...rooms];
+    updated.splice(index, 1);
+    setRooms(updated);
+  };
 
   return (
-    <StaticScreenWrapper>
-      <VStack>
-        <View
-          style={{
-            borderBottomColor: "#bbb", // line color
-            borderBottomWidth: 1, // line thickness
-            marginVertical: 10, // spacing around the line
-          }}
-        />
-        {/* Modal */}
-        <PropertiesRoomCreateModal
-          visible={modalVisible}
-          initialData={
-            editingRoomIndex !== null
-              ? {
-                  ...normalizedRooms[editingRoomIndex],
-                  index: editingRoomIndex,
-                }
-              : undefined
-          }
-          onClose={() => {
-            setModalVisible(false);
-            setEditingRoomIndex(null);
-          }}
-          onSubmit={(roomData, index) => {
-            const normalizedRoom = {
-              ...roomData,
-              tags: roomData.tags ?? [],
-              gallery: roomData.gallery ?? [],
-            };
-
-            if (index !== undefined) {
-              const updatedRooms = [...rooms];
-              updatedRooms[index] = normalizedRoom;
-              setRooms(updatedRooms);
-            } else {
-              setRooms([...rooms, normalizedRoom]);
-            }
-
-            setModalVisible(false);
-            setEditingRoomIndex(null);
-          }}
-        />
-
-        <Text style={[s.Form_Label]}>Add Rooms</Text>
-        <View style={{ alignItems: "flex-start", marginBottom: Spacing.lg }}>
-          <Pressable
-            style={({ pressed }) => ({
-              padding: 10,
-              borderRadius: 10,
-              opacity: pressed ? 0.8 : 1,
-              flexDirection: "row",
-              gap: 10,
-            })}
-            onPress={() => {
-              setEditingRoomIndex(null); // this means ADD
-              // setEditingRoomData(null); // start fresh
-              setModalVisible(true);
-              console.log("Modal visible?", modalVisible);
-            }}
-          >
-            <Text style={[s.generic_text, { fontSize: Fontsize.md }]}>
-              Add Room
-            </Text>
-            <Ionicons name="add" size={20} color="white" />
-          </Pressable>
-        </View>
-        <ScrollView
-          style={{ height: 175 }}
-          contentContainerStyle={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-start",
-            alignContent: "flex-start",
-          }}
+    <View style={s.container}>
+      <View style={s.header}>
+        <Text variant="titleMedium" style={{ fontWeight: "bold" }}>
+          Property Rooms
+        </Text>
+        <Button
+          mode="contained-tonal"
+          icon="plus"
+          onPress={handleOpenAdd}
+          compact
         >
-          {rooms &&
-            rooms.map((room, index) => (
-              <Pressable
-                key={index}
-                onPress={() => {
-                  setEditingRoomIndex(index); // mark which room
-                  // setEditingRoomData(room); // pass in initial values
-                  setModalVisible(true);
-                }}
-              >
-                <RoomItem roomItem={room} />
-              </Pressable>
-            ))}
-        </ScrollView>
-      </VStack>
-    </StaticScreenWrapper>
-  );
-}
+          Add Room
+        </Button>
+      </View>
 
-function RoomItem({ roomItem }: { roomItem: CreateRoomInput }) {
-  return (
-    <Box
-      style={{
-        borderColor: "red",
-        borderWidth: 3,
-        borderRadius: 8,
-        padding: 10,
-        aspectRatio: 3 / 4,
-        height: 175,
-      }}
-    >
-      <Text style={[s.generic_text]}>{roomItem.roomNumber}</Text>
-      <Text style={[s.generic_text]}>{roomItem.price}</Text>
-      <Text style={[s.generic_text]}>{roomItem.maxCapacity}</Text>
-    </Box>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.listContent}
+      >
+        {rooms.length === 0 ? (
+          <View style={s.emptyState}>
+            <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+              No rooms added yet.
+            </Text>
+          </View>
+        ) : (
+          rooms.map((room, index) => (
+            <Card
+              key={index}
+              style={s.roomCard}
+              onPress={() => handleOpenEdit(index)}
+            >
+              <Card.Title
+                title={`Room ${room.roomNumber}`}
+                subtitle={`₱${room.price} • ${room.maxCapacity} Pax`}
+                left={(props) => (
+                  <Avatar.Icon
+                    {...props}
+                    icon={room.thumbnail?.[0] ? "door-open" : "home-outline"}
+                    size={40}
+                  />
+                )}
+                right={(props) => (
+                  <IconButton
+                    {...props}
+                    icon="close-circle"
+                    onPress={() => handleRemove(index)}
+                  />
+                )}
+              />
+            </Card>
+          ))
+        )}
+      </ScrollView>
+
+      <PropertiesRoomCreateModal
+        visible={modalVisible}
+        initialData={editingIndex !== null ? rooms[editingIndex] : undefined}
+        onClose={() => setModalVisible(false)}
+        onSubmit={(data) => {
+          if (editingIndex !== null) {
+            const updated = [...rooms];
+            updated[editingIndex] = data;
+            setRooms(updated);
+          } else {
+            setRooms([...rooms, data]);
+          }
+          setModalVisible(false);
+        }}
+      />
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  generic_text: {
-    color: Colors.TextInverse[2],
+  container: { marginTop: Spacing.md },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
   },
-  Form_Label: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.xxl,
-    marginBottom: 6,
-  },
-  Form_SubLabel: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.xl,
-    marginBottom: 6,
-  },
-  Form_Input_Placeholder: {
-    color: Colors.TextInverse[2],
-    fontSize: Fontsize.md,
+  listContent: { gap: 12, paddingBottom: 8 },
+  roomCard: { width: 200, borderRadius: BorderRadius.md },
+  emptyState: {
+    width: "100%",
+    padding: 20,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#ccc",
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
   },
 });

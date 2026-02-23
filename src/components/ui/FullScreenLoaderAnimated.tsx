@@ -1,31 +1,33 @@
-import { View, StyleSheet, ColorValue } from "react-native";
 import React from "react";
-import { Spinner } from "@gluestack-ui/themed";
+import { StyleSheet, View, ColorValue } from "react-native";
+import { Portal, ActivityIndicator } from "react-native-paper";
 
-interface FullScreenLoaderAnimatedProps {
+interface FullScreenLoaderProps {
+  visible?: boolean;
   spinnerColor?: ColorValue;
 }
 
 export default function FullScreenLoaderAnimated({
+  visible = true,
   spinnerColor = "white",
-}: FullScreenLoaderAnimatedProps) {
+}: FullScreenLoaderProps) {
+  if (!visible) return null;
+
   return (
-    <View style={styles.overlay}>
-      <Spinner size="large" color={spinnerColor} />
-    </View>
+    <Portal>
+      <View style={styles.overlay}>
+        <ActivityIndicator size="large" color={spinnerColor} />
+      </View>
+    </Portal>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    height: "100%",
-    width: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // semi-transparent dark background
+    ...StyleSheet.absoluteFillObject, // fills the entire screen
+    backgroundColor: "rgba(0,0,0,0.5)", // semi-transparent
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000, // ensure it's above everything
+    zIndex: 1000, // ensure on top
   },
 });

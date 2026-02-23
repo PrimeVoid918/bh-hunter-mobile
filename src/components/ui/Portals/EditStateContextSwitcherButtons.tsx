@@ -1,7 +1,6 @@
 import { Alert, View, StyleSheet, Pressable, Text } from "react-native";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import { Colors, Spacing } from "@/constants";
 
 interface EditStateContextSwitcherButtonsProps {}

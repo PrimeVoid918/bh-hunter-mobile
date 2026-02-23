@@ -149,6 +149,7 @@ export const CreateRoomInputSchema = z.object({
   roomType: RoomTypeEnumSchema,
   furnishingType: RoomFurnishingEnumSchema.optional(),
   tags: z.array(z.string()).default([]),
+  availabilityStatus: z.boolean().default(false),
   gallery: z
     .array(
       z.object({

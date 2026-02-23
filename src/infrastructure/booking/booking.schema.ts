@@ -21,6 +21,7 @@ export const BookingStatusEnum = z.enum([
   "CANCELLED_BOOKING", //🔴
   "REJECTED_BOOKING", //🔴
   "COMPLETED_BOOKING", //🟢
+  "PAYMENT_FAILED",
 ]);
 
 type BookingStatus = z.infer<typeof BookingStatusEnum>;
@@ -35,32 +36,38 @@ const statusMap: Record<BookingStatus, StatusMetadata> = {
   PENDING_REQUEST: {
     label: "Pending Request",
     color: "#EAB308", // Yellow
-    description: "Waiting for owner's response",
+    description: "Waiting for the owner to accept your request.",
   },
   AWAITING_PAYMENT: {
     label: "Awaiting Payment",
-    color: "#F97316", // Orange
-    description: "Owner approved! Please pay the fee",
+    color: "#3B82F6", // Blue (Changed to blue to indicate "Action Required")
+    description: "Request approved! Pay now to secure your spot.",
   },
   PAYMENT_APPROVAL: {
     label: "Verifying Payment",
     color: "#F97316", // Orange
-    description: "We are confirming your payment",
+    description: "We're confirming your payment. This won't take long!",
+  },
+  PAYMENT_FAILED: {
+    label: "Payment Failed",
+    color: "#B91C1C", // Dark Red
+    description:
+      "Something went wrong. Please try again or use another method.",
   },
   CANCELLED_BOOKING: {
     label: "Cancelled",
-    color: "#EF4444", // Red
-    description: "Booking was cancelled",
+    color: "#6B7280", // Gray (Neutral color for inactive/closed states)
+    description: "This booking has been cancelled.",
   },
   REJECTED_BOOKING: {
-    label: "Rejected",
-    color: "#EF4444", // Red
-    description: "Owner declined the request",
+    label: "Declined",
+    color: "#EF4444", // Light Red
+    description: "The owner declined this request.",
   },
   COMPLETED_BOOKING: {
-    label: "Booked",
+    label: "Confirmed",
     color: "#22C55E", // Green
-    description: "Room is secured!",
+    description: "You're all set! The room is secured.",
   },
 };
 
@@ -205,6 +212,7 @@ export type GetBooking = z.infer<typeof GetBookingSchema>;
 export const QueryBookingSchema = z.object({
   bookId: z.number().optional(),
   tenantId: z.number().optional(),
+  ownerId: z.number().optional(),
   roomId: z.number().optional(),
   boardingHouseId: z.number().optional(),
   status: BookingStatusEnum.optional(),

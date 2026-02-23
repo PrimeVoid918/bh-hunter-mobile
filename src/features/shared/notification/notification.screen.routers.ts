@@ -36,11 +36,12 @@ export const verificationRoute = (route: string) => {
 };
 
 export const bookingRoute = (route: string, notification: GetNotification) => {
+  console.log("booking id passed: ", notification);
   navigationRef.navigate("Dashboard" as any, {
     screen: "DashboardBookingStack", // first level inside DashboardStack
     params: {
       screen: "DashboardBookingStatusScreen", // second level inside DashboardBookingStack
-      params: { bookId: notification.data.bookId! }, // payload for your screen
+      params: { bookId: notification.data.bookingId! }, // payload for your screen
     },
   });
 };

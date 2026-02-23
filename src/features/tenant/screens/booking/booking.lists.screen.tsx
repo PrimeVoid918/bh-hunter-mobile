@@ -1,42 +1,35 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
 import React, { useState, useCallback, useEffect } from "react";
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import { View, StyleSheet } from "react-native";
 import {
-  BorderRadius,
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-} from "@/constants";
-import { Box, Image, VStack } from "@gluestack-ui/themed";
-import { useGetAllQuery as useGetAllBoardingHouses } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
-import {
-  // GetBoardingHouse,
-  QueryBoardingHouse,
-} from "@/infrastructure/boarding-houses/boarding-house.schema";
-import { ScrollView } from "react-native-gesture-handler";
-import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+  Text,
+  Button,
+  useTheme,
+  ActivityIndicator,
+  Searchbar,
+} from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { TenantTabsParamList } from "../../navigation/tenant.tabs.types";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
-import HeaderSearch from "@/components/layout/HeaderSearch";
 import { useDispatch, useSelector } from "react-redux";
-import genericSearchBarSlice, {
-  setQuery,
-  setResults,
-} from "../../../../infrastructure/redux-utils/genericSearchBar.slice";
-import { RootState } from "@/application/store/stores";
-import useDebounce from "@/infrastructure/utils/debounc.hook";
-import ComponentLoaderAnimated from "@/components/ui/ComponentLoaderAnimated";
+
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import PropertyCard from "@/components/ui/BoardingHouseItems/PropertyCard";
 import { Lists } from "@/components/layout/Lists/Lists";
 
-export default function BookingListsScreen() {
-  const navigation =
-    useNavigation<BottomTabNavigationProp<TenantTabsParamList>>();
+import { Spacing, BorderRadius } from "@/constants";
+import { useGetAllQuery as useGetAllBoardingHouses } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
+import { QueryBoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.schema";
+import {
+  setQuery,
+  setResults,
+} from "@/infrastructure/redux-utils/genericSearchBar.slice";
+import { RootState } from "@/application/store/stores";
+import useDebounce from "@/infrastructure/utils/debounc.hook";
 
+export default function BookingListsScreen() {
+  const theme = useTheme();
   const dispatch = useDispatch();
+  const navigation = useNavigation<any>();
+
+  // Redux search state
   const searchQuery = useSelector(
     (state: RootState) => state.genericSearch.query,
   );
@@ -44,154 +37,124 @@ export default function BookingListsScreen() {
     (state: RootState) => state.genericSearch.results,
   );
 
-  const [filters, setFilters] = useState<QueryBoardingHouse>({
-    minPrice: 1500,
-  });
-  const [page, setPage] = useState(1); // current page
+  // Pagination & Data state
+  const [page, setPage] = useState(1);
   const [allBoardingHouses, setAllBoardingHouses] = useState<
     QueryBoardingHouse[]
   >([]);
-  const offset = 10; // items per page
+  const offset = 10;
 
   const {
     data: boardinghousesPage,
-    isLoading: isBoardingHousesLoading,
-    isError: isBoardingHousesError,
+    isLoading,
+    isFetching, // isFetching is true on every page change
+    isError,
   } = useGetAllBoardingHouses({
-    ...filters,
+    minPrice: 1500,
     page,
     offset,
   });
 
+  // Handle data appending for pagination
   useEffect(() => {
-    if (!boardinghousesPage) return;
-    setAllBoardingHouses((prev) => [...prev, ...boardinghousesPage]);
+    if (boardinghousesPage && boardinghousesPage.length > 0) {
+      setAllBoardingHouses((prev) => {
+        // Prevent duplicate IDs if the API or local state gets messy
+        const existingIds = new Set(prev.map((item) => item.id));
+        const newItems = boardinghousesPage.filter(
+          (item) => !existingIds.has(item.id),
+        );
+        return [...prev, ...newItems];
+      });
+    }
   }, [boardinghousesPage]);
 
-  const debouncedQuery = useDebounce(searchQuery, 150);
+  // Debounced search logic
+  const debouncedQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
     const query = (debouncedQuery || "").toLowerCase();
-
     const filtered = allBoardingHouses.filter((bh) =>
       bh.name?.toLowerCase().includes(query),
     );
-
     dispatch(setResults(filtered));
   }, [debouncedQuery, allBoardingHouses, dispatch]);
 
   const handleGotoPress = (id: number) => {
-    // console.log("handleGotoPress", id);
     navigation.navigate("Booking", {
       screen: "BoardingHouseDetails",
-      params: { id: id, fromMaps: true },
+      params: { id, fromMaps: true },
     });
+  };
+
+  const loadMore = () => {
+    if (!isFetching && boardinghousesPage?.length === offset) {
+      setPage((prev) => prev + 1);
+    }
   };
 
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-      wrapInScrollView={false}
+      variant="form" // Using form variant to avoid internal scroll conflicts
+      loading={isLoading && page === 1}
+      style={{ backgroundColor: theme.colors.background }}
     >
-      {isBoardingHousesError && <FullScreenErrorModal />}
-      <VStack style={[styles.container]}>
-        <HeaderSearch
+      <View style={s.container}>
+        {/* M3 Search Bar */}
+        <Searchbar
           placeholder="Search boarding houses"
-          value={searchQuery}
-          setValue={(val) => {
-            dispatch(setQuery(val));
-          }}
-          containerStyle={{
-            // backgroundColor: Colors.
-            borderRadius: 10,
-            paddingLeft: 5,
-            paddingRight: 5,
-
-            zIndex: 10,
-          }}
+          value={searchQuery || ""}
+          onChangeText={(val) => dispatch(setQuery(val))}
+          style={s.searchBar}
+          mode="bar"
         />
-        {isBoardingHousesLoading && <ComponentLoaderAnimated />}
+
         <Lists
-          list={searchResults.map((item) => item)}
-          contentContainerStyle={[styles.list_container]}
+          list={searchResults}
+          contentContainerStyle={s.listContent}
+          onEndReached={loadMore} // Logic for infinite scroll
           renderItem={({ item }) => (
             <PropertyCard data={item}>
-              <Pressable
+              <Button
+                mode="contained-tonal"
                 onPress={() => handleGotoPress(item.id ?? 0)}
-                style={{
-                  padding: Spacing.sm,
-                  borderWidth: 2,
-                  // borderColor: Colors.
-                  borderRadius: BorderRadius.lg,
-                  // backgroundColor: Colors.
-                }}
+                labelStyle={{ fontWeight: "bold" }}
               >
-                <Text style={{ color: "white" }}>Details</Text>
-              </Pressable>
+                View Details
+              </Button>
             </PropertyCard>
           )}
           ListFooterComponent={
-            boardinghousesPage?.length &&
-            boardinghousesPage.length >= offset ? (
-              <Pressable
-                onPress={() => setPage((prev) => prev + 1)}
-                style={{
-                  padding: 12,
-                  // backgroundColor: Colors.
-                  borderRadius: BorderRadius.md,
-                  alignItems: "center",
-                  marginVertical: 10,
-                }}
-              >
-                <Text
-                  style={{ color: Colors.TextInverse[2], fontWeight: "bold" }}
-                >
-                  Show More
-                </Text>
-              </Pressable>
+            isFetching ? (
+              <ActivityIndicator style={{ marginVertical: 20 }} />
+            ) : boardinghousesPage?.length === offset ? (
+              <Button mode="text" onPress={loadMore} style={s.loadMoreBtn}>
+                Load More
+              </Button>
             ) : null
           }
         />
-      </VStack>
+      </View>
     </StaticScreenWrapper>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     padding: Spacing.md,
+  },
+  searchBar: {
+    marginBottom: Spacing.md,
+    elevation: 0,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: BorderRadius.lg,
+  },
+  listContent: {
+    paddingBottom: 100,
     gap: Spacing.md,
   },
-  list_container: {
-    gap: Spacing.md,
-  },
-
-  generic_text: {
-    color: Colors.TextInverse[2],
-  },
-  Item_Label: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.xl,
-    marginBottom: 6,
-    flexWrap: "wrap",
-    // flexShrink: 1,
-  },
-  Item_SubLabel: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.lg,
-    marginBottom: 6,
-  },
-  Item_Normal: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.md,
-  },
-  Item_Input_Placeholder: {
-    color: Colors.TextInverse[2],
-    fontSize: Fontsize.md,
+  loadMoreBtn: {
+    marginVertical: Spacing.md,
   },
 });

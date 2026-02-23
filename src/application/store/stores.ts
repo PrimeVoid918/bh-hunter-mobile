@@ -16,6 +16,7 @@ import { verificationDocumentsApi } from "@/infrastructure/valid-docs/verificati
 import { bHAndRoomShareApi } from "@/infrastructure/shared/redux.api";
 import { reviewsApi } from "@/infrastructure/reviews/reviews.redux.api";
 import { notificationApi } from "@/infrastructure/notifications/notifications.redux.api";
+import { metricsApi } from "@/infrastructure/metrics/metric.redux.api";
 
 export const store = configureStore({
   reducer: {
@@ -34,6 +35,7 @@ export const store = configureStore({
     [bookingApi.reducerPath]: bookingApi.reducer,
     [verificationDocumentsApi.reducerPath]: verificationDocumentsApi.reducer,
     [reviewsApi.reducerPath]: reviewsApi.reducer,
+    [metricsApi.reducerPath]: metricsApi.reducer,
     genericSearch: genericSearchBarSlice,
   },
   middleware: (getDefaultMiddleware) =>
@@ -48,7 +50,8 @@ export const store = configureStore({
       .concat(notificationApi.middleware)
       .concat(bookingApi.middleware)
       .concat(verificationDocumentsApi.middleware)
-      .concat(reviewsApi.middleware),
+      .concat(reviewsApi.middleware)
+      .concat(metricsApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

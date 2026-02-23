@@ -35,5 +35,5 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       } as MapLibrePluginProps,
     ],
   ],
-  scheme: "yourapp",
+  scheme: "bhhunter",
 });

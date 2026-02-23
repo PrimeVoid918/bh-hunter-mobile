@@ -45,49 +45,52 @@ export default function DashboardBookingsScreen() {
 
   const {
     data: bookingArrays,
-    isLoading: isBookingArraysLoading,
-    isError: isBookingArraysError,
+    isLoading,
+    isError,
     refetch,
-  } = useGetAllQuery({ tenantId: user.id, page: 1, limit: 100});
+  } = useGetAllQuery({ tenantId: user.id, page: 1, limit: 100 });
   const books = React.useMemo(() => bookingArrays ?? [], [bookingArrays]);
   //! currently working for tenant side booking
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-      wrapInScrollView={false}
-      //!if we want to use refresh control
-      //! refreshControl={
-      //!   <RefreshControl refreshing={isBookingArraysLoading} onRefresh={refetch} />
-      //! }
+      variant="list"
+      style={
+        (GlobalStyle.GlobalsContainer,
+        {
+          paddingLeft: Spacing.md,
+          paddingRight: Spacing.md,
+          paddingTop: Spacing.md,
+          paddingBottom: 200,
+        })
+      }
+      contentContainerStyle={GlobalStyle.GlobalsContentContainer}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      loading={isLoading}
+      error={[isError ? "" : null]}
     >
-      <Container refreshing={refreshing} onRefresh={onRefresh}>
-        {isBookingArraysLoading && <FullScreenLoaderAnimated />}
-        {isBookingArraysError && <FullScreenErrorModal />}
-        <VStack>
-          <View
-            style={{
-              padding: 10,
-            }}
-          >
-            <Lists
-              list={books}
-              renderItem={({ item }) => (
-                <BookingListItem
-                  data={item}
-                  goToDetails={() =>
-                    navigate.navigate("DashboardBookingStatusScreen", {
-                      // bookId: book.id,
-                      bookId: item.id,
-                    })
-                  }
-                ></BookingListItem>
-              )}
-              contentContainerStyle={[{ gap: Spacing.base }]}
-            />
-          </View>
-        </VStack>
-      </Container>
+      <VStack>
+        <View
+          style={{
+            padding: 10,
+          }}
+        >
+          <Lists
+            list={books}
+            renderItem={({ item }) => (
+              <BookingListItem
+                data={item}
+                goToDetails={() =>
+                  navigate.navigate("DashboardBookingStatusScreen", {
+                    bookId: item.id,
+                  })
+                }
+              ></BookingListItem>
+            )}
+            contentContainerStyle={[{ gap: Spacing.base }]}
+          />
+        </View>
+      </VStack>
     </StaticScreenWrapper>
   );
 }

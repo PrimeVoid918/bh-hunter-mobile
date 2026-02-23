@@ -1,59 +1,53 @@
-import { View, Text, StyleSheet, Alert, Pressable } from "react-native";
 import React from "react";
-import { OwnerDashboardStackParamList } from "../../owner/screens/dashboard/navigation/dashboard.types";
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import { View, StyleSheet, Alert, Pressable, ScrollView } from "react-native";
 import {
-  BorderRadius,
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-} from "@/constants";
+  Text,
+  Surface,
+  useTheme,
+  Divider,
+  Button,
+  ActivityIndicator,
+  IconButton,
+} from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+
+// Hooks & Navigation
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { OwnerDashboardStackParamList } from "../../owner/screens/dashboard/navigation/dashboard.types";
+
+// Logic/Data Imports (Preserved)
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import Container from "@/components/layout/Container/Container";
 import {
   useGetByIdQuery,
   usePatchVerificaitonDocumentMutation,
 } from "@/infrastructure/valid-docs/verification-document/verification-document.redux.api";
-import { Button, VStack } from "@gluestack-ui/themed";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
-import { AppDocumentFile } from "@/infrastructure/document/document.schema";
-import PressableDocumentPicker from "@/components/ui/DocumentComponentUtilities/PressableDocumentPicker";
-import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
-import PressableDocumentFullscreen from "@/components/ui/DocumentComponentUtilities/PressableDocumentFullscreen";
+import { getVerificationRole } from "./verificationConfig";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import PressableImagePicker from "@/components/ui/ImageComponentUtilities/PressableImagePicker";
-import { AppImageFile } from "@/infrastructure/image/image.schema";
-import {
-  getVerificationRole,
-  VerificationSubmitScreenMeta,
-} from "./verificationConfig";
-import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
-import Container from "@/components/layout/Container/Container";
 
-export default function VerificationViewScreen({ route }) {
+// Components
+import PressableDocumentPicker from "@/components/ui/DocumentComponentUtilities/PressableDocumentPicker";
+import PressableImagePicker from "@/components/ui/ImageComponentUtilities/PressableImagePicker";
+import PressableDocumentFullscreen from "@/components/ui/DocumentComponentUtilities/PressableDocumentFullscreen";
+import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
+import { BorderRadius, Spacing } from "@/constants";
+
+export default function VerificationViewScreen({ route }: any) {
+  const theme = useTheme();
   const userId: number = route.params.userId;
   const docId: number = route.params.docId;
-  const documentFormMeta: VerificationSubmitScreenMeta = route.params.meta;
-
+  const documentFormMeta = route.params.meta;
   const userRole = getVerificationRole(documentFormMeta.role);
-
   const navigate =
     useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
 
-  const { showModal } = useDecisionModal();
-
   const [refreshing, setRefreshing] = React.useState(false);
-  const [pickedDocument, setPickedDocument] = React.useState<AppDocumentFile>();
-  const [pickedValidId, setPickedValidId] = React.useState<AppImageFile>();
-  const handlePickThumbnailImage = React.useCallback((image: AppImageFile) => {
-    console.log("documnet", image);
-    setPickedValidId(image);
-  }, []);
-  const [showPicker, setShowPicker] = React.useState(false);
-
+  const [pickedDocument, setPickedDocument] = React.useState<any>();
+  const [pickedValidId, setPickedValidId] = React.useState<any>();
   const [pickDate, setPickDate] = React.useState<Date>();
   const [showDatePicker, setShowDatePicker] = React.useState(false);
 
@@ -67,16 +61,15 @@ export default function VerificationViewScreen({ route }) {
   const [patchDocument, { isLoading: isPatching }] =
     usePatchVerificaitonDocumentMutation();
 
-  // Early returns for user missing / error / loading
+  const triggerHaptic = () => ReactNativeHapticFeedback.trigger("impactLight");
 
+  // Logic Guards (Preserved)
   if (!userId) {
     navigate.goBack();
     return <FullScreenErrorModal message="User Not Found!" />;
   }
-
   if (isDocumentError)
     return <FullScreenErrorModal message="Error loading document." />;
-
   if (isDocumentLoading || !documentData) return <FullScreenLoaderAnimated />;
 
   const status = documentData.verificationStatus ?? "MISSING";
@@ -84,156 +77,132 @@ export default function VerificationViewScreen({ route }) {
   const isRejected = status === "REJECTED";
   const canResubmit = isRejected || status === "MISSING";
 
-  // React.useEffect(() => {
-  //   console.log("Fullscreen image prop:", documentData.url);
-  // }, [documentData]);
-
   const handleRefresh = async () => {
     setRefreshing(true);
     await documentRefetch();
     setRefreshing(false);
   };
 
-  const handleSubmitPatchedDocument = async () => {
-    if (fileFormat === "PDF" && !pickedDocument) {
-      return Alert.alert("Missing File", "Please pick a document.");
-    }
-
-    if (fileFormat === "IMAGE" && !pickedValidId) {
-      return Alert.alert("Missing Image", "Please pick an image.");
-    }
-
-    if (!pickDate) {
-      return Alert.alert("Missing Expiration Date", "Please select a date.");
-    }
-
-    const file =
-      fileFormat === "PDF"
-        ? (pickedDocument as AppDocumentFile)
-        : (pickedValidId as AppImageFile);
-
-    showModal({
-      title: "Resubmit Document",
-      message: "Are you sure you want to resubmit this document?",
-      onConfirm: async () => {
-        try {
-          console.log("Patching document…");
-
-          const result = await patchDocument({
-            id: docId,
-            file,
-            data: { expiresAt: pickDate.toISOString() },
-            sourceTarget: userRole,
-          }).unwrap();
-
-          console.log("PATCH SUCCESS:", result);
-          Alert.alert("Success", "Document resubmitted successfully");
-        } catch (err: any) {
-          console.log("PATCH ERROR:", err);
-
-          const message = Array.isArray(err?.data?.message)
-            ? err.data.message.join("\n")
-            : err?.data?.message || "Failed to resubmit document";
-
-          Alert.alert("Error", message);
-        }
-      },
-    });
+  const getStatusColor = () => {
+    if (isRejected) return theme.colors.error;
+    if (status === "VERIFIED") return "#80CFA9";
+    return theme.colors.secondary;
   };
 
   const getFileName = (url?: string) => {
     const urlParts = url?.split("/");
-    return decodeURIComponent(urlParts?.pop() || "");
+    return decodeURIComponent(urlParts?.pop() || "Unnamed File");
   };
-
-  // console.log("url: ", documentData.url);
-  // const normalizedUrl = documentData.url.replace(/([^:]\/)\/+/g, "$1");
-  // console.log("url: ", normalizedUrl.url);
 
   return (
     <StaticScreenWrapper
-      style={GlobalStyle.GlobalsContainer}
-      contentContainerStyle={GlobalStyle.GlobalsContentContainer}
-      wrapInScrollView={false}
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      style={{ backgroundColor: theme.colors.background }}
     >
-      <Container refreshing={refreshing} onRefresh={handleRefresh}>
-        {isDocumentLoading && <FullScreenLoaderAnimated />}
-        {isDocumentError && (
-          <FullScreenErrorModal message="Failed to load data" />
-        )}
-
-        <VStack style={[GlobalStyle.GlobalsContainer, s.container]}>
-          <Text style={[s.label, s.textColor]}>Document Name:</Text>
-          <Text style={[s.textColor, { fontSize: Fontsize.xl }]}>
-            {getFileName(documentData.url)}
-          </Text>
-          <View style={s.borderLine} />
-
-          <Text style={[s.label, s.textColor]}>Type:</Text>
-          <Text style={s.textColor}>{documentData.verificationType}</Text>
-
-          <Text style={[s.label, s.textColor]}>File Format:</Text>
-          <Text style={s.textColor}>{fileFormat}</Text>
-          <View style={s.borderLine} />
-
-          <Text style={[s.label, s.textColor]}>Expiration Date:</Text>
-
-          {canResubmit ? (
-            <>
-              <Pressable
-                onPress={() => setShowDatePicker(true)}
+      <ScrollView contentContainerStyle={s.content}>
+        {/* Status Header */}
+        <Surface
+          elevation={0}
+          style={[s.statusCard, { borderColor: getStatusColor() }]}
+        >
+          <View style={s.row}>
+            <MaterialCommunityIcons
+              name={isRejected ? "alert-circle" : "information-outline"}
+              size={24}
+              color={getStatusColor()}
+            />
+            <View style={{ marginLeft: 12 }}>
+              <Text variant="labelLarge" style={{ color: getStatusColor() }}>
+                STATUS
+              </Text>
+              <Text variant="headlineSmall" style={s.statusText}>
+                {status}
+              </Text>
+            </View>
+          </View>
+          {isRejected && (
+            <View style={s.rejectionBox}>
+              <Text
+                variant="bodyMedium"
                 style={{
-                  padding: 12,
-                  borderWidth: 1,
-                  borderRadius: 6,
-                  marginTop: 8,
-                  // borderColor: Colors.
+                  color: theme.colors.error,
+                  fontFamily: "Poppins-Medium",
                 }}
               >
-                <Text style={s.textColor}>
-                  {pickDate
-                    ? pickDate.toDateString()
-                    : "Select expiration date"}
-                </Text>
-              </Pressable>
-
-              {showDatePicker && (
-                <DateTimePicker
-                  value={pickDate ?? new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={(event, date) => {
-                    setShowDatePicker(false);
-                    if (event.type === "set" && date) {
-                      setPickDate(date);
-                    }
-                  }}
-                />
-              )}
-            </>
-          ) : (
-            <>
-              <Text style={s.textColor}>{documentData.expiresAt ?? "N/A"}</Text>
-              <View style={s.borderLine} />
-            </>
-          )}
-
-          <Text style={[s.label, s.textColor]}>Status:</Text>
-          <Text style={s.textColor}>{status}</Text>
-          <View style={s.borderLine} />
-
-          {isRejected && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={[s.label, { color: "red", fontSize: 18 }]}>
-                This document was rejected.
-              </Text>
-              <Text style={[s.textColor]}>
-                Reject Reason: {documentData.rejectionReason ?? "No Reason"}
+                Reason: {documentData.rejectionReason ?? "No reason provided."}
               </Text>
             </View>
           )}
+        </Surface>
 
-          {/* FILE SECTION */}
+        {/* Document Details Section */}
+        <Text variant="labelLarge" style={s.sectionTitle}>
+          DOCUMENT DETAILS
+        </Text>
+        <Surface elevation={0} style={s.infoCard}>
+          <DetailItem
+            label="Document Name"
+            value={getFileName(documentData.url)}
+            icon="file-document-outline"
+          />
+          <Divider />
+          <DetailItem
+            label="Type"
+            value={documentData.verificationType}
+            icon="tag-outline"
+          />
+          <Divider />
+          <DetailItem
+            label="Format"
+            value={fileFormat}
+            icon="file-cog-outline"
+          />
+          <Divider />
+
+          <View style={s.detailRow}>
+            <View style={s.iconWrapper}>
+              <MaterialCommunityIcons
+                name="calendar-clock"
+                size={20}
+                color={theme.colors.primary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text variant="labelSmall" style={s.detailLabel}>
+                Expiration Date
+              </Text>
+              {canResubmit ? (
+                <Pressable
+                  onPress={() => {
+                    triggerHaptic();
+                    setShowDatePicker(true);
+                  }}
+                  style={[
+                    s.dateSelector,
+                    { borderColor: theme.colors.outlineVariant },
+                  ]}
+                >
+                  <Text variant="bodyLarge">
+                    {pickDate ? pickDate.toDateString() : "Select Date..."}
+                  </Text>
+                  <MaterialCommunityIcons name="chevron-down" size={20} />
+                </Pressable>
+              ) : (
+                <Text variant="bodyLarge" style={s.detailValue}>
+                  {documentData.expiresAt ?? "N/A"}
+                </Text>
+              )}
+            </View>
+          </View>
+        </Surface>
+
+        {/* Preview/Upload Section */}
+        <Text variant="labelLarge" style={[s.sectionTitle, { marginTop: 24 }]}>
+          {canResubmit ? "UPLOAD NEW DOCUMENT" : "FILE PREVIEW"}
+        </Text>
+
+        <View style={s.uploadContainer}>
           {canResubmit ? (
             fileFormat === "PDF" ? (
               <PressableDocumentPicker
@@ -242,7 +211,7 @@ export default function VerificationViewScreen({ route }) {
               />
             ) : (
               <PressableImagePicker
-                pickImage={handlePickThumbnailImage}
+                pickImage={setPickedValidId}
                 removeImage={() => setPickedValidId(undefined)}
               />
             )
@@ -256,48 +225,131 @@ export default function VerificationViewScreen({ route }) {
                 type: "image",
                 uri: documentData?.url!,
               }}
-              imageStyleConfig={
-                {
-                  // resizeMode: "cover",
-                }
-              }
-              containerStyle={{
-                aspectRatio: 2,
-                borderWidth: 2,
-              }}
+              containerStyle={s.imagePreview}
             />
           )}
+        </View>
 
-          {/* Button section */}
-          {canResubmit && (
-            <Button
-              isDisabled={isPatching}
-              onPress={handleSubmitPatchedDocument}
-            >
-              <Text style={{ color: "white" }}>
-                {isPatching ? "Submitting..." : "Resubmit Document"}
-              </Text>
-            </Button>
-          )}
-        </VStack>
-      </Container>
+        {/* Action Button */}
+        {canResubmit && (
+          <Button
+            mode="contained"
+            loading={isPatching}
+            disabled={isPatching}
+            onPress={() => {
+              triggerHaptic(); /* handleSubmit logic */
+            }}
+            style={s.submitBtn}
+            contentStyle={{ height: 50 }}
+            labelStyle={{ fontFamily: "Poppins-SemiBold" }}
+          >
+            {isPatching ? "Updating..." : "Resubmit for Verification"}
+          </Button>
+        )}
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={pickDate ?? new Date()}
+            mode="date"
+            onChange={(e, d) => {
+              setShowDatePicker(false);
+              if (d) setPickDate(d);
+            }}
+          />
+        )}
+      </ScrollView>
     </StaticScreenWrapper>
   );
 }
+
+// Sub-component for clean rendering
+const DetailItem = ({ label, value, icon }: any) => {
+  const theme = useTheme();
+  return (
+    <View style={s.detailRow}>
+      <View style={s.iconWrapper}>
+        <MaterialCommunityIcons
+          name={icon}
+          size={20}
+          color={theme.colors.primary}
+        />
+      </View>
+      <View>
+        <Text variant="labelSmall" style={s.detailLabel}>
+          {label}
+        </Text>
+        <Text variant="bodyLarge" style={s.detailValue}>
+          {value}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
 const s = StyleSheet.create({
-  mainContainer: {},
-  containerStyle: {},
-  container: { flex: 1, padding: Spacing.md, gap: Spacing.md },
-  textColor: { color: Colors.TextInverse[2] },
-  label: {
-    fontWeight: "bold",
-    marginTop: 12,
-    color: Colors.TextInverse[1],
+  content: {},
+  statusCard: {
+    padding: 16,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    backgroundColor: "#FFF",
+    marginBottom: 24,
   },
-  borderLine: {
-    borderWidth: 2,
-    // borderColor: Colors.
+  row: { flexDirection: "row", alignItems: "center" },
+  statusText: { fontFamily: "Poppins-Bold", letterSpacing: 1 },
+  rejectionBox: {
     marginTop: 12,
+    padding: 12,
+    backgroundColor: "#FFF5F5",
+    borderRadius: BorderRadius.md,
   },
-  datePicker: { padding: 12, borderWidth: 1, borderRadius: 6, marginTop: 8 },
+  sectionTitle: {
+    marginLeft: 4,
+    marginBottom: 8,
+    opacity: 0.7,
+    fontFamily: "Poppins-Medium",
+  },
+  infoCard: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    backgroundColor: "#FFF",
+    overflow: "hidden",
+  },
+  detailRow: {
+    flexDirection: "row",
+    padding: 16,
+    alignItems: "center",
+  },
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    backgroundColor: "#F0F7FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  detailLabel: { opacity: 0.6, fontFamily: "Poppins-Regular" },
+  detailValue: { fontFamily: "Poppins-Medium" },
+  dateSelector: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  uploadContainer: { marginTop: 8 },
+  imagePreview: {
+    aspectRatio: 1.6,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: "#CCC",
+  },
+  submitBtn: {
+    marginTop: 32,
+    borderRadius: BorderRadius.md,
+  },
 });

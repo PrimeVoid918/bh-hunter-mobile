@@ -29,9 +29,9 @@ export enum OccupancyType {
 }
 
 export const OccupancyTypeLabels: Record<OccupancyType, string> = {
-  [OccupancyType.MALE]: "Male Only",
-  [OccupancyType.FEMALE]: "Female Only",
-  [OccupancyType.MIXED]: "Mixed",
+  [OccupancyType.MALE]: "♂️ Male Only",
+  [OccupancyType.FEMALE]: "♀️ Female Only",
+  [OccupancyType.MIXED]: "⚧️ Mixed",
 };
 
 export type BackendOccupancyType = "MALE" | "FEMALE" | "MIXED";

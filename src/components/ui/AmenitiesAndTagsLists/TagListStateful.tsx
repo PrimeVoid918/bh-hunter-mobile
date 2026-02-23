@@ -1,33 +1,77 @@
-import { View, Text, StyleSheet } from "react-native";
 import React from "react";
-import { Pressable, ScrollView } from "react-native-gesture-handler";
-import { Box, HStack } from "@gluestack-ui/themed";
-import { BorderRadius, Colors, Fontsize } from "@/constants";
-import TagListDumb from "./TagListDumb";
+import { View, StyleSheet, ScrollView } from "react-native";
+import { Chip, Text, useTheme } from "react-native-paper";
 import { FieldValues, Path, UseFormReturn } from "react-hook-form";
+import { Spacing, BorderRadius } from "@/constants";
 
-interface TagListInterface<T extends string> {
+interface TagListDumbProps<T extends string> {
   items: readonly T[];
   selected: readonly T[];
   isEditing: boolean;
   onToggle: (value: T) => void;
-  emptyLabel?: string;
 }
 
-interface TagListStatefulProps<T extends string, TForm extends FieldValues> {
-  name: Path<TForm>;
-  items: readonly T[];
-  isEditing: boolean;
-  form: Pick<UseFormReturn<TForm>, "watch" | "setValue" | "getValues">;
-}
+// 1. Dumb Component (The UI)
+const TagListDumb = <T extends string>({
+  items,
+  selected,
+  isEditing,
+  onToggle,
+}: TagListDumbProps<T>) => {
+  const theme = useTheme();
 
+  return (
+    <View style={s.container}>
+      <View style={s.flexWrap}>
+        {items.map((item) => {
+          const isSelected = selected.includes(item);
+
+          return (
+            <Chip
+              key={item}
+              // M3 Logic: Show checkmark when selected
+              selected={isSelected}
+              showSelectedCheck={true}
+              // If not editing, the chip is "read-only" (disabled)
+              onPress={isEditing ? () => onToggle(item) : undefined}
+              mode={isSelected ? "flat" : "outlined"}
+              style={[
+                s.chip,
+                { borderRadius: BorderRadius.pill }, // M3 Chips are usually pill-shaped
+                !isSelected && { borderColor: theme.colors.outlineVariant },
+              ]}
+              // M3 uses secondaryContainer for selected state by default in Paper
+              selectedColor={theme.colors.onSecondaryContainer}
+            >
+              {item}
+            </Chip>
+          );
+        })}
+        {items.length === 0 && (
+          <Text
+            variant="bodyMedium"
+            style={{ color: theme.colors.onSurfaceVariant }}
+          >
+            No items selected
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+};
+
+// 2. Stateful Component (The Logic)
 export function TagListStateful<T extends string, TForm extends FieldValues>({
   name,
   items,
   isEditing,
   form,
-}: TagListStatefulProps<T, TForm>) {
-  // Type selected as T[]
+}: {
+  name: Path<TForm>;
+  items: readonly T[];
+  isEditing: boolean;
+  form: Pick<UseFormReturn<TForm>, "watch" | "setValue" | "getValues">;
+}) {
   const selected: T[] = (form.watch(name) ?? []) as T[];
 
   const toggle = (value: T) => {
@@ -41,7 +85,7 @@ export function TagListStateful<T extends string, TForm extends FieldValues>({
 
   return (
     <TagListDumb
-      items={items}
+      items={isEditing ? items : selected} // Only show selected items when not editing
       selected={selected}
       isEditing={isEditing}
       onToggle={toggle}
@@ -50,28 +94,15 @@ export function TagListStateful<T extends string, TForm extends FieldValues>({
 }
 
 const s = StyleSheet.create({
-  amenitiesContainer: {
-    padding: 16,
-    borderRadius: BorderRadius.md,
+  container: {
+    paddingVertical: Spacing.sm,
   },
-  amenityChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.md,
+  flexWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8, // M3 standard gap between chips
   },
-  amenityChipSelected: {
-    backgroundColor: "#10b981",
-  },
-  amenityText: {
-    fontSize: Fontsize.sm,
-  },
-  amenityTextSelected: {
-    color: "white",
-    fontWeight: "600",
-  },
-  amenityDisplay: {
-    padding: 10,
-    borderRadius: BorderRadius.md,
-    fontSize: Fontsize.md,
+  chip: {
+    marginBottom: 4,
   },
 });

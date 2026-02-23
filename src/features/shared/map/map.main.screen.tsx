@@ -36,6 +36,7 @@ import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import Map from "./Map";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import PressableImageFullscreen from "../../../components/ui/ImageComponentUtilities/PressableImageFullscreen";
+import ReloadFAB from "./ReloadFab";
 
 export default function MapMainScreen() {
   const [search, setSearch] = useState("");
@@ -53,6 +54,8 @@ export default function MapMainScreen() {
     data: boardinghouses,
     isLoading: isBoardingHousesLoading,
     isError: isBoardingHousesError,
+    refetch,
+    isFetching,
   } = useGetAllBoardingHouses({});
 
   const navigation =
@@ -80,23 +83,34 @@ export default function MapMainScreen() {
     });
   };
 
+  const refetchBoardingHouses = React.useCallback(() => {
+    refetch();
+  }, [refetch]);
+
   return (
     <StaticScreenWrapper
       style={[GlobalStyle.GlobalsContainer, s.con_main]}
       contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-      wrapInScrollView={false}
+      // wrapInScrollView={false}
+      refreshing={isFetching}
+      loading={isBoardingHousesLoading}
+      error={[isBoardingHousesError ? "Failed to fetch user" : null]}
+      variant="layout"
     >
-      {isBoardingHousesLoading && <FullScreenLoaderAnimated />}
-      {/* <HeaderSearch
-        containerStyle={s.search_headerContainer}
-        placeholder="Search"
-        value={search}
-        setValue={onChangeInputValue}
-      /> */}
       <Map
+        mapStyle={{
+          width: "100%",
+          height: "100%",
+          // position: "absolute",
+          zIndex: 1,
+        }}
         data={boardinghouses}
         isBoardingHousesLoading={isBoardingHousesLoading}
         handleMarkerPress={handleMarkerPress}
+      />
+      <ReloadFAB
+        loading={isBoardingHousesLoading}
+        onPress={() => refetchBoardingHouses()}
       />
       <BottomSheet
         ref={bottomSheetRef}
@@ -195,11 +209,7 @@ export default function MapMainScreen() {
 
 const s = StyleSheet.create({
   con_main: {},
-  map: {
-    // ...StyleSheet.absoluteFill,
-    width: "100%",
-    height: "100%",
-  },
+
   search_headerContainer: {
     position: "absolute",
     width: "90%",

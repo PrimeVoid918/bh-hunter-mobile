@@ -1,52 +1,37 @@
-import { Button } from "@gluestack-ui/themed";
-import { Overlay } from "@gluestack-ui/overlay";
-
+import React, { useEffect, useState, useCallback } from "react";
 import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
   Modal,
-} from "react-native";
-import React, { useEffect, useState } from "react";
-import {
-  Input,
-  InputField,
-  VStack,
-  FormControl,
-  Box,
-  Image,
-} from "@gluestack-ui/themed";
+  Portal,
+  Button,
+  Text,
+  useTheme,
+  Divider,
+  Chip,
+} from "react-native-paper";
+import { ScrollView, View, StyleSheet, Pressable } from "react-native";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "@gluestack-ui/themed";
+
+import { FormField } from "@/components/ui/FormFields/FormField";
+import PressableImagePicker from "@/components/ui/ImageComponentUtilities/PressableImagePicker";
+import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
 import {
   CreateRoomInput,
   CreateRoomInputSchema,
-  RoomFurnishingType,
-  roomFurnishingTypeOptions,
-  RoomType,
   roomTypeOptions,
+  roomFurnishingTypeOptions,
 } from "@/infrastructure/room/rooms.schema";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ScrollView, Pressable } from "react-native";
-import { BorderRadius, Colors, Fontsize, Spacing } from "@/constants";
-import {
-  ROOM_FEATURE_TAGS,
-  RoomFeatureTag,
-} from "@/infrastructure/room/rooms.constants";
-import { Ionicons } from "@expo/vector-icons";
+import { ROOM_FEATURE_TAGS } from "@/infrastructure/room/rooms.constants";
 import { pickImageExpo } from "@/infrastructure/image/image.service";
-import ButtomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
-import z from "zod";
+import { Spacing, BorderRadius } from "@/constants";
 
-type RoomWithIndex = CreateRoomInput & { index?: number };
-interface PropertiesRoomCreateModalProps {
+interface ModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateRoomInput, indexToReplace?: number) => void;
-  // initialData?: RoomWithIndex;
-  initialData?: CreateRoomInput & { index: number };
-  isEditing?: boolean;
+  onSubmit: (data: CreateRoomInput) => void;
+  initialData?: CreateRoomInput;
 }
 
 export default function PropertiesRoomCreateModal({
@@ -54,618 +39,291 @@ export default function PropertiesRoomCreateModal({
   onClose,
   onSubmit,
   initialData,
-  isEditing,
-}: PropertiesRoomCreateModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
+}: ModalProps) {
+  const theme = useTheme();
+  const [selTypeOpen, setSelTypeOpen] = useState(false);
+  const [selFurnOpen, setSelFurnOpen] = useState(false);
 
-  const [isFurnishingActionSheetOpen, setIsFurnishingActionSheetOpen] =
-    useState(false);
-  const [isRoomTypeActionSheetOpen, setIsRoomTypeActionSheetOpen] =
-    useState(false);
-  const [selectedType, setSelectedType] = useState<string>("");
+  const { control, handleSubmit, setValue, getValues, watch, reset } =
+    useForm<CreateRoomInput>({
+      resolver: zodResolver(CreateRoomInputSchema) as any,
+      defaultValues: initialData || {
+        roomNumber: "",
+        maxCapacity: 0,
 
-  const defaultValues: CreateRoomInput = {
-    roomNumber: "",
-    description: "",
-    roomType: RoomType.BED_SPACER,
-    furnishingType: RoomFurnishingType.UNFURNISHED,
-    maxCapacity: 0,
-    price: 0,
-    tags: [],
-    gallery: [],
-    thumbnail: [],
-  };
-
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    getValues,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<z.infer<typeof CreateRoomInputSchema>>({
-    resolver: zodResolver(CreateRoomInputSchema) as any,
-    defaultValues: initialData || defaultValues,
-  });
+        price: 0,
+        tags: [],
+        thumbnail: [],
+        gallery: [],
+      },
+    });
 
   useEffect(() => {
-    if (initialData) {
-      reset(initialData); // for edit mode
-    } else {
-      reset(defaultValues); // for add mode
-    }
-  }, [initialData, visible]);
+    if (visible)
+      reset(
+        initialData || {
+          roomNumber: "",
+          maxCapacity: 0,
+          price: 0,
+          tags: [],
+          thumbnail: [],
+          gallery: [],
+        },
+      );
+  }, [visible, initialData, reset]);
 
-  const [availableFeatureTage, setAvailableFeatureTage] = useState<
-    Array<string>
-  >(
-    ROOM_FEATURE_TAGS.filter(
-      (feature) => !defaultValues.tags?.includes(feature),
-    ),
-  );
-  const selectedFeatureTags = watch("tags") ?? [];
-  useEffect(() => {
-    setAvailableFeatureTage(
-      ROOM_FEATURE_TAGS.filter(
-        (feature) => !selectedFeatureTags.includes(feature),
-      ),
-    );
-  }, [selectedFeatureTags]);
-  const handleSelectFeatureTag = (item: string) => {
-    const update = [...(selectedFeatureTags || []), item] as RoomFeatureTag[];
-    setValue("tags", update);
-    setAvailableFeatureTage((prev) => prev.filter((a) => a !== item));
-  };
-  const handleRemoveFeatureTag = (item: string) => {
-    const update = (selectedFeatureTags || []).filter((a) => a !== item);
-    setValue("tags", update as RoomFeatureTag[]);
-    setAvailableFeatureTage((prev) => [...prev, item]);
-  };
-
+  /* ------------------------- Image Logic ------------------------- */
   const handlePickGalleryImages = async () => {
-    try {
-      const pick = await pickImageExpo(10);
-      if (pick && pick.length > 0) {
-        setValue("gallery", pick);
-      }
-    } catch (err) {
-      console.log(err);
-      Alert.alert("Error", "Invalid image file");
+    const pick = await pickImageExpo(10);
+    if (pick?.length) {
+      const currentGallery = getValues("gallery") || [];
+      setValue("gallery", [...currentGallery, ...pick]);
     }
   };
 
-  const handleRemoveGalleryImage = (indexToRemove: number) => {
-    const newGallery = [...(getValues("gallery") ?? [])]; // get current value
-    newGallery.splice(indexToRemove, 1); // remove item by index
-    setValue("gallery", newGallery); // update the form
+  const handleRemoveGalleryImage = (index: number) => {
+    const currentGallery = getValues("gallery") || [];
+    const updatedGallery = currentGallery.filter((_, i) => i !== index);
+    setValue("gallery", updatedGallery);
   };
 
-  const handleFinalSubmit = (data: CreateRoomInput) => {
-    const index = isEditing ? initialData?.index : undefined;
-    onSubmit(data, index);
-    onClose();
-  };
+  const selectedTags = watch("tags") || [];
 
-  const handlePickThumbnailImage = async () => {
-    try {
-      const picked = await pickImageExpo(1);
-      console.log("Picked images:", picked); // 👈 log this
-      if (picked && picked.length > 0) {
-        setValue("thumbnail", [picked[0]], { shouldValidate: true });
-      }
-    } catch (err) {
-      console.log("Pick error:", err);
-      Alert.alert("Error", "Invalid image file");
-    }
-  };
-  const handleRemoveThumbnailImage = () => {
-    setValue("thumbnail", []);
+  const toggleTag = (tag: string) => {
+    const current = [...selectedTags];
+    const idx = current.indexOf(tag as any);
+    if (idx > -1) current.splice(idx, 1);
+    else current.push(tag as any);
+    setValue("tags", current);
   };
 
   return (
-    <>
-      <Overlay isOpen={visible} onRequestClose={onClose}>
-        <View style={[modalStyles.overlay]}>
-          <View style={[modalStyles.container]}>
-            {/* Close Button */}
-            <TouchableOpacity
-              onPress={onClose}
-              style={[modalStyles.closeButton]}
-            >
-              <Ionicons name="close" size={24} color="#333" />
-            </TouchableOpacity>
+    <Portal>
+      <Modal
+        visible={visible}
+        onDismiss={onClose}
+        contentContainerStyle={m.modalContainer}
+      >
+        <Text variant="headlineSmall" style={m.title}>
+          {initialData ? "Edit Room" : "Add New Room"}
+        </Text>
 
-            {/* Modal Form Content */}
-            <ScrollView contentContainerStyle={{ paddingBottom: Spacing.sm }}>
-              <Pressable onPress={handlePickThumbnailImage}>
-                <Box
-                  style={{
-                    width: "75%",
-                    height: 200,
-                    borderRadius: 8,
-                    backgroundColor: "#f0f0f0",
-                    overflow: "hidden",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Controller
-                    control={control}
-                    name="thumbnail"
-                    render={({ field: { value } }) => {
-                      const thumbnailImage =
-                        value && value.length > 0 ? value[0] : null;
+        <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
+          <View style={{ gap: Spacing.md }}>
+            {/* Primary Thumbnail */}
+            <Text variant="labelLarge" style={m.sectionLabel}>
+              Cover Photo
+            </Text>
+            <PressableImagePicker
+              image={watch("thumbnail")?.[0]}
+              pickImage={(img) => setValue("thumbnail", [img])}
+              removeImage={() => setValue("thumbnail", [])}
+            />
 
-                      return (
-                        <>
-                          {thumbnailImage ? (
-                            <Image
-                              source={{
-                                uri: thumbnailImage.uri.startsWith("file://")
-                                  ? thumbnailImage.uri
-                                  : `file://${thumbnailImage.uri}`,
-                              }}
-                              style={{ width: "100%", height: "100%" }}
-                              alt="Thumbnail"
-                            />
-                          ) : (
-                            <Text style={{ color: "#888" }}>Tap to upload</Text>
-                          )}
-                        </>
-                      );
-                    }}
-                  />
-                </Box>
-              </Pressable>
-              {/* Room Number */}
-              <FormControl isInvalid={!!errors.roomNumber}>
-                <FormControl.Label>
-                  <Text style={[s.Form_SubLabel]}>Room Number</Text>
-                </FormControl.Label>
-                <Controller
-                  control={control}
-                  name="roomNumber"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input borderColor="$coolGray400">
-                      <InputField
-                        placeholder="Room code"
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        value={value}
-                        style={[s.Form_Input_Placeholder]}
-                      />
-                    </Input>
-                  )}
-                />
-                {errors.roomNumber && (
-                  <Text style={{ color: "red" }}>
-                    {errors.roomNumber.message}
-                  </Text>
-                )}
-              </FormControl>
-
-              {/* Max Capacity */}
-              <FormControl isInvalid={!!errors.maxCapacity}>
-                <FormControl.Label>
-                  <Text style={[s.Form_SubLabel]}>Max Capacity</Text>
-                </FormControl.Label>
-                <Controller
-                  control={control}
-                  name="maxCapacity"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input borderColor="$coolGray400">
-                      <InputField
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        value={value?.toString() ?? ""}
-                        keyboardType="numeric"
-                        style={[s.Form_Input_Placeholder]}
-                      />
-                    </Input>
-                  )}
-                />
-                {errors.maxCapacity && (
-                  <Text style={{ color: "red" }}>
-                    {errors.maxCapacity.message}
-                  </Text>
-                )}
-              </FormControl>
-
-              {/* Price */}
-              <FormControl isInvalid={!!errors.price}>
-                <FormControl.Label>
-                  <Text style={[s.Form_SubLabel]}>Price</Text>
-                </FormControl.Label>
-                <Controller
-                  control={control}
-                  name="price"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input borderColor="$coolGray400">
-                      <InputField
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        value={value?.toString() ?? ""}
-                        keyboardType="numeric"
-                        style={[s.Form_Input_Placeholder]}
-                      />
-                    </Input>
-                  )}
-                />
-                {errors.price && (
-                  <Text style={{ color: "red" }}>{errors.price.message}</Text>
-                )}
-              </FormControl>
-
-              {/* Room Description */}
-              <FormControl
-                isInvalid={!!errors.description}
-                style={{ paddingBottom: Spacing.md }}
-              >
-                <FormControl.Label>
-                  <Text style={[s.Form_SubLabel]}>Description</Text>
-                </FormControl.Label>
-                <Controller
-                  control={control}
-                  name="description"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input borderColor="$coolGray400">
-                      <InputField
-                        placeholder=""
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        value={value}
-                        style={[s.Form_Input_Placeholder]}
-                      />
-                    </Input>
-                  )}
-                />
-                {errors.roomNumber && (
-                  <Text style={{ color: "red" }}>
-                    {errors.roomNumber.message}
-                  </Text>
-                )}
-              </FormControl>
-
-              {/* Room Furnished type */}
-              <FormControl isInvalid={!!errors.furnishingType}>
-                <FormControl.Label>
-                  <Text style={[s.Form_SubLabel]}>Room Furnishing</Text>
-                </FormControl.Label>
-
-                <Controller
-                  control={control}
-                  name="furnishingType"
-                  rules={{ required: "Room Furnishing is required" }}
-                  render={({ field: { onChange, value } }) => (
-                    <View style={{ marginBottom: 10 }}>
-                      <Button
-                        onPress={() => setIsFurnishingActionSheetOpen(true)}
-                      >
-                        <Text>{value || "Select Room Furnishing"}</Text>
-                      </Button>
-
-                      {errors?.furnishingType && (
-                        <Text style={{ color: "red", marginTop: 4 }}>
-                          {errors.furnishingType.message}
-                        </Text>
-                      )}
-
-                      {value && (
-                        <Text
-                          style={{
-                            color: Colors.TextInverse[2],
-                            fontSize: Fontsize.md,
-                            marginTop: 6,
-                            textAlign: "center",
-                          }}
-                        >
-                          Selected: {value}
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                />
-              </FormControl>
-
-              {/* Room type */}
-              <FormControl isInvalid={!!errors.roomType}>
-                <FormControl.Label>
-                  <Text style={[s.Form_SubLabel]}>Room Type</Text>
-                </FormControl.Label>
-
-                <Controller
-                  control={control}
-                  name="roomType"
-                  rules={{ required: "Room Type is required" }}
-                  render={({ field: { onChange, value } }) => (
-                    <View style={{ marginBottom: 10 }}>
-                      <Button
-                        onPress={() => setIsRoomTypeActionSheetOpen(true)}
-                      >
-                        <Text>{value || "Select Room Type"}</Text>
-                      </Button>
-
-                      {errors?.roomType && (
-                        <Text style={{ color: "red", marginTop: 4 }}>
-                          {errors.roomType.message}
-                        </Text>
-                      )}
-
-                      {value && (
-                        <Text
-                          style={{
-                            color: Colors.TextInverse[2],
-                            fontSize: Fontsize.md,
-                            marginTop: 6,
-                            textAlign: "center",
-                          }}
-                        >
-                          Selected: {value}
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                />
-              </FormControl>
-
-              {/* Tags */}
-              <VStack
-                style={{
-                  gap: Spacing.md,
-                  borderWidth: 1,
-                  padding: Spacing.sm,
-                  borderRadius: BorderRadius.md,
-                  // marginBottom: Spacing.md,
-                }}
-              >
-                <Text style={[s.Form_SubLabel]}>Select Room Amenities:</Text>
-                <ScrollView
-                  style={{ height: 150 }}
-                  contentContainerStyle={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 10,
-                    justifyContent: "flex-start",
-                    alignContent: "flex-start",
-                  }}
-                  nestedScrollEnabled={true} // important when inside another scrollable parent
-                  keyboardShouldPersistTaps="handled" // helps with form fields
-                >
-                  {availableFeatureTage.map((item, index) => (
-                    <Pressable
-                      key={index}
-                      onPress={() => handleSelectFeatureTag(item)}
-                    >
-                      <Box
-                        style={{
-                          borderRadius: BorderRadius.md,
-                          padding: 5,
-                        }}
-                      >
-                        <Text style={[s.generic_text]}>{item}</Text>
-                      </Box>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-
-                <Text style={[s.Form_SubLabel, { marginTop: Spacing.md }]}>
-                  Selected Amenities:
+            {/* Gallery Section - Mirroring Boarding House Style */}
+            <View style={m.gallerySection}>
+              <View style={m.galleryHeader}>
+                <Text variant="labelLarge" style={m.sectionLabel}>
+                  Room Gallery
                 </Text>
-                <ScrollView
-                  style={{ height: 150 }}
-                  contentContainerStyle={{
-                    gap: 10,
-                    padding: Spacing.sm,
-                  }}
-                  nestedScrollEnabled={true} // important when inside another scrollable parent
-                  keyboardShouldPersistTaps="handled" // helps with form fields
-                >
-                  {selectedFeatureTags.length ? (
-                    selectedFeatureTags.map((item, index) => (
-                      <Pressable
-                        key={index}
-                        onPress={() => handleRemoveFeatureTag(item)}
-                      >
-                        <Box
-                          style={{
-                            borderRadius: BorderRadius.md,
-                            padding: 5,
-                          }}
-                        >
-                          <Text style={[s.generic_text]}>{item}</Text>
-                        </Box>
-                      </Pressable>
-                    ))
-                  ) : (
-                    <Text style={[s.generic_text]}>No amenities selected</Text>
-                  )}
-                </ScrollView>
-                {/* image selection */}
-                <VStack>
-                  <VStack>
-                    <Pressable
-                      onPress={handlePickGalleryImages}
-                      style={{
-                        padding: Spacing.sm,
-                        alignSelf: "flex-start",
-                        borderRadius: BorderRadius.md,
-                      }}
-                    >
-                      <Text style={[s.generic_text, { fontSize: Fontsize.md }]}>
-                        Select Images
-                      </Text>
-                    </Pressable>
-                    <Controller
-                      control={control}
-                      name="gallery"
-                      render={({ field: { value } }) => {
-                        const galleryImage = value || [];
-
-                        return (
-                          <>
-                            <ScrollView
-                              horizontal
-                              style={{
-                                width: "100%",
-                                height: 100,
-                                marginTop: 10,
-                                marginBottom: 10,
-                              }}
-                              contentContainerStyle={{
-                                marginTop: 10,
-                                flexDirection: "row",
-                                alignItems: "center",
-                                paddingHorizontal: 8,
-                              }}
-                            >
-                              {galleryImage.length > 0 ? (
-                                galleryImage.map((image, index) => (
-                                  <View key={index}>
-                                    <Image
-                                      source={{
-                                        uri: image.uri.startsWith("file://")
-                                          ? image.uri
-                                          : `file://${image.uri}`,
-                                      }}
-                                      style={{
-                                        width: 100,
-                                        height: 100,
-                                        borderRadius: 8,
-                                        marginRight: 8,
-                                        backgroundColor: "#ccc",
-                                      }}
-                                      alt={`Gallery image ${index + 1}`}
-                                    />
-                                    <Pressable
-                                      onPress={() =>
-                                        handleRemoveGalleryImage(index)
-                                      }
-                                      style={{
-                                        position: "absolute",
-                                        top: "0%",
-                                        right: "9%",
-                                      }}
-                                    >
-                                      <Ionicons
-                                        name="close-circle"
-                                        size={20}
-                                        color="white"
-                                      />
-                                    </Pressable>
-                                  </View>
-                                ))
-                              ) : (
-                                <Text style={{ color: "white" }}>
-                                  No Images Selected
-                                </Text>
-                              )}
-                            </ScrollView>
-                          </>
-                        );
-                      }}
-                    />
-                  </VStack>
-                </VStack>
-
-                {/* Submit */}
-                <VStack
-                  style={{
-                    alignItems: "center",
-                    borderRadius: BorderRadius.md,
-                    padding: 10,
-                    justifyContent: "center",
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={() => {
-                      handleSubmit(handleFinalSubmit)();
-                      console.log("clicked..?");
-                    }}
+                <Pressable onPress={handlePickGalleryImages}>
+                  <Text
+                    style={{ color: theme.colors.primary, fontWeight: "bold" }}
                   >
-                    <Text
-                      style={{
-                        color: "black",
-                        textAlign: "center",
-                        fontSize: 18,
-                      }}
-                    >
-                      Add Room
-                    </Text>
-                  </TouchableOpacity>
-                </VStack>
-              </VStack>
-            </ScrollView>
+                    Add Images
+                  </Text>
+                </Pressable>
+              </View>
+
+              <Controller
+                control={control}
+                name="gallery"
+                render={({ field: { value } }) => (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={m.galleryScroll}
+                  >
+                    {value?.map((image, index) => (
+                      <View key={index} style={m.galleryItem}>
+                        <Image
+                          source={{ uri: image.uri }}
+                          style={m.galleryImage}
+                          alt="Room Gallery"
+                        />
+                        <Pressable
+                          onPress={() => handleRemoveGalleryImage(index)}
+                          style={m.galleryRemove}
+                        >
+                          <Ionicons
+                            name="close-circle"
+                            size={22}
+                            color="white"
+                          />
+                        </Pressable>
+                      </View>
+                    ))}
+                    {(!value || value.length === 0) && (
+                      <View style={m.emptyGallery}>
+                        <Text variant="bodySmall" style={{ opacity: 0.5 }}>
+                          No images added
+                        </Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                )}
+              />
+            </View>
+
+            <Divider />
+
+            {/* Core Info */}
+            <View style={m.row}>
+              <FormField
+                name="roomNumber"
+                control={control}
+                isEditing
+                label="Room #"
+                containerStyle={{ flex: 1 }}
+              />
+              <FormField
+                name="price"
+                control={control}
+                isEditing
+                label="Price"
+                keyboardType="numeric"
+                prefix="₱"
+                containerStyle={{ flex: 1 }}
+              />
+            </View>
+
+            <FormField
+              name="maxCapacity"
+              control={control}
+              isEditing
+              label="Capacity (Pax)"
+              keyboardType="numeric"
+            />
+
+            <FormField
+              name="description"
+              control={control}
+              isEditing
+              inputType="paragraph"
+              label="About Room"
+            />
+
+            <View style={m.row}>
+              <Button
+                mode="outlined"
+                style={{ flex: 1 }}
+                onPress={() => setSelTypeOpen(true)}
+                icon="home-outline"
+              >
+                {watch("roomType") || "Type"}
+              </Button>
+              <Button
+                mode="outlined"
+                style={{ flex: 1 }}
+                onPress={() => setSelFurnOpen(true)}
+                icon="bed-outline"
+              >
+                {watch("furnishingType") || "Furnish"}
+              </Button>
+            </View>
+
+            <Divider />
+
+            <Text variant="labelLarge">Amenities</Text>
+            <View style={m.chipGroup}>
+              {ROOM_FEATURE_TAGS.map((tag) => (
+                <Chip
+                  key={tag}
+                  selected={selectedTags.includes(tag as any)}
+                  onPress={() => toggleTag(tag)}
+                  showSelectedCheck
+                  mode="outlined"
+                >
+                  {tag}
+                </Chip>
+              ))}
+            </View>
           </View>
+        </ScrollView>
+
+        <View style={m.footer}>
+          <Button onPress={onClose}>Cancel</Button>
+          <Button mode="contained" onPress={handleSubmit(onSubmit)}>
+            {initialData ? "Update Room" : "Add Room"}
+          </Button>
         </View>
-        {/* </Modal> */}
-      </Overlay>
-      <ButtomSheetSelector
-        options={roomTypeOptions}
-        isOpen={isRoomTypeActionSheetOpen}
-        onClose={() => setIsRoomTypeActionSheetOpen(false)}
-        onSelect={(value) => {
-          setValue("roomType", value);
-          setIsRoomTypeActionSheetOpen(false);
-        }}
-      />
-      <ButtomSheetSelector
-        options={roomFurnishingTypeOptions}
-        isOpen={isFurnishingActionSheetOpen}
-        onClose={() => setIsFurnishingActionSheetOpen(false)}
-        onSelect={(value) => {
-          setValue("furnishingType", value);
-          setIsFurnishingActionSheetOpen(false);
-        }}
-      />
-    </>
+
+        {/* Action Sheets */}
+        <BottomSheetSelector
+          isOpen={selTypeOpen}
+          onClose={() => setSelTypeOpen(false)}
+          options={roomTypeOptions}
+          onSelect={(v) => {
+            setValue("roomType", v);
+            setSelTypeOpen(false);
+          }}
+        />
+        <BottomSheetSelector
+          isOpen={selFurnOpen}
+          onClose={() => setSelFurnOpen(false)}
+          options={roomFurnishingTypeOptions}
+          onSelect={(v) => {
+            setValue("furnishingType", v);
+            setSelFurnOpen(false);
+          }}
+        />
+      </Modal>
+    </Portal>
   );
 }
 
-const s = StyleSheet.create({
-  generic_text: {
-    color: Colors.TextInverse[2],
+const m = StyleSheet.create({
+  modalContainer: {
+    backgroundColor: "white",
+    margin: 20,
+    padding: 20,
+    borderRadius: BorderRadius.lg,
+    maxHeight: "90%",
   },
-  Form_Label: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.xxl,
-    marginBottom: 6,
+  title: { marginBottom: 16, fontWeight: "bold" },
+  sectionLabel: { marginBottom: 4 },
+  row: { flexDirection: "row", gap: 12 },
+  chipGroup: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  gallerySection: { marginTop: Spacing.xs },
+  galleryHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  Form_SubLabel: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.xl,
-    marginBottom: 6,
+  galleryScroll: { flexDirection: "row" },
+  galleryItem: { marginRight: 12, position: "relative" },
+  galleryImage: {
+    width: 100,
+    height: 100,
+    borderRadius: BorderRadius.md,
+    backgroundColor: "#f0f0f0",
   },
-  Form_Input_Placeholder: {
-    color: Colors.TextInverse[2],
-    fontSize: Fontsize.md,
-  },
-});
-
-const modalStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    // backgroundColor: "white",
+  galleryRemove: { position: "absolute", top: 4, right: 4 },
+  emptyGallery: {
+    height: 100,
+    width: 100,
+    borderWidth: 1,
+    borderColor: "#eee",
+    borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    // zIndex: 1,
+    borderRadius: BorderRadius.md,
   },
-  container: {
-    width: "100%",
-    maxHeight: "90%",
-    borderRadius: 10,
-    padding: 20,
-    elevation: 4,
-  },
-  closeButton: {
-    borderRadius: BorderRadius.circle,
-    position: "absolute",
-    right: 10,
-    top: 10,
-    // zIndex: 1,
+  footer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 20,
+    gap: 10,
   },
 });

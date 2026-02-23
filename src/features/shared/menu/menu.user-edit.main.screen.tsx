@@ -120,17 +120,7 @@ export default function MenuUserEditScreen() {
   };
 
   return (
-    <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[
-        GlobalStyle.GlobalsContentContainer,
-        {
-          padding: Spacing.lg,
-          // paddingBottom: 80, // gives space for keyboard
-          gap: Spacing.lg,
-        },
-      ]}
-    >
+    <StaticScreenWrapper style={[GlobalStyle.GlobalsContainer]}>
       <VStack
         style={[
           {

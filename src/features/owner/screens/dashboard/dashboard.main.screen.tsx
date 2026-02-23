@@ -1,237 +1,267 @@
-import { View, Text, StyleSheet, Dimensions, Pressable } from "react-native";
-import { Box, HStack } from "@gluestack-ui/themed";
-import React, { useState } from "react";
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import Button from "@/components/ui/Button";
-
+import React, { useState, useMemo } from "react";
+import { View, StyleSheet, Pressable, ScrollView } from "react-native";
 import {
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-  BorderRadius,
-} from "@/constants";
-import { VStack } from "@gluestack-ui/themed";
-
-//redux
+  Text,
+  Surface,
+  Button,
+  Searchbar,
+  useTheme,
+  Avatar,
+  Card,
+  Icon,
+} from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
-import { Owner } from "@/infrastructure/owner/owner.types";
-import { useGetAllQuery } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
-import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 import { useNavigation } from "@react-navigation/native";
-import { OwnerDashboardStackParamList } from "./navigation/dashboard.types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import ScreenHeaderComponent from "@/components/layout/ScreenHeaderComponent";
-import HeaderSearch from "@/components/layout/HeaderSearch";
+
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import PropertyCard from "../../../../components/ui/BoardingHouseItems/PropertyCard";
-import { Lists } from "@/components/layout/Lists/Lists";
-import {
-  BoardingHouse,
-  GetBoardingHouse,
-} from "@/infrastructure/boarding-houses/boarding-house.schema";
-import Container from "@/components/layout/Container/Container";
-import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import VerificationIndicatorComponent from "../../../../components/ui/Verification/VerificationIndicatorComponent";
+import { Lists } from "@/components/layout/Lists/Lists";
+
+import { Spacing, BorderRadius, GlobalStyle } from "@/constants";
+import { useGetAllQuery as useGetAllQueryBH } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
+import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
+import { Owner } from "@/infrastructure/owner/owner.types";
+import { OwnerDashboardStackParamList } from "./navigation/dashboard.types";
+import DashboardStateCard from "@/components/ui/Dashboard/DashboardStateCard";
+import { useGetAllQuery as useGetAllQueryBooking } from "@/infrastructure/booking/booking.redux.api";
+import { useGetOverviewMetricsQuery } from "@/infrastructure/metrics/metric.redux.api";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 export default function DashboardMainScreen() {
-  const [refreshing, setRefreshing] = React.useState(false);
-
+  const theme = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate =
     useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
-  const { selectedUser: data } = useDynamicUserApi();
-  const user = data as Owner;
 
-  const [isGrid, setIsGrid] = useState(false);
-
-  const { selectedUser: userData } = useDynamicUserApi();
-  const owner = userData as Owner;
-
+  const { selectedUser } = useDynamicUserApi();
+  const owner = selectedUser as Owner;
 
   const {
     data: boardingHouses,
-    isLoading: boardingHousesLoading,
-    isError: boardingHousesError,
-    refetch: refetchBoardingHouses,
-  } = useGetAllQuery({ ownerId: owner.id });
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAllQueryBH({ ownerId: owner?.id });
 
-  const iconSize = 25;
+  const { data: metrics } = useGetOverviewMetricsQuery({
+    role: "OWNER",
+    userId: owner.id,
+  });
 
-  const handleGotoPress = (bhId: number) => {
-    navigate.navigate("BoardingHouseDetailsScreen", { id: bhId });
-  };
+  const stats = useMemo(() => {
+    if (!boardingHouses || !metrics) {
+      return { totalProperties: 0, totalRooms: 0, activeBookings: 0 };
+    }
 
-  const handlePageRefresh = () => {
+    const activeBookings =
+      metrics.bookings?.statusCounts
+        ?.filter((s) => s.status === "COMPLETED_BOOKING" || s.status === "PAID")
+        .reduce((acc, curr) => acc + curr._count.status, 0) ?? 0;
+
+    return {
+      totalProperties: boardingHouses.length,
+
+      totalRooms: boardingHouses.reduce(
+        (acc, bh) => acc + (bh.rooms?.length || 0),
+        0,
+      ),
+
+      activeBookings,
+    };
+  }, [boardingHouses, metrics]);
+
+  const handlePageRefresh = async () => {
     setRefreshing(true);
-    refetchBoardingHouses();
+    await refetch();
     setRefreshing(false);
   };
+
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer, s.StaticScreenWrapper]}
-      contentContainerStyle={[
-        GlobalStyle.GlobalsContentContainer,
-        s.GlobalsContentContainer,
-      ]}
+      variant="list"
       refreshing={refreshing}
       onRefresh={handlePageRefresh}
+      loading={isLoading}
     >
-      {boardingHousesError && <FullScreenErrorModal />}
-      {boardingHousesLoading && <FullScreenLoaderAnimated />}
-      <ScreenHeaderComponent text={{ textValue: "Dashboard" }} />
-
-      <HStack
-        style={{
-          width: "100%",
-          borderWidth: 1,
-          borderRadius: BorderRadius.lg,
-          justifyContent: "space-between",
-          margin: 0,
-          padding: 0,
-        }}
-      >
-        <HeaderSearch
-          value=""
-          setValue={() => {}}
-          containerStyle={{ flex: 1 }}
-        />
-        <Button
-          onPressAction={() => setIsGrid(!isGrid)}
-          containerStyle={{
-            aspectRatio: 1,
-            height: 50,
-            // width: 10,
-            margin: Spacing.md,
-            // margin: Spacing.md,
-            borderWidth: 1,
-            padding: 0,
-            borderRadius: BorderRadius.lg,
-          }}
-        >
-          <Ionicons
-            name={isGrid ? "grid" : "reorder-four"}
-            color="white"
-            size={20}
-          />
-        </Button>
-      </HStack>
-
-      <View>
-        <Pressable onPress={() => navigate.navigate("VerificationMainScreen")}>
-          <VerificationIndicatorComponent isVerified={owner?.isVerified!} />
-        </Pressable>
-      </View>
-
-      <VStack style={[s.Widget]}>
-        <Box style={[s.Widget_item]}>
-          <Ionicons name="home" color="white" size={iconSize} />
-          <Text style={[s.generic_text_lg]}>
-            {user.boardingHouses.length ?? 0}
-          </Text>
-        </Box>
-        <Box style={[s.Widget_item]}>
-          <Ionicons name="people" color="white" size={iconSize} />
-          <Text style={[s.generic_text_lg]}>{0}</Text>
-        </Box>
-        <Box style={[s.Widget_item]}>
-          <Ionicons name="book" color="white" size={iconSize} />
-          <Text style={[s.generic_text_lg]}>{0}</Text>
-        </Box>
-        <Box style={[s.Widget_item]}>
-          <Ionicons name="server" color="white" size={iconSize} />
-          <Text style={[s.generic_text_lg]}>{0}</Text>
-        </Box>
-      </VStack>
-
-      <VStack
-        style={{
-          gap: 10,
-          flexDirection: "row",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          alignContent: "flex-start",
-        }}
-      >
-        {!boardingHousesLoading &&
-          !boardingHousesError &&
-          (!boardingHouses || boardingHouses.length === 0) && (
-            <Text style={{ color: "white", fontSize: Fontsize.xl }}>
-              No boarding houses registered yet.
+      <View style={[s.container]}>
+        {/* 1. Header Section */}
+        <View style={s.header}>
+          <View>
+            <Text variant="displaySmall" style={s.welcomeText}>
+              Hi, {owner?.firstname || "Owner"}
             </Text>
-          )}
-        {boardingHouses && (
-          <>
+            <Text
+              variant="titleMedium"
+              style={{ color: theme.colors.onSurfaceVariant }}
+            >
+              Property Portfolio
+            </Text>
+          </View>
+          <Pressable onPress={() => navigate.navigate("Settings" as any)}>
+            <Avatar.Icon size={48} icon="account-circle" />
+          </Pressable>
+        </View>
+
+        {/* 3. Verification - Tonal Surface */}
+        <VerificationIndicatorComponent
+          onPress={() => navigate.navigate("VerificationMainScreen")}
+          isVerified={
+            owner?.registrationStatus === "COMPLETED" &&
+            owner?.verificationLevel === "FULLY_VERIFIED"
+          }
+        />
+
+        {/* 4. Stats Row - Elevated Tonal Cards */}
+        <View style={s.statsRow}>
+          <DashboardStateCard
+            label="Properties"
+            value={stats.totalProperties}
+            icon="home-variant"
+            bgColor={theme.colors.primaryContainer}
+            textColor={theme.colors.onPrimaryContainer}
+          />
+          <DashboardStateCard
+            label="Rooms"
+            value={stats.totalRooms}
+            icon="bed"
+            bgColor={theme.colors.secondaryContainer}
+            textColor={theme.colors.onSecondaryContainer}
+          />
+          <DashboardStateCard
+            label="Listings"
+            value={stats.activeBookings}
+            icon="calendar-check"
+            bgColor={theme.colors.tertiaryContainer}
+            textColor={theme.colors.onTertiaryContainer}
+          />
+        </View>
+
+        {/* 5. List Header */}
+        <View style={s.listHeader}>
+          <Text variant="titleLarge" style={{ fontWeight: "700" }}>
+            Properties
+          </Text>
+          <Button
+            mode="contained"
+            icon="plus"
+            onPress={() => navigate.navigate("PropertyCreate" as any)}
+            style={s.fabReplica}
+          >
+            Create
+          </Button>
+        </View>
+
+        <Searchbar
+          placeholder="Search properties"
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={[
+            s.searchBar,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.outlineVariant,
+              borderRadius: BorderRadius.md,
+            },
+          ]}
+          inputStyle={s.searchInput}
+          placeholderTextColor={theme.colors.placeholder}
+          iconColor={theme.colors.primary}
+          mode="bar"
+          elevation={0} // Stays flat as per your Design Anchor
+        />
+
+        {/* 6. Main List */}
+        <View style={{ paddingBottom: 120 }}>
+          {boardingHouses?.length === 0 ? (
+            <View style={s.emptyState}>
+              <Icon
+                source="home-off-outline"
+                size={64}
+                color={theme.colors.outline}
+              />
+              <Text variant="bodyLarge" style={{ marginTop: 16 }}>
+                Start your journey here
+              </Text>
+            </View>
+          ) : (
             <Lists
-              list={boardingHouses}
-              contentContainerStyle={[
-                {
-                  gap: Spacing.lg,
-                },
-              ]}
-              renderItem={({ item, index }) => (
-                <PropertyCard data={item} key={index}>
-                  <Pressable
-                    onPress={() => handleGotoPress(item.id)}
-                    style={{
-                      paddingTop: Spacing.xs,
-                      paddingBottom: Spacing.xs,
-                      paddingLeft: Spacing.sm,
-                      paddingRight: Spacing.sm,
-                      borderWidth: 2,
-                      borderRadius: BorderRadius.md,
-                    }}
+              list={
+                boardingHouses?.filter((bh) =>
+                  bh.name.toLowerCase().includes(searchQuery.toLowerCase()),
+                ) || []
+              }
+              contentContainerStyle={{ gap: 16 }}
+              renderItem={({ item }) => (
+                <PropertyCard data={item}>
+                  <Button
+                    mode="contained-tonal"
+                    icon="cog"
+                    onPress={() =>
+                      navigate.navigate("BoardingHouseDetailsScreen", {
+                        id: item.id,
+                      })
+                    }
+                    style={{ marginTop: 8 }}
                   >
-                    <Text style={{ color: "white" }}>Details</Text>
-                  </Pressable>
+                    Manage
+                  </Button>
                 </PropertyCard>
               )}
             />
-          </>
-        )}
-      </VStack>
+          )}
+        </View>
+      </View>
     </StaticScreenWrapper>
   );
 }
 
 const s = StyleSheet.create({
-  StaticScreenWrapper: {
-    padding: Spacing.md,
+  container: {
+    gap: Spacing.md,
   },
-  GlobalsContentContainer: {
-    gap: Spacing.lg,
-  },
-  Hero: {},
-  Hero_text1: {
-    fontSize: Fontsize.h2,
-    fontWeight: "bold",
-  },
-  Widget: {
-    // borderColor: 'red',
-    // borderWidth: 3
-    gap: 0,
-    // gap: Spacing.none,
+  header: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
-    alignContent: "center",
-  },
-  Widget_item: {
-    borderRadius: BorderRadius.md,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
     alignItems: "center",
-    padding: 20,
-    width: "auto",
+  },
+  welcomeText: {
+    fontWeight: "900",
+    letterSpacing: -1,
+  },
+  verifSurface: {
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  listHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  fabReplica: {
+    borderRadius: BorderRadius.md,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 60,
+    opacity: 0.5,
   },
 
-  generic_text_sm: {
-    fontSize: Fontsize.sm,
+  searchBar: {
+    height: 52,
+    borderWidth: 1,
+    borderColor: "transparent", // Default state
   },
-  generic_text_md: {
-    fontSize: Fontsize.md,
-  },
-  generic_text_lg: {
-    fontSize: Fontsize.lg,
+  searchInput: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 16,
+    minHeight: 0,
   },
 });

@@ -1,86 +1,99 @@
-import { Text, StyleSheet } from "react-native";
 import React from "react";
-import { ScrollView } from "react-native-gesture-handler";
-import { Box, HStack, Pressable, View } from "@gluestack-ui/themed";
-import { BorderRadius, Colors, Fontsize } from "@/constants";
+import { StyleSheet, View } from "react-native";
+import { Chip, Text, useTheme } from "react-native-paper";
+import { BorderRadius, Spacing } from "@/constants";
 
-interface TagListDumbInterface<T extends string> {
+interface TagListDumbProps<T extends string> {
+  /** All possible items to display (available options) */
   items: readonly T[];
+  /** Subset of items currently selected (the values to display) */
   selected: readonly T[];
+  /** If false, only selected items are shown in a static wrapping list. */
   isEditing: boolean;
+  /** Callback when a chip is pressed. Disabled if isEditing is false. */
   onToggle: (value: T) => void;
+  /** Label shown when no items are selected in view mode. */
   emptyLabel?: string;
 }
 
+/**
+ * A Material Design 3 Chip list that always wraps to the next line.
+ * * - **Edit Mode**: Shows all items. Selected ones are highlighted with a checkmark.
+ * - **View Mode**: Shows only selected items as static "badges".
+ */
 export default function TagListDumb<T extends string>({
   items,
   selected,
   isEditing,
   onToggle,
   emptyLabel = "No items listed",
-}: TagListDumbInterface<T>) {
+}: TagListDumbProps<T>) {
+  const theme = useTheme();
+
+  // Show all items when editing to allow selection;
+  // Show only selected items when viewing to act as a summary.
   const displayList = isEditing
     ? items
     : items.filter((i) => selected.includes(i));
 
+  // Handle the empty state for View mode
   if (!isEditing && displayList.length === 0) {
     return (
-      <Text style={[s.amenityText, { marginTop: 12, opacity: 0.5 }]}>
+      <Text variant="bodyMedium" style={s.emptyText}>
         {emptyLabel}
       </Text>
     );
   }
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <HStack style={{ gap: 12, paddingRight: 20 }}>
-        {displayList.map((item) => {
-          const active = isEditing && selected.includes(item);
+    <View style={s.flexWrap}>
+      {displayList.map((item) => {
+        const isSelected = selected.includes(item);
 
-          const Chip = (
-            <Box style={[s.amenityChip, active && s.amenityChipSelected]}>
-              <Text style={active ? s.amenityTextSelected : s.amenityText}>
-                {item}
-              </Text>
-            </Box>
-          );
-
-          return isEditing ? (
-            <Pressable key={item} onPress={() => onToggle(item)}>
-              {Chip}
-            </Pressable>
-          ) : (
-            <View key={item}>{Chip}</View>
-          );
-        })}
-      </HStack>
-    </ScrollView>
+        return (
+          <Chip
+            key={item}
+            selected={isSelected}
+            // Logic: Only show the checkmark icon when the user is actively editing
+            showSelectedCheck={isEditing}
+            // Logic: Disable interaction if not in editing mode
+            onPress={isEditing ? () => onToggle(item) : undefined}
+            // M3 Style: 'flat' (filled) for selected, 'outlined' for available
+            mode={isSelected ? "flat" : "outlined"}
+            style={[
+              s.chip,
+              { borderRadius: BorderRadius.pill },
+              !isSelected && { borderColor: theme.colors.outlineVariant },
+              // View mode chips are slightly more compact
+              !isEditing && { height: 32, justifyContent: "center" },
+            ]}
+            selectedColor={theme.colors.onSecondaryContainer}
+            textStyle={s.chipText}
+          >
+            {item}
+          </Chip>
+        );
+      })}
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  amenitiesContainer: {
-    padding: 16,
-    borderRadius: BorderRadius.md,
+  flexWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8, // Standard M3 spacing between chips
+    paddingVertical: Spacing.xs,
   },
-  amenityChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.md,
+  chip: {
+    marginVertical: 4, // Provides vertical breathing room when wrapped
   },
-  amenityChipSelected: {
-    backgroundColor: "#10b981",
+  chipText: {
+    fontSize: 12,
   },
-  amenityText: {
-    fontSize: Fontsize.sm,
-  },
-  amenityTextSelected: {
-    color: "white",
-    fontWeight: "600",
-  },
-  amenityDisplay: {
-    padding: 10,
-    borderRadius: BorderRadius.md,
-    fontSize: Fontsize.md,
+  emptyText: {
+    marginTop: Spacing.xs,
+    opacity: 0.6,
+    fontStyle: "italic",
   },
 });

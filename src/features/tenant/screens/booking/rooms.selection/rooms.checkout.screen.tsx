@@ -1,196 +1,241 @@
-import { View, Text, Platform, StyleSheet, Alert } from "react-native";
 import React, { useState } from "react";
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import { View, StyleSheet, Alert, Platform } from "react-native";
 import {
-  Box,
+  Text,
   Button,
+  Surface,
   Checkbox,
-  CheckboxIcon,
-  CheckboxIndicator,
-  CheckboxLabel,
-  VStack,
-} from "@gluestack-ui/themed";
-
+  useTheme,
+  Divider,
+  Avatar,
+  IconButton,
+} from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Colors, Fontsize, GlobalStyle, Spacing } from "@/constants";
-import DecisionModal from "@/components/ui/DecisionModal";
-import { useCreateBookingMutation } from "@/infrastructure/booking/booking.redux.api";
-import { CreateBookingInput } from "@/infrastructure/booking/booking.schema";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { TenantBookingStackParamList } from "../navigation/booking.types";
 import { useSelector } from "react-redux";
-import { RootState } from "@/application/store/stores";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import ScreenHeaderComponent from "../../../../../components/layout/ScreenHeaderComponent";
-import UserInformatioCard from "@/components/ui/Information/UserInformatioCard";
-import { useGetOneQuery } from "@/infrastructure/owner/owner.redux.api";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
-type RouteProps = RouteProp<TenantBookingStackParamList, "RoomsCheckoutScreen">;
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import UserInformatioCard from "@/components/ui/Information/UserInformatioCard";
+import { Spacing, BorderRadius } from "@/constants";
+import { useCreateBookingMutation } from "@/infrastructure/booking/booking.redux.api";
+import { useGetOneQuery as useGetOwnerQuery } from "@/infrastructure/owner/owner.redux.api";
+import { RootState } from "@/application/store/stores";
 
 export default function RoomsCheckoutScreen() {
-  const route = useRoute<RouteProps>();
+  const theme = useTheme();
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
   const { roomId, ownerId } = route.params;
-  const navigation =
-    useNavigation<NativeStackNavigationProp<TenantBookingStackParamList>>();
+
   const tenantId = useSelector(
     (state: RootState) => state.tenants.selectedUser?.id,
   );
+  const { data: ownerData } = useGetOwnerQuery(ownerId, { skip: !ownerId });
+  const [createBooking, { isLoading }] = useCreateBookingMutation();
 
-  const [showModal, setShowModal] = React.useState(false);
-  const [createBooking, { isLoading, isError }] = useCreateBookingMutation();
-
-  const [checkIn, setCheckIn] = React.useState(new Date());
+  // State
+  const [showModal, setShowModal] = useState(false);
+  const [checkIn, setCheckIn] = useState(new Date());
   const [checkOut, setCheckOut] = useState(
-    new Date(new Date().setMonth(new Date().getMonth() + 1)), // default +1 month
+    new Date(new Date().setMonth(new Date().getMonth() + 1)),
   );
+  const [showPicker, setShowPicker] = useState(false);
+  const [terms, setTerms] = useState({ t1: false, t2: false });
 
-  if (!ownerId) {
-    return <Text>Cound not Load the Informations!</Text>;
-  }
+  const canSubmit = terms.t1 && terms.t2;
 
-  const { data: ownerData } = useGetOneQuery(ownerId);
-
-  const [showCheckIn, setShowCheckIn] = useState(false);
-  const [hasAcceptedTerms1, setHasAcceptedTerms1] = useState(false);
-  const [hasAcceptedTerms2, setHasAcceptedTerms2] = useState(false);
-  const canSubmit = hasAcceptedTerms1 && hasAcceptedTerms2;
-
-  const onCheckInChange = (_event: any, selectedDate?: Date) => {
-    setShowCheckIn(Platform.OS === "ios");
+  const onDateChange = (_: any, selectedDate?: Date) => {
+    setShowPicker(Platform.OS === "ios");
     if (selectedDate) {
       setCheckIn(selectedDate);
-      // Auto-calc check out 1 month after check-in
-      const newCheckOut = new Date(selectedDate);
-      newCheckOut.setMonth(newCheckOut.getMonth() + 1);
-      setCheckOut(newCheckOut);
+      const nextMonth = new Date(selectedDate);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      setCheckOut(nextMonth);
     }
   };
 
-  const handleSaveChanges = async () => {
-    if (!tenantId) return;
-    if (!roomId) return;
-
-    // if (!hasAcceptedTerms1 && !hasAcceptedTerms2) {
-    //   Alert.alert(
-    //     "Failed to create Booking Request: " +
-    //   );
-    // }
-
-    const payload = {
-      tenantId,
-      startDate: checkIn.toISOString(),
-      endDate: checkOut.toISOString(),
-    };
-
+  const handleConfirm = async () => {
+    if (!tenantId || !roomId) return;
     try {
       await createBooking({
-        roomId: roomId,
-        payload,
+        roomId,
+        payload: {
+          tenantId,
+          startDate: checkIn.toISOString(),
+          endDate: checkOut.toISOString(),
+        },
       }).unwrap();
 
-      Alert.alert("Success", "Successfully created Booking Request!", [
-        {
-          text: "OK",
-          onPress: () =>
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "BoardingHouseLists" }],
-            }),
-        },
-      ]);
-    } catch (error: any) {
-      console.log("error:", error);
       Alert.alert(
-        "Failed to create Booking Request: " +
-          (error?.error || "Unknown error"),
+        "Request Sent",
+        "Your reservation request is now pending owner approval.",
+        [
+          {
+            text: "View Dashboard",
+            onPress: () => navigation.navigate("BoardingHouseLists"),
+          },
+        ],
       );
+    } catch (err: any) {
+      Alert.alert("Error", err?.data?.message || "Failed to create request.");
     }
   };
 
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
+      loading={isLoading}
+      style={{ backgroundColor: theme.colors.background }}
     >
-      {isLoading && <FullScreenLoaderAnimated />}
-      <VStack style={{ flex: 1, padding: Spacing.md }}>
-        <ScreenHeaderComponent text={{ textValue: "Reservation Request" }} />
-        <VStack>
-          <UserInformatioCard user={ownerData!}></UserInformatioCard>
-        </VStack>
-        <VStack style={{ gap: 4 }}>
-          <Text style={{ fontWeight: "600" }}>Reservation Notes</Text>
-          <Text>• Reservation locks the room for 1 month by default.</Text>
-          <Text>
-            • Final rent terms and payments are negotiated directly with the
-            owner.
-          </Text>
-          <Text>
-            • Make sure to communicate with the owner for check-in/out
-            preferences.
-          </Text>
-        </VStack>
-        <Box>
-          <Text>
-            Reservation Duration:{" "}
-            {Math.ceil(
-              (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
-            )}{" "}
-            days
-          </Text>
-        </Box>
-      </VStack>
-      <Checkbox
-        value="terms1"
-        isChecked={hasAcceptedTerms1}
-        onChange={setHasAcceptedTerms1}
-      >
-        <CheckboxIndicator>
-          <CheckboxIcon />
-        </CheckboxIndicator>
-        <CheckboxLabel>
-          I understand this is a reservation intent and not a guaranteed
-          booking.
-        </CheckboxLabel>
-      </Checkbox>
+      <View style={s.container}>
+        <Text variant="headlineSmall" style={s.headerText}>
+          Reservation Request
+        </Text>
 
-      <Checkbox
-        value="terms2"
-        isChecked={hasAcceptedTerms2}
-        onChange={setHasAcceptedTerms2}
-      >
-        <CheckboxIndicator>
-          <CheckboxIcon />
-        </CheckboxIndicator>
-        <CheckboxLabel>
-          I agree that final arrangements are discussed directly with the owner.
-        </CheckboxLabel>
-      </Checkbox>
-      <Box style={[{ marginTop: "auto" }]}>
-        <Button onPress={() => setShowModal(true)} disabled={!canSubmit}>
-          <Text style={[{}, s.textColor]}>Submit Reservation Request</Text>
+        {/* 1. Owner Section */}
+        <Text variant="labelLarge" style={s.sectionLabel}>
+          PROPERTY OWNER
+        </Text>
+        <UserInformatioCard user={ownerData} />
+
+        {/* 2. Date Selection Section */}
+        <Surface elevation={1} style={s.dateCard}>
+          <View style={s.dateHeader}>
+            <View>
+              <Text
+                variant="labelSmall"
+                style={{ color: theme.colors.primary }}
+              >
+                PROPOSED CHECK-IN
+              </Text>
+              <Text variant="titleLarge" style={s.bold}>
+                {checkIn.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+            <Button mode="outlined" onPress={() => setShowPicker(true)} compact>
+              Change
+            </Button>
+          </View>
+
+          <Divider style={s.divider} />
+
+          <View style={s.durationRow}>
+            <Text variant="bodyMedium">Reservation Period:</Text>
+            <Text variant="bodyLarge" style={s.bold}>
+              30 Days (Default)
+            </Text>
+          </View>
+        </Surface>
+
+        {showPicker && (
+          <DateTimePicker
+            value={checkIn}
+            mode="date"
+            display="default"
+            onChange={onDateChange}
+            minimumDate={new Date()}
+          />
+        )}
+
+        {/* 3. Notes Section */}
+        <Surface
+          elevation={0}
+          style={[
+            s.notesCard,
+            { backgroundColor: theme.colors.surfaceVariant },
+          ]}
+        >
+          <Text variant="titleSmall" style={{ marginBottom: 4 }}>
+            Important Notes
+          </Text>
+          <Text variant="bodySmall">
+            • Room is locked for 1 month upon approval.
+          </Text>
+          <Text variant="bodySmall">
+            • Final rent is negotiated directly with owner.
+          </Text>
+        </Surface>
+
+        {/* 4. Terms Section */}
+        <View style={s.termsContainer}>
+          <View style={s.checkboxRow}>
+            <Checkbox.Android
+              status={terms.t1 ? "checked" : "unchecked"}
+              onPress={() => setTerms({ ...terms, t1: !terms.t1 })}
+              color={theme.colors.primary}
+            />
+            <Text variant="bodySmall" style={s.termsText}>
+              I understand this is a reservation intent, not a guaranteed
+              booking.
+            </Text>
+          </View>
+          <View style={s.checkboxRow}>
+            <Checkbox.Android
+              status={terms.t2 ? "checked" : "unchecked"}
+              onPress={() => setTerms({ ...terms, t2: !terms.t2 })}
+              color={theme.colors.primary}
+            />
+            <Text variant="bodySmall" style={s.termsText}>
+              I agree to discuss final arrangements directly with the owner.
+            </Text>
+          </View>
+        </View>
+
+        {/* Submit Action */}
+        <Button
+          mode="contained"
+          disabled={!canSubmit}
+          onPress={() => setShowModal(true)}
+          style={s.submitBtn}
+          contentStyle={{ height: 56 }}
+          labelStyle={{ fontSize: 16, fontWeight: "700" }}
+        >
+          Send Request
         </Button>
-      </Box>
-      <DecisionModal
-        visible={showModal}
-        title="Confirm Date"
-        message={`Are you sure about the Date?\n${checkIn.toDateString()} - ${checkOut.toDateString()}`}
-        onCancel={() => setShowModal(false)}
-        onConfirm={handleSaveChanges}
-        confirmText="Confirm"
-        cancelText="Cancel"
-      />
+      </View>
+
+     
     </StaticScreenWrapper>
   );
 }
 
 const s = StyleSheet.create({
-  button_text_style: {
-    fontSize: Fontsize.xl,
+  container: { padding: Spacing.md, flex: 1 },
+  headerText: { fontWeight: "900", marginBottom: 24, textAlign: "center" },
+  sectionLabel: {
+    marginTop: 16,
+    marginBottom: 8,
+    opacity: 0.6,
+    letterSpacing: 1,
   },
-
-  textColor: {
-    color: Colors.TextInverse[2],
+  dateCard: {
+    padding: 16,
+    borderRadius: 24,
+    backgroundColor: "white",
+    marginVertical: 12,
   },
+  dateHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  bold: { fontWeight: "bold" },
+  divider: { marginVertical: 12 },
+  durationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  notesCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 8,
+  },
+  termsContainer: { marginTop: 24, gap: 8 },
+  checkboxRow: { flexDirection: "row", alignItems: "center", paddingRight: 32 },
+  termsText: { flexShrink: 1, opacity: 0.8 },
+  submitBtn: { marginTop: 32, borderRadius: 16 },
 });

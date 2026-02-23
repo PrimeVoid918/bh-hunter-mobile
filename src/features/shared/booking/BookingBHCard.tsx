@@ -1,64 +1,48 @@
-import { View, Text, StyleSheet } from "react-native";
 import React from "react";
+import { View, StyleSheet } from "react-native";
+import { Text, Surface, useTheme } from "react-native-paper";
 import { GetBooking } from "@/infrastructure/booking/booking.schema";
-import { BorderRadius, Colors, Fontsize } from "@/constants";
-import ImageFullScreenModal from "@/components/ui/ImageComponentUtilities/ImageFullScreenModal";
+import { BorderRadius, Fontsize } from "@/constants";
 import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
-import { Ionicons } from "@expo/vector-icons";
-import { HStack } from "@gluestack-ui/themed";
 
-interface BookingBHCardInterface {
-  data: GetBooking;
-}
-
-export default function BookingBHCard({ data }: BookingBHCardInterface) {
+export default function BookingBHCard({ data }: { data: GetBooking }) {
   const { boardingHouse } = data;
+  const theme = useTheme();
+
   return (
-    <View style={[s.container]}>
-      <View>
-        <PressableImageFullscreen
-          image={boardingHouse?.thumbnail?.[0] ?? null}
-          containerStyle={{ width: "100%", aspectRatio: 2 }}
-          imageStyleConfig={{
-            resizeMode: "cover",
-            containerStyle: { borderRadius: BorderRadius.md },
-          }}
-        />
+    <Surface style={s.container} elevation={1}>
+      <PressableImageFullscreen
+        image={boardingHouse?.thumbnail?.[0] ?? null}
+        containerStyle={s.image}
+        imageStyleConfig={{ resizeMode: "cover" }}
+      />
+      <View style={s.overlay}>
+        <Text variant="headlineSmall" style={s.name}>
+          {boardingHouse?.name}
+        </Text>
+        <Text variant="bodyMedium" style={s.location}>
+          {boardingHouse?.address || "Check address in details"}
+        </Text>
       </View>
-      <View style={[s.floating_container]}>
-        <HStack>
-          <Ionicons
-            name="home"
-            size={Fontsize.h1}
-          />
-          <Text style={[s.text_color, s.boardingHouse_name]}>
-            {boardingHouse?.name}
-          </Text>
-        </HStack>
-      </View>
-    </View>
+    </Surface>
   );
 }
 
 const s = StyleSheet.create({
   container: {
-    borderWidth: 1,
-    position: "relative",
+    borderRadius: 24, // M3 Extra Large rounding
+    overflow: "hidden",
+    marginBottom: 12,
   },
-
-  floating_container: {
+  image: { width: "100%", aspectRatio: 16 / 9 },
+  overlay: {
+    padding: 16,
+    backgroundColor: "rgba(0,0,0,0.4)", // Glassmorphism feel
     position: "absolute",
     bottom: 0,
-    width: "100%",
-    borderWidth: 2,
+    left: 0,
+    right: 0,
   },
-
-  boardingHouse_name: {
-    fontSize: Fontsize.h2,
-    fontWeight: "900",
-  },
-
-  text_color: {
-    color: Colors.TextInverse[2],
-  },
+  name: { color: "white", fontWeight: "900" },
+  location: { color: "rgba(255,255,255,0.8)" },
 });

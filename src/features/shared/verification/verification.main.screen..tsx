@@ -40,6 +40,16 @@ import { Lists } from "@/components/layout/Lists/Lists";
 import VerificationCardComponent from "./VerificationCardComponent";
 import VerificationStatusHeader from "./VerificationStatusHeaderComponent";
 import { MenuStackParamList } from "../menu/navigation/menu.stack.types";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import {
+  ActivityIndicator,
+  Divider,
+  Surface,
+  TouchableRipple,
+  useTheme,
+} from "react-native-paper";
+import { ScrollView } from "react-native-gesture-handler";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type VerificationMainNavigationProp =
   NativeStackNavigationProp<OwnerDashboardStackParamList>;
@@ -48,63 +58,81 @@ type VerificationMainNavigationProp =
 //   MenuStack: undefined;
 // };
 
+const hapticOptions = {
+  enableVibrateFallback: true,
+  ignoreAndroidSystemSettings: false,
+};
+
 export default function VerificationMainScreen() {
-  // const navigation = useNavigation<RootStackParamList>();
-  const navigation = useNavigation<VerificationMainNavigationProp>();
-
-  const { id, role } = useDynamicUserApi();
+  const theme = useTheme();
+  const navigation = useNavigation<any>();
+  const { id: userId, role } = useDynamicUserApi();
   const userRole = getVerificationRole(role);
-
-  const userId = id;
-
   const isTenant = role === "TENANT";
-  const isOwner = role === "OWNER";
 
-  if (!userId) {
-    Alert.alert("Error", "User not found");
-    return null;
-  }
+  const triggerHaptic = () =>
+    ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
 
-  // User PROFILE QUERY WITH FULL DEBUG LOGS
+  // Queries (Preserved logic)
   const {
     data: userData,
     isLoading: isUserLoading,
-    isError: isUserError,
+    isError,
     refetch: userRefetch,
     isFetching,
-  } = isTenant ? useGetOneQueryTenant(userId) : useGetOneQueryOwner(userId); // owner hook
-  const { sourceTarget, verificationTypes } = verificationConfig[userRole];
+  } = isTenant ? useGetOneQueryTenant(userId!) : useGetOneQueryOwner(userId!);
 
-  // VERIFICATION STATUS QUERY
+  const { sourceTarget, verificationTypes } = verificationConfig[userRole];
   const {
     data: verificationStatusData,
-    isLoading: verificationStatusLoading,
-    isError: verificationStatusError,
     refetch: verificationStatusRefetch,
+    isLoading: isLoadingVerification,
+    isError: isErrorVerification,
   } = useGetVerificationStatusQuery(
-    { id: userId, sourceTarget: sourceTarget },
-    { refetchOnMountOrArgChange: true, refetchOnFocus: true },
+    { id: userId!, sourceTarget },
+    { refetchOnFocus: true },
   );
 
   const [patchTenant] = usePatchMutationTenant();
   const [patchOwner] = usePatchMutationOwner();
 
-  // THIS IS THE VALUE YOU CARE ABOUT
-  const hasAcceptedLegitimacyConsent =
-    userData?.hasAcceptedLegitimacyConsent ?? false;
-
-  // LOG EVERYTHING — YOU WILL SEE THIS IN CONSOLE
-  // React.useEffect(() => {
-  // }, [userData]);
-
-  // Log when refetch happens
   useFocusEffect(
     React.useCallback(() => {
-      // console.log("Screen focused → forcing refetch for ownerId:", ownerId);
       userRefetch();
       verificationStatusRefetch();
     }, [userId, userRefetch, verificationStatusRefetch]),
   );
+
+  const verificationList = React.useMemo(() => {
+    const submittedDocsMap = Object.fromEntries(
+      (verificationStatusData?.verificationDocuments ?? []).map((doc) => [
+        doc.verificationType,
+        doc,
+      ]),
+    );
+    return verificationTypes.map((type) => {
+      const submitted = submittedDocsMap[type] ?? null;
+      return {
+        type,
+        meta: VerificationTypeMap[type],
+        status: submitted?.verificationStatus ?? "MISSING",
+        document: submitted,
+      };
+    });
+  }, [verificationTypes, verificationStatusData]);
+
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case "VERIFIED":
+        return { color: "#80CFA9", icon: "check-decagram" };
+      case "REJECTED":
+        return { color: theme.colors.error, icon: "alert-decagram" };
+      case "PENDING":
+        return { color: theme.colors.secondary, icon: "clock-outline" };
+      default:
+        return { color: theme.colors.outline, icon: "plus-circle-outline" };
+    }
+  };
 
   const handleConsentChange = async (value: boolean) => {
     try {
@@ -131,117 +159,210 @@ export default function VerificationMainScreen() {
     }
   };
 
+  const [refreshing, setRefreshing] = React.useState(false);
   const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
     userRefetch();
     verificationStatusRefetch();
+    setTimeout(() => setRefreshing(false), 1000);
   }, [userRefetch, verificationStatusRefetch]);
-
-  const verificationList = React.useMemo<VerificationListItem[]>(() => {
-    const submittedDocsMap = Object.fromEntries(
-      (verificationStatusData?.verificationDocuments ?? []).map((doc) => [
-        doc.verificationType,
-        doc,
-      ]),
-    ) as Record<VerificationType, VerificationDocumentMetaData>;
-
-    return verificationTypes.map((type) => {
-      const submitted = submittedDocsMap[type] ?? null;
-
-      return {
-        type,
-        meta: VerificationTypeMap[type],
-        status: submitted?.verificationStatus ?? "MISSING",
-        document: submitted,
-      };
-    });
-  }, [verificationTypes, verificationStatusData]);
 
   return (
     <StaticScreenWrapper
-      refreshing={isFetching}
+      variant="list"
+      refreshing={refreshing}
       onRefresh={onRefresh}
-      style={[GlobalStyle.GlobalsContainer, s.container]}
-      contentContainerStyle={[
-        GlobalStyle.GlobalsContentContainer,
-        s.containerStyle,
-      ]}
+      loading={isUserLoading && isLoadingVerification}
+      error={[isError && isErrorVerification ? "" : null]}
     >
-      {isUserLoading ||
-        (verificationStatusLoading && <FullScreenLoaderAnimated />)}
-      {isUserError ||
-        (verificationStatusError && (
-          <FullScreenErrorModal message="Failed to load data" />
-        ))}
-      {/* Header */}
-      <VerificationStatusHeader
-        verified={verificationStatusData?.verified}
-        verificationList={verificationList}
-        onCompleteProfile={() => navigation.navigate("ProfileEditScreen")}
-      />
-
-      <VStack style={s.cardHolder}>
-        <Lists
-          list={verificationList}
-          contentContainerStyle={{ gap: Spacing.md }}
-          renderItem={({ item }) => (
-            <VerificationCardComponent
-              title={item.meta.displayName ?? item.type}
-              status={item.status}
-              onPress={() => {
-                if (item.status === "MISSING" || item.status === "REJECTED") {
-                  navigation.navigate("VerificationSubmitScreen", {
-                    userId,
-                    meta: { ...item.meta, type: item.type, role },
-                  });
-                } else {
-                  navigation.navigate("VerificationViewScreen", {
-                    userId,
-                    docId: item.document!.id,
-                    meta: { ...item.meta, type: item.type, role },
-                  });
-                }
-              }}
-            />
-          )}
+      <ScrollView
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <VerificationStatusHeader
+          verified={verificationStatusData?.verified}
+          verificationList={verificationList}
+          onCompleteProfile={() => navigation.navigate("ProfileEditScreen")}
         />
-      </VStack>
 
-      {/* THIS IS WHERE THE TRUTH IS REVEALED */}
-      <VStack style={{ marginTop: "auto", padding: Spacing.lg }}>
-        {/* <Text
-          style={{
-            color: "yellow",
-            fontSize: 14,
-            marginBottom: 10,
-            textAlign: "center",
-          }}
+        <Text variant="labelLarge" style={s.sectionLabel}>
+          REQUIRED DOCUMENTS
+        </Text>
+
+        {/* Document List Container */}
+        <Surface
+          elevation={0}
+          style={[
+            s.listContainer,
+            { borderColor: theme.colors.outlineVariant },
+          ]}
         >
-          DEBUG: Consent = {String(hasAcceptedLegitimacyConsent)} (from backend)
-        </Text> */}
+          <Lists
+            list={verificationList}
+            contentContainerStyle={{ width: "100%" }}
+            renderItem={({ item, index }) => {
+              const info = getStatusInfo(item.status);
+              const isLastItem = index === verificationList.length - 1;
 
-        <LegitmacyContsentComponent
-          value={hasAcceptedLegitimacyConsent}
-          onChange={handleConsentChange}
-        />
-      </VStack>
+              return (
+                <React.Fragment>
+                  <TouchableRipple
+                    onPress={() => {
+                      triggerHaptic();
+                      if (
+                        item.status === "MISSING" ||
+                        item.status === "REJECTED"
+                      ) {
+                        navigation.navigate("VerificationSubmitScreen", {
+                          userId,
+                          meta: { ...item.meta, type: item.type, role },
+                        });
+                      } else {
+                        navigation.navigate("VerificationViewScreen", {
+                          userId,
+                          docId: item.document!.id,
+                          meta: { ...item.meta, type: item.type, role },
+                        });
+                      }
+                    }}
+                    style={s.listItem}
+                  >
+                    <View style={s.itemContent}>
+                      <View
+                        style={[
+                          s.iconBg,
+                          { backgroundColor: info.color + "15" },
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name={info.icon}
+                          size={24}
+                          color={info.color}
+                        />
+                      </View>
 
-      {isFetching && !isUserLoading && <FullScreenLoaderAnimated />}
+                      <View style={{ flex: 1, marginLeft: 16 }}>
+                        <Text variant="titleMedium" style={s.itemTitle}>
+                          {item.meta.displayName ?? item.type}
+                        </Text>
+                        <Text
+                          variant="bodySmall"
+                          style={{
+                            color: info.color,
+                            fontFamily: "Poppins-Medium",
+                          }}
+                        >
+                          {item.status.replace("_", " ")}
+                        </Text>
+                      </View>
+
+                      <MaterialCommunityIcons
+                        name="chevron-right"
+                        size={20}
+                        color={theme.colors.outline}
+                      />
+                    </View>
+                  </TouchableRipple>
+
+                  {!isLastItem && (
+                    <Divider horizontalInset={false} style={{ height: 1 }} />
+                  )}
+                </React.Fragment>
+              );
+            }}
+          />
+        </Surface>
+
+        {/* Consent Section */}
+        <Surface
+          elevation={0}
+          style={[s.consentCard, { borderColor: theme.colors.outlineVariant }]}
+        >
+          <View style={s.consentHeader}>
+            <MaterialCommunityIcons
+              name="shield-check-outline"
+              size={20}
+              color={theme.colors.primary}
+            />
+            <Text
+              variant="labelLarge"
+              style={{ marginLeft: 8, color: theme.colors.primary }}
+            >
+              LEGAL CONSENT
+            </Text>
+          </View>
+          <LegitmacyContsentComponent
+            value={userData?.hasAcceptedLegitimacyConsent ?? false}
+            onChange={(val: boolean) => {
+              triggerHaptic();
+              handleConsentChange(val);
+            }}
+          />
+        </Surface>
+      </ScrollView>
+
+      {isFetching && (
+        <View style={s.loaderOverlay}>
+          <ActivityIndicator animating={true} color={theme.colors.primary} />
+        </View>
+      )}
     </StaticScreenWrapper>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flexDirection: "column" },
-  containerStyle: { flexGrow: 1, padding: Spacing.lg, alignItems: "center" },
-  cardHolder: { gap: Spacing.md, width: "100%" },
-  cardContainer: {
-    flexDirection: "row",
-    borderRadius: BorderRadius.md,
-    alignItems: "center",
-    gap: Spacing.sm,
-    padding: Spacing.md,
+  scrollContent: {},
+  sectionLabel: {
+    marginLeft: 4,
+    marginBottom: 12,
+    opacity: 0.7,
+    fontFamily: "Poppins-Medium",
   },
-  cardCta: { marginLeft: "auto" },
-  cardText: { color: Colors.TextInverse[1], fontSize: 16, fontWeight: "600" },
-  cardTextSub: { color: Colors.TextInverse[1], fontSize: 12, opacity: 0.8 },
+  listContainer: {
+    borderRadius: BorderRadius.md, // xl radius
+    borderWidth: 1,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    marginBottom: 24,
+  },
+  listItem: {
+    padding: 16,
+  },
+  itemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  itemTitle: {
+    fontFamily: "Poppins-SemiBold",
+  },
+  consentCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    backgroundColor: "#F7F9FC", // Slightly different bg to distinguish it
+  },
+  consentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  loaderOverlay: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "white",
+    padding: 8,
+    borderRadius: 20,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#EEE",
+  },
 });

@@ -60,12 +60,12 @@ export const Colors = {
     "#C6C6C6", // Very light gray (disabled background or subtle borders)
   ],
   TextInverse: [
-    "#FFFFFF", // Pure white - for very bright/highlighted text
-    "#E5E5E5", // Very light gray - subtle highlights or disabled light text
-    "#BFBFBF", // Light gray - placeholder or secondary light text
-    "#999999", // Medium gray - secondary text on dark backgrounds
-    "#666666", // Dark gray - regular text on dark backgrounds
     "#2E2E2E", // Original text color - primary dark text
+    "#666666", // Dark gray - regular text on dark backgrounds
+    "#999999", // Medium gray - secondary text on dark backgrounds
+    "#BFBFBF", // Light gray - placeholder or secondary light text
+    "#E5E5E5", // Very light gray - subtle highlights or disabled light text
+    "#FFFFFF", // Pure white - for very bright/highlighted text
   ],
 
   Card: "#FAFAFA",

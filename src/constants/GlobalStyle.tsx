@@ -1,17 +1,19 @@
 import { StyleSheet } from "react-native";
 import { Colors } from "./themes/colors";
 import { BorderWidth } from "./themes/border";
+import { Spacing } from "./themes/spacing";
 
 export const GlobalStyle = StyleSheet.create({
   GlobalsContainer: {
     flex: 1,
+    backgroundColor: Colors.whiteToBlack[0],
+    // gap: Spacing.md,
   },
   GlobalsContentContainer: {
     justifyContent: "flex-start",
     alignItems: "stretch",
   },
-  GlobalsColor: {
-  },
+  GlobalsColor: {},
 
   fontColor: {
     // color: Colors.Text[2],
@@ -31,21 +33,21 @@ export const GlobalStyle = StyleSheet.create({
 });
 
 export const GlobalBottomNavigationStyles = {
-  // containerBackgroundColor: Colors.PrimaryLight[6],
-  // containerIconColor: Colors.PrimaryLight[6],
-  // containerIconActiveColor: Colors.PrimaryLight[2],
-  // containerIconInactiveColor: Colors.PrimaryLight[3],
-  // containerIconContainerColor: Colors.PrimaryLight[6],
-  // containerIconHeightFromBottom: 0,
-  containerIconHeightFromBottom: 40,
+  containerBackgroundColor: Colors.whiteToBlack[0],
+  containerIconColor: Colors.whiteToBlack[7],
+  containerIconActiveColor: Colors.whiteToBlack[2],
+  containerIconInactiveColor: Colors.whiteToBlack[4],
+  containerIconContainerColor: Colors.whiteToBlack[8],
+  containerIconHeightFromBottom: 0,
+  // containerIconHeightFromBottom: 40,
 
   // containerIconHeight: 0,
   containerIconHeight: 60,
 
   iconBorderWidth: BorderWidth.xs,
-  // iconBackgroundColor: Colors.PrimaryLight[7],
-  // iconColorFocused: Colors.PrimaryLight[2],
-  // iconColorNotFucused: Colors.PrimaryLight[5],
+  iconBackgroundColor: Colors.PrimaryLight[6],
+  iconColorFocused: Colors.whiteToBlack[2],
+  iconColorNotFucused: Colors.whiteToBlack[6],
   iconHeight: 50,
   iconLiftHeightWhenFocused: -10,
   iconLiftHeightWhenNotFocused: 0,

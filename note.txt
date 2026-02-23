@@ -1,2 +1,0 @@
-
-please use Redux-Saga, it is for async call on you decision modal if you ever needed some refacorting on that case

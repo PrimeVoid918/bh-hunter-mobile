@@ -1,25 +1,22 @@
 import React from "react";
+import { View, StyleSheet, Alert } from "react-native";
+import { Text, Button, HelperText, useTheme } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CreateReviewInput,
   CreateReviewSchema,
 } from "@/infrastructure/reviews/reviews.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateMutation } from "@/infrastructure/reviews/reviews.redux.api";
-import { FormField } from "../FormFields/FormField";
-import { Button, ButtonText, HStack, VStack } from "@gluestack-ui/themed";
-import StarRatingInput from "./StarRatingInput";
-import { Alert, Text } from "react-native";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
-import FormStateActionsButton from "../Buttons/FormStateActionsButton";
-import { BorderRadius, Colors, Spacing } from "@/constants";
+import { FormField } from "../FormFields/FormField";
 import RatingStarInput from "../Ratings/RatingStarInput";
+import { Spacing, BorderRadius } from "@/constants";
 
 interface CreateReviewComponentInterface {
   boardingHouseId: number;
   starFilledColor: string;
   starHollowedColor: string;
-
   onSubmitSuccess: () => void;
   onCancel: () => void;
 }
@@ -31,6 +28,7 @@ export function CreateReviewComponent({
   onCancel,
   onSubmitSuccess,
 }: CreateReviewComponentInterface) {
+  const theme = useTheme();
   const { selectedUser: userData } = useDynamicUserApi();
   const currentUser = userData!.id;
 
@@ -43,7 +41,7 @@ export function CreateReviewComponent({
     resolver: zodResolver(CreateReviewSchema),
     defaultValues: {
       tenantId: currentUser,
-      rating: 1,
+      rating: 0, // Start at 0 to encourage a conscious choice
       comment: "",
     },
   });
@@ -51,99 +49,118 @@ export function CreateReviewComponent({
   const [createReview, { isLoading }] = useCreateMutation();
 
   const onSubmit = (data: CreateReviewInput) => {
-    Alert.alert(
-      "Submit Review?",
-      "Are you sure you want to post this review?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Yes, Post it",
-          onPress: async () => {
-            try {
-              await createReview({ boardingHouseId, data }).unwrap();
+    if (data.rating === 0) {
+      Alert.alert("Rating Required", "Please select a star rating.");
+      return;
+    }
 
-              Alert.alert("Success", "Your review has been posted!", [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    reset();
-                    onSubmitSuccess();
-                  },
-                },
-              ]);
-            } catch (e: any) {
-              const errorMessage = e?.data?.message || "Something went wrong.";
-              Alert.alert("Submission Failed", errorMessage, [
-                { text: "Try Again" },
-              ]);
-            }
-          },
+    Alert.alert("Post Review?", "Share your feedback with the community?", [
+      { text: "Not yet", style: "cancel" },
+      {
+        text: "Post now",
+        onPress: async () => {
+          try {
+            await createReview({ boardingHouseId, data }).unwrap();
+            reset();
+            onSubmitSuccess();
+          } catch (e: any) {
+            Alert.alert("Error", e?.data?.message || "Failed to post review.");
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   return (
-    <VStack style={{ gap: Spacing.sm }}>
-      <VStack
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-          gap: Spacing.md,
-        }}
-      >
+    <View style={s.root}>
+      {/* Interaction Area */}
+      <View style={s.ratingContainer}>
         <Controller
           control={control}
           name="rating"
           render={({ field }) => (
-            <RatingStarInput
-              value={field.value!}
-              onChange={field.onChange}
-              starFilledColor={starFilledColor}
-              starHollowedColor={starHollowedColor}
-            />
+            <View style={{ alignItems: "center" }}>
+              <RatingStarInput
+                value={field.value!}
+                onChange={field.onChange}
+                starFilledColor={starFilledColor}
+                starHollowedColor={starHollowedColor}
+              />
+              {errors.rating && (
+                <HelperText type="error" padding="none">
+                  {errors.rating.message}
+                </HelperText>
+              )}
+            </View>
           )}
         />
+      </View>
 
+      <View style={s.fieldContainer}>
         <FormField
           name="comment"
           control={control}
           isEditing={true}
-          inputConfig={{
-            inputType: "paragraph",
-            placeholder: "...",
-          }}
-          containerStyle={{
-            borderWidth: 3,
-            marginTop: Spacing.md,
-            width: "100%",
-            minHeight: 150,
-            borderColor: Colors.PrimaryLight[8],
-            borderRadius: BorderRadius.md,
+          inputType="paragraph"
+          placeholder="Describe your experience (optional)..."
+          containerStyle={s.formField}
+          inputProps={{
+            multiline: true,
+            numberOfLines: 4,
           }}
         />
-      </VStack>
+        {errors.comment && (
+          <HelperText type="error">{errors.comment.message}</HelperText>
+        )}
+      </View>
 
-      {/* local actions */}
-      <HStack style={{ gap: Spacing.md, marginLeft: "auto" }}>
-        <FormStateActionsButton
-          label={isLoading ? "Submitting..." : "Submit"}
-          variant="primary"
-          isLoading={isLoading}
+      {/* Action Buttons */}
+      <View style={s.actionRow}>
+        <Button mode="text" onPress={onCancel} disabled={isLoading}>
+          Not now
+        </Button>
+        <Button
+          mode="contained"
           onPress={handleSubmit(onSubmit)}
-        />
-        {/* <FormStateActionsButton
-          label="Cancel"
-          variant="danger"
-          onPress={() => {
-            reset();
-            onCancel();
-          }}
-        /> */}
-      </HStack>
-    </VStack>
+          loading={isLoading}
+          disabled={isLoading}
+          style={s.submitButton}
+          contentStyle={s.submitButtonContent}
+        >
+          Post
+        </Button>
+      </View>
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  root: {
+    gap: Spacing.md,
+    width: "100%",
+    paddingVertical: Spacing.sm,
+  },
+  ratingContainer: {
+    paddingVertical: Spacing.sm,
+    alignItems: "center",
+  },
+  fieldContainer: {
+    width: "100%",
+  },
+  formField: {
+    minHeight: 120, // Enough for a good comment
+  },
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  submitButton: {
+    borderRadius: BorderRadius.pill,
+  },
+  submitButtonContent: {
+    paddingHorizontal: Spacing.md,
+  },
+});

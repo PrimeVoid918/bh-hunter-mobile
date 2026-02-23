@@ -5,14 +5,11 @@ import { BorderRadius, Colors, Fontsize, Spacing } from "@/constants";
 import RenderStateView from "../RenderStateView";
 import {
   useCancelBookingMutation,
-  useCreatePaymentProofMutation,
   useGetOneQuery,
 } from "@/infrastructure/booking/booking.redux.api";
 import { Ionicons } from "@expo/vector-icons";
 import useTenantBookingProgressHook from "./config";
 import { AppImageFile } from "@/infrastructure/image/image.schema";
-import DecisionModal from "@/components/ui/DecisionModal";
-import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
 import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
 import PressableImagePicker from "@/components/ui/ImageComponentUtilities/PressableImagePicker";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
@@ -64,7 +61,6 @@ export default function TenantBookingProgress({
     },
   ] = useCancelBookingMutation();
 
-  const { showModal } = useDecisionModal();
 
   //* Handlers and Logic
   const [pickedImage, setPickedImage] = React.useState<AppImageFile>();
@@ -123,7 +119,6 @@ export default function TenantBookingProgress({
       {isCreatePaymentLoading && <FullScreenLoaderAnimated /> &&
         isCancelBookingLoading &&
         isBookingLoading}
-      <DecisionModal visible={isMessageBoxVisible} />
       <RenderStateView onAction={() => {}} state={initialApprovalState} />
       {/* Payment Reciept */}
       <RenderStateView

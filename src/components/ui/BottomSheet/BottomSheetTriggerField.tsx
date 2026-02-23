@@ -1,6 +1,7 @@
 import { Colors, Fontsize } from "@/constants";
-import { FormControl, Button, Text, View } from "@gluestack-ui/themed";
+import { FormControl, Button, View, HStack } from "@gluestack-ui/themed";
 import { Controller } from "react-hook-form";
+import { Chip, Text } from "react-native-paper";
 
 export type SelectOption<T extends string = string> = {
   value: T;
@@ -10,7 +11,7 @@ export type SelectOption<T extends string = string> = {
 type BottomSheetTriggerFieldProps<T extends string = string> = {
   name: string;
   control: any;
-  label: string;
+  label?: string;
   options: SelectOption<T>[]; // pass value/label mapping
   isEditing: boolean;
   placeholder?: string;
@@ -44,14 +45,20 @@ export function BottomSheetTriggerField<T extends string>({
                   <Text>{selected?.label ?? placeholder}</Text>
                 </Button>
               ) : (
-                <Text
-                  style={{
-                    color: Colors.TextInverse[2],
-                    fontSize: Fontsize.md,
-                  }}
-                >
-                  {label}: {selected?.label ?? "-"}
-                </Text>
+                <HStack style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text>{label ? `${label}: ` : ""}</Text>
+                  <Chip onPress={() => console.log("Pressed")}>
+                    {selected?.label}
+                  </Chip>
+                </HStack>
+                // <Text
+                //   style={{
+                //     color: Colors.TextInverse[2],
+                //     fontSize: Fontsize.md,
+                //   }}
+                // >
+                //   {label}: {selected?.label ?? "-"}
+                // </Text>
               )}
             </View>
           );

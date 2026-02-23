@@ -1,63 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Image } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { StyleSheet, Image, ViewStyle } from "react-native";
 import {
   MapView,
   Camera,
   UserLocation,
-  MarkerView,
   PointAnnotation,
 } from "@maplibre/maplibre-react-native";
+import { View, Text } from "@gluestack-ui/themed";
+import * as Location from "expo-location";
 import { BoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.schema";
-import { Text, View } from "@gluestack-ui/themed";
-import * as Location from "expo-location"; // ✅ import Location
 
-const DEFAULT_COORDS: [number, number] = [124.6095, 11.0008519]; // [lng, lat]
+const DEFAULT_COORDS: [number, number] = [124.6095, 11.0008519];
 
 interface MapProps {
   data: BoardingHouse[];
   isBoardingHousesLoading?: boolean;
   handleMarkerPress: (house: BoardingHouse) => void;
+  mapStyle?: ViewStyle;
+  backdropStyle?: ViewStyle;
 }
 
-export default function Map({
-  data,
-  isBoardingHousesLoading,
-  handleMarkerPress,
-}: MapProps) {
-  // Request location permission on mount
-  const [locationGranted, setLocationGranted] = React.useState(false);
-  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
-
-  useEffect(() => {
-    const requestPermission = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationGranted(status === "granted");
-    };
-    requestPermission();
-  }, []);
-
-  useEffect(() => {
-    if (errorMsg) {
-      console.log(errorMsg);
-    }
-  }, [errorMsg]);
-  const [imageSize, setImageSize] = useState(25);
-  const attempts = React.useRef(0);
-  const maxAttempts = 5;
-
-  useEffect(() => {
-    if (attempts.current >= maxAttempts) return;
-
-    const timer = setTimeout(() => {
-      setImageSize((prev) => prev + 1);
-      attempts.current += 1;
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [imageSize]); // ← Re-run when size changes
-
-  //TODO: use OSRM (Open Source Routing Machine)
-  /**
+//TODO: use OSRM (Open Source Routing Machine)
+/**
    * Package,Purpose,Why you need it
    *fetch (Built-in),API Requests,To call the OSRM servers. No extra install needed.
    *@turf/turf,Geospatial Logic,"To calculate the distance (e.g., ""1.2 km away"") or ""clean"" the coordinates OSRM gives you."
@@ -67,26 +31,53 @@ export default function Map({
     </MapLibreGL.ShapeSource>
    */
 
+export default function Map({
+  data,
+  isBoardingHousesLoading,
+  handleMarkerPress,
+  mapStyle,
+  backdropStyle,
+}: MapProps) {
+  const [locationGranted, setLocationGranted] = useState(false);
+  const [imageSize, setImageSize] = useState(25);
+  const [cameraCoords, setCameraCoords] =
+    useState<[number, number]>(DEFAULT_COORDS);
+
+  // Request location once
+  useEffect(() => {
+    Location.requestForegroundPermissionsAsync().then(({ status }) =>
+      setLocationGranted(status === "granted"),
+    );
+  }, []);
+
+  // Optional marker animation
+  const attempts = useRef(0);
+  const maxAttempts = 5;
+  useEffect(() => {
+    if (attempts.current >= maxAttempts) return;
+    const timer = setTimeout(() => {
+      setImageSize((prev) => prev + 1);
+      attempts.current += 1;
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [imageSize]);
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, mapStyle]}>
       <MapView
         style={styles.map}
-        mapStyle="https://tiles.openfreemap.org/styles/liberty"
         logoEnabled={false}
         attributionEnabled={true}
+        mapStyle="https://tiles.openfreemap.org/styles/liberty"
       >
-        {/* Center + zoom */}
         <Camera
-          centerCoordinate={DEFAULT_COORDS}
+          centerCoordinate={cameraCoords}
           zoomLevel={14}
           animationDuration={0}
         />
-
-        {locationGranted && <UserLocation visible={true} />}
-
-        {/* Markers */}
+        {locationGranted && <UserLocation visible />}
         {!isBoardingHousesLoading &&
-          (data ?? []).map((house: BoardingHouse, i) => {
+          data.map((house, i) => {
             const location = house.location;
             if (
               !location ||
@@ -97,50 +88,29 @@ export default function Map({
 
             const [lng, lat] = location.coordinates;
             console.log("long, lat", lng, lat);
-
             return (
               <PointAnnotation
-                key={i}
+                key={house.id ?? i}
                 id={`marker-${i}`}
                 coordinate={[lng, lat]}
-                onSelected={() => handleMarkerPress?.(house)}
+                onSelected={() => handleMarkerPress(house)}
               >
-                <View style={{}}>
-                  <Image
-                    source={require("@/assets/static/green-marker.png")}
-                    style={{
-                      width: imageSize,
-                      height: 32,
-                      backgroundColor: "transparent",
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 6,
-                      // borderWidth: 1,
-                      // borderColor: "gray",
-                      flexShrink: 0, // important
-                    }}
-                  />
-                  {/* <Text style={{ fontSize: 4 }}>{house.name}</Text> */}
-                  {/* <Text style={{ fontSize: 12 }}>{house.description}</Text> */}
-                  {/* <Text style={{ fontSize: 12 }}>{house.ownerId}</Text> */}
-                  {/* <Text style={{ fontSize: 12 }}>{house.amenities}</Text> */}
-                </View>
+                <Image
+                  source={require("@/assets/static/green-marker.png")}
+                  style={{ width: imageSize, height: 32 }}
+                />
               </PointAnnotation>
             );
           })}
       </MapView>
+
+      {backdropStyle && (
+        <View pointerEvents="none" style={[styles.backdrop, backdropStyle]} />
+      )}
+
       <View style={styles.attributionContainer}>
         <Text style={styles.attributionText}>
-          ©{" "}
-          <Text
-            style={{ color: "blue" }}
-            onPress={() =>
-              Linking.openURL("https://www.openstreetmap.org/copyright")
-            }
-          >
-            OpenStreetMap
-          </Text>{" "}
-          contributors
+          © <Text style={{ color: "blue" }}>OpenStreetMap</Text> contributors
         </Text>
       </View>
     </View>
@@ -148,29 +118,8 @@ export default function Map({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
-  markerContainer: {
-    backgroundColor: "red",
-    padding: 4,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "gray",
-  },
-  // markerText: {
-  //   fontSize: 12,
-  // },
-  errorText: {
-    position: "absolute",
-    top: 10,
-    alignSelf: "center",
-    color: "red",
-    fontSize: 14,
-  },
+  container: { flex: 1 },
+  map: { flex: 1 },
   attributionContainer: {
     position: "absolute",
     bottom: 10,
@@ -179,7 +128,10 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 4,
   },
-  attributionText: {
-    fontSize: 10,
+  attributionText: { fontSize: 10 },
+
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 5,
   },
 });

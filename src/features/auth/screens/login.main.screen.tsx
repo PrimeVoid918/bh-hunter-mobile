@@ -1,13 +1,13 @@
 import { StyleSheet, ImageStyle, Alert } from "react-native";
-import { View, Text } from "@gluestack-ui/themed";
+import { View, Text, VStack } from "@gluestack-ui/themed";
 
 import React, { useState, useEffect } from "react";
 // UI Layout
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 
 // UI comopnent
-import TextInput from "@/components/ui/TextInput";
-import Button from "@/components/ui/Button";
+// import TextInput from "@/components/ui/TextInput";
+// import Button from "@/components/ui/Button";
 
 // constants
 import {
@@ -38,6 +38,9 @@ import {
   expoStorageCleaner,
   logExpoSystemDir,
 } from "@/infrastructure/utils/expo-utils/expo-utils.service";
+import { Surface, TextInput, Button, Divider } from "react-native-paper";
+import Map from "@/features/shared/map/Map";
+import HeaderLogo from "./HeaderLogo";
 
 export default function LoginMainScreen() {
   const rootNavigation =
@@ -55,22 +58,22 @@ export default function LoginMainScreen() {
   ] = useLoginMutation();
   const dispatch = useDispatch<AppDispatch>();
 
-  // useEffect(() => {
-  //   setTimeout(() => {
-  //     onPressLogin();
-  //   }, 700);
-  // }, []);
+  useEffect(() => {
+    setTimeout(() => {
+      onPressLogin();
+    }, 700);
+  }, []);
 
   const onPressLogin = async () => {
-    const packageLoad = {
-      username: username.value,
-      password: password.value,
-    };
-
     // const packageLoad = {
-    //   username: "tenant1",
-    //   password: "tenant1",
+    //   username: username.value,
+    //   password: password.value,
     // };
+
+    const packageLoad = {
+      username: "owner2",
+      password: "owner2",
+    };
     await logExpoSystemDir(["images", "documents"]);
     console.log("packageLoad: ", packageLoad);
     try {
@@ -101,182 +104,115 @@ export default function LoginMainScreen() {
   };
   return (
     <StaticScreenWrapper
-      wrapInScrollView
       style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[
-        GlobalStyle.GlobalsContentContainer,
-        {
-          height: "100%",
-          justifyContent: "center",
-          alignItems: "center",
-        },
-      ]}
+      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
+      wrapInScrollView={false}
+      // loading={isLoginLoading}
+      // error={[isLoginError ? "Failed to fetch user" : null]}
+      variant="layout"
     >
-      {isLoginLoading && <FullScreenLoaderAnimated />}
-      <View style={[s.Container]}>
-        <Text
+      <VStack
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "green",
+          justifyContent: "center",
+          alignContent: "center",
+          position: "relative",
+        }}
+      >
+        <VStack
           style={{
-            fontSize: 60,
-            color: "white",
-            fontWeight: 900,
-            marginBottom: 20,
+            alignSelf: "center",
+            width: "80%",
+            zIndex: 2,
           }}
         >
-          Boarding House Hunter
-        </Text>
-        <View style={[s.Form]}>
-          <View style={[s.Form_Inputs]}>
-            <TextInput
-              placeholder="username"
-              iconName="person"
-              variant="primary"
-              value={username.value}
-              onChangeText={(text) =>
-                setUsername({ value: text, error: false })
-              }
-              containerStyle={s.Form_InputContainer}
-              textInputStyle={s.Form_InputText}
-              iconStyle={s.Form_InputIcon}
-            />
-            <TextInput
-              variant="primary"
-              iconName="lock-closed"
-              placeholder="password"
-              value={password.value}
-              onChangeText={(text) =>
-                setPassword({ value: text, error: false })
-              }
-              containerStyle={s.Form_InputContainer}
-              textInputStyle={s.Form_InputText}
-              iconStyle={s.Form_InputIcon}
-              secureTextEntry={true}
-            />
-          </View>
-          <View style={[s.Form_Buttons]}>
-            <Button
-              title="Login"
-              variant="primary"
-              onPressAction={onPressLogin}
-              textStyle={s.Form_Bottons_Login_Text}
-            ></Button>
-            <Button
-              title="Dont have an Account?"
-              containerStyle={s.Form_Bottons_Signup_Container}
-              textStyle={s.Form_Bottons_Signup_Text}
-              onPressAction={onPressSignup}
-            ></Button>
-          </View>
-        </View>
-      </View>
+          <HeaderLogo />
+          {/* <Text
+            style={{
+              fontSize: 60,
+              fontWeight: "900",
+              fontFamily: "Poppins-Black",
+              marginBottom: 20,
+            }}
+          >
+            Boarding House Hunter
+          </Text> */}
+          <Surface
+            elevation={3}
+            style={{
+              borderRadius: BorderRadius.md,
+              padding: Spacing.md,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "column",
+                borderRadius: Spacing.base,
+                gap: Spacing.base,
+              }}
+            >
+              <View>
+                <TextInput
+                  label="Username"
+                  mode="outlined"
+                  value={username.value}
+                  onChangeText={(text: string) =>
+                    setUsername({ value: text, error: false })
+                  }
+                />
+                <TextInput
+                  label="Password"
+                  mode="outlined"
+                  secureTextEntry
+                  value={password.value}
+                  onChangeText={(text: string) =>
+                    setPassword({ value: text, error: false })
+                  }
+                />
+              </View>
+              <View style={{ gap: Spacing.sm }}>
+                <Button
+                  onPress={onPressLogin}
+                  mode="elevated"
+                  style={{
+                    borderRadius: BorderRadius.md,
+                  }}
+                >
+                  <Text>Login</Text>
+                </Button>
+                <Divider />
+                <Button
+                  onPress={onPressSignup}
+                  mode="elevated"
+                  style={{
+                    borderRadius: BorderRadius.md,
+                  }}
+                >
+                  <Text>Dont have an Account?</Text>
+                </Button>
+              </View>
+            </View>
+          </Surface>
+        </VStack>
+
+        <Map
+          data={[]}
+          handleMarkerPress={() => {}}
+          mapStyle={{
+            width: "100%",
+            height: "100%",
+            position: "absolute",
+            zIndex: 1,
+          }}
+          backdropStyle={{
+            backgroundColor: "rgba(255,255,255,0.5)", // faded white
+          }}
+        ></Map>
+      </VStack>
     </StaticScreenWrapper>
   );
 }
 
-const s = StyleSheet.create({
-  default: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Colors.PrimaryLight[9],
-    // width: '100%',
-    // borderColor: 'yellow',
-    // borderWidth: 3
-  },
-  Container: {
-    backgroundColor: "transparent",
-    flex: 1,
-    width: "90%",
-
-    position: "relative",
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    // borderColor: 'yellow',
-    // borderWidth: 3,
-  },
-
-  logo_Container: {
-    alignSelf: "stretch",
-    top: undefined,
-    position: undefined,
-    padding: 0,
-    left: 0,
-    right: 0,
-  },
-  logo_Image: {
-    height: 125,
-  } as ImageStyle,
-
-  Form: {
-    height: 300,
-    width: "90%",
-
-    borderWidth: BorderWidth.lg,
-    borderRadius: BorderRadius.xl,
-
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: Spacing.base,
-
-    ...ShadowLight.xxl,
-  },
-  Form_Inputs: {
-    // borderColor: 'blue',
-    // borderWidth: 6,
-    width: "100%",
-    gap: 12,
-  },
-  Form_InputContainer: {},
-  Form_InputIcon: {},
-  Form_InputText: {
-    fontSize: Fontsize.lg,
-    padding: Spacing.xs,
-  },
-  Form_Buttons: {
-    marginTop: "auto",
-    // flex: 1,
-    justifyContent: "flex-start",
-    alignSelf: "stretch",
-    alignItems: "center",
-  },
-  Form_Bottons_Login_Container: {
-    borderColor: "green",
-    borderWidth: 3,
-    flex: 1,
-    alignSelf: "stretch",
-    width: "100%",
-  },
-  Form_Bottons_Login_Text: {
-    color: Colors.Text[2],
-    fontSize: Fontsize.h3,
-    fontWeight: "700",
-  },
-  Form_Bottons_Signup_Container: {
-    borderWidth: 0,
-    margin: 0,
-    padding: 0,
-    backgroundColor: "transparent",
-    textDecorationLine: "underline",
-    height: "auto",
-  },
-  Form_Bottons_Signup_Text: {
-    margin: 0,
-    padding: 0,
-    color: Colors.Text[5],
-    fontSize: Fontsize.md,
-    fontWeight: 100,
-  },
-
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    height: "100%",
-    width: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // semi-transparent dark background
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000, // ensure it's above everything
-  },
-});
+const s = StyleSheet.create({});

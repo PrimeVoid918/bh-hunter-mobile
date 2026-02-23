@@ -36,7 +36,7 @@ export default function BookingDecisionBlock({
   return (
     <View>
       {/* STATUS TEXT */}
-      <Text>Status: {status}</Text>
+      {/* <Text>Status: {status}</Text> */}
 
       {/* OWNER ACTIONS */}
       {isOwner && status === "PENDING_REQUEST" && (
@@ -64,13 +64,6 @@ export default function BookingDecisionBlock({
         </Button>
       )}
 
-      {/* TENANT ACTIONS */}
-      {/* {isTenant && status === "AWAITING_PAYMENT" && (
-        <Button onPress={onUploadProof}>
-          <Text>Upload Payment Proof</Text>
-        </Button>
-      )} */}
-
       {isTenant && status === "PENDING_REQUEST" && (
         <>
           <TextInput
@@ -84,15 +77,6 @@ export default function BookingDecisionBlock({
             <Text>Cancel Booking</Text>
           </Button>
         </>
-      )}
-
-      {/* TERMINAL STATES */}
-      {(status === "CANCELLED_BOOKING" || status === "REJECTED_BOOKING") && (
-        <Text>Booking closed.</Text>
-      )}
-
-      {status === "COMPLETED_BOOKING" && (
-        <Text>Booking completed successfully.</Text>
       )}
     </View>
   );

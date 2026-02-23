@@ -1,72 +1,69 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import React from "react";
 import { Box, HStack, VStack } from "@gluestack-ui/themed";
+import { Text, useTheme } from "react-native-paper";
 import RatingStarRatio from "./RatingStarRatio";
 import { StarDistribution } from "@/infrastructure/reviews/review.star-rating.service";
-import { Colors, Fontsize, Spacing } from "@/constants";
+import { Colors, Fontsize, Spacing, BorderRadius } from "@/constants";
 import { ReviewSummary } from "@/infrastructure/reviews/reviews.schema";
-import type { ReviewSummarySchema } from "../../../infrastructure/reviews/reviews.schema";
 
 interface RatingSummarInterface {
   starFilledColor: string;
   starHollowedColor: string;
   metaData: ReviewSummary;
-  //   averageRating: number;
-  // total: number;
-  // distribution: Record<string, number>;
 }
 
-export default function RatingSummar({
+export default function RatingSummary({
   starFilledColor,
   starHollowedColor,
   metaData: { average, distribution, total },
 }: RatingSummarInterface) {
-  const size = Fontsize.sm;
+  const theme = useTheme();
 
-  // Convert backend distribution object to array for the bars
   const computedDistribution: StarDistribution[] = Object.entries(distribution)
     .map(([star, countStr]) => {
       const count = Number(countStr);
       const percentage = total > 0 ? count / total : 0;
       return { star: Number(star), count, percentage };
     })
-    .sort((a, b) => b.star - a.star); // descending stars
+    .sort((a, b) => b.star - a.star);
 
   return (
-    <Box style={[s.container]}>
-      {/* Average rating */}
-      <VStack style={[s.star_ratio_con]}>
-        <Text style={[s.ratio_text, s.text_color]}>{average}</Text>
-        <View style={{ marginTop: "auto" }}>
-          <RatingStarRatio
-            starFilledColor={starFilledColor}
-            starHollowedColor={starHollowedColor}
-            rating={average}
-            size={size}
-          />
-          <Text style={[s.text_color]}>{total}</Text>
-        </View>
+    <Box style={s.container}>
+      {/* Left Side: The Hero Rating */}
+      <VStack style={s.scoreSection}>
+        <Text style={s.averageText}>
+          {average.toFixed(1)}
+        </Text>
+        <RatingStarRatio
+          starFilledColor={starFilledColor}
+          starHollowedColor={starHollowedColor}
+          rating={average}
+          size={14}
+        />
+        <Text variant="labelSmall" style={s.totalText}>
+          {total.toLocaleString()} reviews
+        </Text>
       </VStack>
 
-      {/* Distribution bars */}
-      <VStack flex={1} style={[s.distributionBars_container]}>
+      {/* Right Side: The Distribution Chart */}
+      <VStack style={s.chartSection}>
         {computedDistribution.map((d) => (
-          <HStack key={d.star} style={[s.distributionBars_container_rows]}>
-            <Text style={[s.text_color]}>{d.star}</Text>
-            <Box
-              flex={1}
-              height={10}
-              backgroundColor={starHollowedColor}
-              borderRadius={5}
-              overflow="hidden"
-            >
-              <Box
-                width={`${d.percentage * 100}%`}
-                height="100%"
-                backgroundColor={starFilledColor}
+          <HStack key={d.star} style={s.barRow}>
+            <Text variant="labelMedium" style={s.starNumber}>
+              {d.star}
+            </Text>
+            <View style={s.barBackground}>
+              <View
+                style={[
+                  s.barFill,
+                  { 
+                    width: `${d.percentage * 100}%`, 
+                    backgroundColor: starFilledColor 
+                  },
+                ]}
               />
-            </Box>
-            {/* Optional: <Text>{d.count}</Text> */}
+            </View>
           </HStack>
         ))}
       </VStack>
@@ -77,29 +74,51 @@ export default function RatingSummar({
 const s = StyleSheet.create({
   container: {
     flexDirection: "row",
-    gap: Spacing.md,
-  },
-
-  star_ratio_con: {
-    alignItems: "flex-start",
-    aspectRatio: 1,
-    // borderWidth: 1,
-    gap: 0,
-  },
-
-  ratio_text: {
-    fontSize: Fontsize.display2,
-  },
-
-  distributionBars_container: {
-    gap: Spacing.xs,
-  },
-  distributionBars_container_rows: {
-    gap: Spacing.xs,
     alignItems: "center",
+    paddingVertical: Spacing.sm,
+    backgroundColor: 'transparent',
   },
-
-  text_color: {
+  scoreSection: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 100, // Fixed width for alignment
+    gap: 4,
+  },
+  averageText: {
+    fontSize: 56, // Large display size
+    fontWeight: "700",
+    lineHeight: 60,
     color: Colors.TextInverse[1],
+  },
+  totalText: {
+    opacity: 0.6,
+    marginTop: 2,
+    color: Colors.TextInverse[1],
+  },
+  chartSection: {
+    flex: 1,
+    gap: 4, // Tight gaps like Play Store
+    paddingLeft: Spacing.md,
+  },
+  barRow: {
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  starNumber: {
+    width: 10,
+    textAlign: "center",
+    opacity: 0.8,
+    color: Colors.TextInverse[1],
+  },
+  barBackground: {
+    flex: 1,
+    height: 8, // Thinner bars look more modern
+    backgroundColor: "rgba(0,0,0,0.05)", // Very subtle track
+    borderRadius: BorderRadius.pill,
+    overflow: "hidden",
+  },
+  barFill: {
+    height: "100%",
+    borderRadius: BorderRadius.pill,
   },
 });

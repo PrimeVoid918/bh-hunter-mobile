@@ -19,8 +19,6 @@ import {
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import { expoStorageCleaner } from "@/infrastructure/utils/expo-utils/expo-utils.service";
 import Container from "@/components/layout/Container/Container";
-import { useDecisionModal } from "@/components/ui/FullScreenDecisionModal";
-import DecisionModal from "@/components/ui/DecisionModal";
 import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
 
 type RouteProps = RouteProp<
@@ -39,8 +37,6 @@ export default function DashboardBookingDetailsScreen() {
   const [isMessageBoxVisible, setIsMessageBoxVisible] = React.useState(false);
   const [cancelationMessage, setCancellationMessage] = React.useState("");
 
-  const { showModal } = useDecisionModal();
-
   const [
     cancelBooking,
     { isError: isCalcelBookingError, isLoading: isCancelBookingLoading },
@@ -51,8 +47,8 @@ export default function DashboardBookingDetailsScreen() {
 
   const {
     data: bookingData,
-    isLoading: isBookingDataLoading,
-    isError: isBookingDataError,
+    isLoading,
+    isError,
     refetch: refetchBookingData,
   } = useGetOneQuery(bookId);
   const tenantIdForBooking = bookingData?.tenantId;
@@ -101,10 +97,22 @@ export default function DashboardBookingDetailsScreen() {
 
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer, s.container]}
-      contentContainerStyle={[GlobalStyle.GlobalsContainer]}
+      variant="list"
+      style={
+        (GlobalStyle.GlobalsContainer,
+        {
+          paddingLeft: Spacing.md,
+          paddingRight: Spacing.md,
+          paddingTop: Spacing.md,
+          paddingBottom: 200,
+        })
+      }
+      contentContainerStyle={GlobalStyle.GlobalsContentContainer}
+      refreshing={refreshing}
+      onRefresh={handleTopRefreshPage}
+      loading={isLoading}
+      error={[isError ? "" : null]}
     >
-      {isBookingDataLoading && <FullScreenLoaderAnimated />}
       <Container refreshing={refreshing} onRefresh={handleTopRefreshPage}>
         <VStack>
           {tenantIdForBooking && (

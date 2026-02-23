@@ -11,13 +11,16 @@ import {
 import { Lists } from "@/components/layout/Lists/Lists";
 import { ReviewSummary } from "@/infrastructure/reviews/reviews.schema";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
+import { Divider } from "react-native-paper";
 
 interface ReviewSectionInterface {
+  isOwner?: boolean;
   boardingHouseId?: number;
 }
 
 export default function ReviewSection({
   boardingHouseId,
+  isOwner,
 }: ReviewSectionInterface) {
   const {
     data: reviewsData,
@@ -33,10 +36,15 @@ export default function ReviewSection({
 
   // 1. Identify if the user has already reviewed this place
   const { selectedUser: userData } = useDynamicUserApi();
-  const currentUser = userData!.id;
+  const currentUserId = userData!.id;
 
-  const myReview = reviewsData?.find((r) => r.tenantId === currentUser);
-  const otherReviews = reviewsData?.filter((r) => r.tenantId !== currentUser);
+  const myReview = !isOwner
+    ? reviewsData?.find((r) => r.tenantId === currentUserId)
+    : undefined;
+
+  const displayReviews = !isOwner
+    ? reviewsData?.filter((r) => r.tenantId !== currentUserId) // Exclude mine
+    : reviewsData; // Owner sees everything
 
   // console.log("Others reviews: ", otherReviews);
 
@@ -60,17 +68,21 @@ export default function ReviewSection({
         }
       ></RatingSummary>
 
-      <ReviewSubmissionHandler
-        boardingHouseId={boardingHouseId!}
-        myReview={myReview}
-        starFilledColor={starFilledColor}
-        starHollowedColor={starHollowedColor}
-        onReviewChange={refetch} //
-      ></ReviewSubmissionHandler>
+      <Divider bold />
+      {!isOwner && (
+        <ReviewSubmissionHandler
+          boardingHouseId={boardingHouseId!}
+          myReview={myReview}
+          starFilledColor={starFilledColor}
+          starHollowedColor={starHollowedColor}
+          onReviewChange={refetch} //
+        ></ReviewSubmissionHandler>
+      )}
+      <Divider bold/>
 
       {reviewsData ? (
         <Lists
-          list={otherReviews!}
+          list={displayReviews!}
           renderItem={({ item, index }) => (
             <ReviewItem
               review={item}

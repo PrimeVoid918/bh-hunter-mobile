@@ -1,19 +1,23 @@
-import { View, Text, Alert } from "react-native";
 import React from "react";
-import { BorderRadius, Colors, Spacing } from "@/constants";
-import { HStack, Button, ButtonText, VStack } from "@gluestack-ui/themed";
+import { View, StyleSheet, Alert } from "react-native";
+import {
+  Text,
+  useTheme,
+  Button,
+  HelperText,
+  Surface,
+} from "react-native-paper";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Review,
   UpdateReviewInput,
   UpdateReviewSchema,
 } from "@/infrastructure/reviews/reviews.schema";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FormField } from "../FormFields/FormField";
-import StarRatingInput from "./StarRatingInput";
 import { usePatchMutation } from "@/infrastructure/reviews/reviews.redux.api";
-import FormStateActionsButton from "../Buttons/FormStateActionsButton";
+import { FormField } from "../FormFields/FormField";
 import RatingStarInput from "../Ratings/RatingStarInput";
+import { Spacing, BorderRadius } from "@/constants";
 
 interface EditReviewComponentProps {
   initialReview: Review;
@@ -30,9 +34,14 @@ export default function EditReviewComponent({
   starFilledColor,
   starHollowedColor,
 }: EditReviewComponentProps) {
+  const theme = useTheme();
   const [updateReview, { isLoading }] = usePatchMutation();
 
-  const { control, handleSubmit } = useForm<UpdateReviewInput>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<UpdateReviewInput>({
     resolver: zodResolver(UpdateReviewSchema),
     defaultValues: {
       rating: initialReview.rating,
@@ -43,12 +52,9 @@ export default function EditReviewComponent({
   const onSubmit = (data: UpdateReviewInput) => {
     Alert.alert(
       "Save Changes?",
-      "Are you sure you want to update your review? This will overwrite your previous feedback.",
+      "Update your review? This will overwrite your previous feedback.",
       [
-        {
-          text: "Keep Editing",
-          style: "cancel",
-        },
+        { text: "Keep Editing", style: "cancel" },
         {
           text: "Update",
           onPress: async () => {
@@ -58,15 +64,9 @@ export default function EditReviewComponent({
                 boardingHouseId: initialReview.boardingHouseId,
                 data,
               }).unwrap();
-
-              Alert.alert(
-                "Updated",
-                "Your review has been modified successfully.",
-                [{ text: "OK", onPress: onSubmitSuccess }],
-              );
+              onSubmitSuccess();
             } catch (e: any) {
-              const msg = e?.data?.message || "Failed to update review.";
-              Alert.alert("Error", msg);
+              Alert.alert("Error", e?.data?.message || "Failed to update.");
             }
           },
         },
@@ -75,14 +75,12 @@ export default function EditReviewComponent({
   };
 
   return (
-    <View style={{ gap: 12 }}>
-      <VStack
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Text></Text>
+    <View style={s.root}>
+      {/* 1. Rating Selector Section */}
+      <View style={s.ratingSection}>
+        <Text variant="labelLarge" style={s.label}>
+          Tap to rate
+        </Text>
         <Controller
           control={control}
           name="rating"
@@ -95,39 +93,56 @@ export default function EditReviewComponent({
             />
           )}
         />
+        {errors.rating && (
+          <HelperText type="error">{errors.rating.message}</HelperText>
+        )}
+      </View>
 
+      {/* 2. Comment Field */}
+      <View style={s.fieldSection}>
+        <Text variant="labelLarge" style={s.label}>
+          Describe your experience
+        </Text>
         <FormField
           name="comment"
           control={control}
           isEditing={true}
-          inputConfig={{
-            inputType: "paragraph",
-            placeholder: "...",
-          }}
-          containerStyle={{
-            borderWidth: 3,
-            marginTop: Spacing.md,
-            width: "100%",
-            minHeight: 150,
-            borderRadius: BorderRadius.md,
-          }}
+          inputType="paragraph"
+          placeholder="What did you like or dislike?"
+          containerStyle={s.formFieldContainer}
+          inputProps={{ multiline: true, numberOfLines: 5 }}
         />
-      </VStack>
+      </View>
 
-      <HStack style={{ gap: Spacing.md, marginLeft: "auto" }}>
-        <FormStateActionsButton
-          label={"Cancel"}
-          variant="primary"
-          isLoading={isLoading}
-          onPress={onCancel}
-        />
-        <FormStateActionsButton
-          label={isLoading ? "Saving..." : "Save Changes"}
-          variant="danger"
-          isLoading={isLoading}
+      {/* 3. Action Buttons */}
+      <View style={s.actions}>
+        <Button mode="text" onPress={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+        <Button
+          mode="contained"
           onPress={handleSubmit(onSubmit)}
-        />
-      </HStack>
+          loading={isLoading}
+          style={s.button}
+        >
+          Update Review
+        </Button>
+      </View>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  root: { gap: Spacing.lg, width: "100%" },
+  ratingSection: { alignItems: "center", gap: Spacing.xs },
+  fieldSection: { gap: Spacing.xs },
+  label: { opacity: 0.7, marginBottom: 4, textAlign: "center" },
+  formFieldContainer: { minHeight: 120 },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  button: { borderRadius: BorderRadius.pill },
+});
