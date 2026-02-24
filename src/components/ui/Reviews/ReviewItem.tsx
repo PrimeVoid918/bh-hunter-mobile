@@ -1,7 +1,9 @@
-import { View, Text, StyleSheet } from "react-native";
 import React from "react";
-import { Box, HStack, VStack } from "@gluestack-ui/themed";
-import { Colors, Fontsize, Spacing, BorderRadius } from "@/constants";
+import { View, StyleSheet } from "react-native";
+import { Text, useTheme, IconButton } from "react-native-paper";
+import { HStack, VStack } from "@gluestack-ui/themed";
+
+import { Fontsize, Spacing } from "@/constants";
 import ImageUserPFP from "../ImageComponentUtilities/ImageUserPFP";
 import RatingsStarStatic from "../Ratings/RatingsStarStatic";
 import { Review } from "@/infrastructure/reviews/reviews.schema";
@@ -18,86 +20,77 @@ export default function ReviewItem({
   starFilledColor,
   starHollowedColor,
 }: ReviewItemInterface) {
-  // Logic: Using your getRelativeTime for that "Smart Day" measurement
+  const { colors } = useTheme();
   const relativeDate = getRelativeTime(review.createdAt);
 
   return (
-    <Box style={s.comment_container}>
-      <HStack style={s.header_row}>
-        {/* User Avatar - Slightly smaller for M3 feel */}
-        <ImageUserPFP height={36} />
+    <VStack style={s.itemContainer}>
+      {/* HEADER: User Info and Top-level Meta */}
+      <HStack justifyContent="space-between" alignItems="center">
+        <HStack alignItems="center" gap={Spacing.md}>
+          <ImageUserPFP height={40} />
+          <VStack>
+            <Text style={s.userName}>{review.tenant.username}</Text>
+            <HStack alignItems="center" gap={Spacing.sm}>
+              <RatingsStarStatic
+                star={review.rating}
+                starFilledColor={starFilledColor}
+                starHollowedColor={starHollowedColor}
+                size={12}
+              />
+              <Text style={s.dateText}>{relativeDate}</Text>
+            </HStack>
+          </VStack>
+        </HStack>
 
-        <VStack style={s.commentor_infoContainer}>
-          <HStack style={s.name_date_row}>
-            <Text style={[s.text_color, s.commentor_name]}>
-              {review.tenant.username}
-            </Text>
-            {/* Options button usually goes here in Play Store */}
-          </HStack>
-
-          <HStack style={s.rating_date_row}>
-            <RatingsStarStatic
-              star={review.rating}
-              starFilledColor={starFilledColor}
-              starHollowedColor={starHollowedColor}
-              size={12} // Smaller stars look more professional
-            />
-            <Text style={s.date_text}>{relativeDate}</Text>
-          </HStack>
-        </VStack>
+        {/* M3 Action Menu (e.g., Report or Edit) */}
+        <IconButton
+          icon="dots-vertical"
+          size={20}
+          onPress={() => {}}
+          iconColor={colors.outline}
+          style={{ margin: 0 }}
+        />
       </HStack>
 
-      {/* Review Body - Full width below the avatar for better readability */}
-      <View style={s.comment_body}>
-        <Text style={[s.text_color, s.comment_text]}>{review.comment}</Text>
+      {/* BODY: The actual comment content */}
+      <View style={s.commentBody}>
+        <Text style={s.commentText}>
+          {review.comment || "No written review provided."}
+        </Text>
       </View>
-    </Box>
+
+      {/* OPTIONAL: Helpful/Response Row */}
+      {/* If this were Google Play, "Was this helpful?" would go here */}
+    </VStack>
   );
 }
 
 const s = StyleSheet.create({
-  comment_container: {
-    paddingVertical: Spacing.md,
+  itemContainer: {
+    paddingVertical: Spacing.sm,
     backgroundColor: "transparent",
   },
-  header_row: {
-    alignItems: "center",
-    gap: Spacing.md,
-  },
-  commentor_infoContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  name_date_row: {
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  rating_date_row: {
-    alignItems: "center",
-    gap: Spacing.sm,
-    marginTop: 2,
-  },
-  commentor_name: {
-    fontWeight: "700",
+  userName: {
+    fontFamily: "Poppins-SemiBold",
     fontSize: Fontsize.md,
-    color: Colors.TextInverse[1],
-  },
-  date_text: {
-    fontSize: 12,
-    color: Colors.TextInverse[1],
-    opacity: 0.6,
-  },
-  comment_body: {
-    paddingTop: Spacing.sm,
-    // Aligning text with the start of the name rather than the avatar
-    paddingLeft: 36 + Spacing.md,
-  },
-  comment_text: {
-    fontSize: Fontsize.md,
+    color: "#1A1A1A",
     lineHeight: 20,
-    opacity: 0.9,
   },
-  text_color: {
-    color: Colors.TextInverse[1],
+  dateText: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 11,
+    color: "#767474", // theme.colors.outline
+    letterSpacing: 0.2,
+  },
+  commentBody: {
+    marginTop: Spacing.sm,
+    paddingLeft: 40 + Spacing.md, // Aligns text perfectly with the start of the username
+  },
+  commentText: {
+    fontFamily: "Poppins-Regular",
+    fontSize: Fontsize.md,
+    lineHeight: 22,
+    color: "#3A3A3A", // High contrast but not pure black
   },
 });

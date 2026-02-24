@@ -67,7 +67,6 @@ export const BaseBoardingHouseSchema = z.object({
   availabilityStatus: z.boolean(),
   locationId: z.number(),
 
-  // ✅ This must be a Zod schema, not a TypeScript interface
   location: GetLocationSchema,
 
   properties: z.array(z.string()),

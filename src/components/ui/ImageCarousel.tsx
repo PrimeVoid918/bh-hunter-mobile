@@ -1,123 +1,158 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
-  ScrollView,
-  TouchableOpacity,
+  FlatList,
   Image,
-  Text,
-  StyleProp,
-  ViewStyle,
+  StyleSheet,
+  Dimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
-import { BorderRadius, BorderWidth, ShadowLight, Spacing } from "@/constants";
-import { useTheme } from "react-native-paper"; // Grab your custom theme
+import { Surface, Text, useTheme, TouchableRipple } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+import { BorderRadius, Spacing } from "@/constants";
 import PressableImageFullscreen from "./ImageComponentUtilities/PressableImageFullscreen";
 
 interface CarouselProps {
   images: Array<{ url: string | any } | undefined>;
-  variant?: "primary" | "secondary";
-  containerStyle?: StyleProp<ViewStyle>;
-  scrollStyle?: StyleProp<ViewStyle>;
 }
 
-export default function ImageCarousel({
-  images,
-  variant = "primary",
-  scrollStyle,
-  containerStyle,
-}: CarouselProps) {
-  const theme = useTheme();
-  const [imageIndex, setImageIndex] = useState(0);
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-  const isRow = variant === "primary";
+export default function ImageCarousel({ images }: CarouselProps) {
+  const { colors } = useTheme();
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  // M3 Configuration: Logical and Clean
-  const m3Config = {
-    container: {
-      borderRadius: BorderRadius.xl,
-      backgroundColor: theme.colors.surface,
-      // M3 uses thin outlines instead of thick borders
-      borderWidth: BorderWidth.xs,
-      borderColor: theme.colors.outlineVariant,
-      overflow: "hidden" as const,
-      ...ShadowLight.sm, // M3 shadows are subtle
-    },
-    mainImageContainer: {
-      height: isRow ? 280 : "100%",
-      aspectRatio: isRow ? 16 / 9 : undefined,
-      backgroundColor: theme.colors.surfaceVariant,
-      flex: isRow ? undefined : 1,
-    },
-    thumbnail: (isActive: boolean) => ({
-      width: 72, // Consistent M3 sizing
-      height: 72,
-      borderRadius: BorderRadius.md,
-      borderWidth: isActive ? BorderWidth.lg : BorderWidth.xs,
-      borderColor: isActive
-        ? theme.colors.primary
-        : theme.colors.outlineVariant,
-      backgroundColor: theme.colors.surfaceVariant,
-    }),
+  // Filter out undefined images
+  const validImages = images.filter(
+    (img): img is { url: string | any } => !!img,
+  );
+
+  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const slideSize = event.nativeEvent.layoutMeasurement.width;
+    const index = event.nativeEvent.contentOffset.x / slideSize;
+    setActiveIndex(Math.round(index));
   };
 
-  const activeImage = images[imageIndex];
+  if (validImages.length === 0) {
+    return (
+      <Surface style={s.emptyContainer} elevation={0}>
+        <MaterialCommunityIcons
+          name="image-off-outline"
+          size={32}
+          color={colors.outline}
+        />
+        <Text variant="labelMedium" style={{ color: colors.outline }}>
+          No Images Available
+        </Text>
+      </Surface>
+    );
+  }
 
   return (
-    <View
-      style={[
-        m3Config.container,
-        isRow ? {} : { flexDirection: "row", height: 300 },
-        containerStyle,
-      ]}
-    >
-      {/* Main Image Area */}
-      <View style={m3Config.mainImageContainer}>
-        {!activeImage ? (
-          <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
-            <Text style={{ color: theme.colors.onSurfaceVariant }}>
-              No Image
-            </Text>
+    <Surface style={s.mainContainer} elevation={0}>
+      {/* Main Horizontal List */}
+      <FlatList
+        data={validImages}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={onScroll}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View style={s.slide}>
+            <PressableImageFullscreen
+              image={item}
+              imageStyleConfig={{
+                resizeMode: "cover",
+                containerStyle: { width: "100%", height: "100%" },
+              }}
+            />
           </View>
-        ) : (
-          <PressableImageFullscreen
-            image={activeImage}
-            imageStyleConfig={{ resizeMode: "cover" }}
-          />
         )}
+      />
+
+      {/* Floating Pagination Dots */}
+      <View style={s.paginationContainer}>
+        {validImages.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              s.dot,
+              {
+                backgroundColor:
+                  i === activeIndex ? colors.primary : colors.surface,
+                width: i === activeIndex ? 12 : 6, // Active dot is wider
+                borderColor: colors.outlineVariant,
+                borderWidth: i === activeIndex ? 0 : 1,
+              },
+            ]}
+          />
+        ))}
       </View>
 
-      {/* Thumbnails List */}
-      <View>
-        <ScrollView
-          horizontal={isRow}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            {
-              padding: Spacing.md,
-              gap: Spacing.sm,
-              flexDirection: isRow ? "row" : "column",
-            },
-            scrollStyle,
-          ]}
-        >
-          {images.map((img, i) => (
-            <TouchableOpacity
-              key={i}
-              onPress={() => setImageIndex(i)}
-              activeOpacity={0.8}
-            >
-              <Image
-                source={
-                  typeof img?.url === "string" ? { uri: img.url } : img?.url
-                }
-                style={m3Config.thumbnail(i === imageIndex)}
-              />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* Index Badge */}
+      <View style={[s.badge, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+        <Text style={s.badgeText}>
+          {activeIndex + 1} / {validImages.length}
+        </Text>
       </View>
-    </View>
+    </Surface>
   );
 }
+
+const s = StyleSheet.create({
+  mainContainer: {
+    width: "100%",
+    aspectRatio: 16 / 10,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: "#CCCCCC", // outlineVariant
+    overflow: "hidden",
+    position: "relative",
+    backgroundColor: "#F0F0F5", // surfaceVariant
+  },
+  emptyContainer: {
+    width: "100%",
+    aspectRatio: 16 / 10,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  slide: {
+    width: SCREEN_WIDTH - Spacing.md * 2 - 2, // Accounting for wrapper padding/borders
+    height: "100%",
+  },
+  paginationContainer: {
+    position: "absolute",
+    bottom: 12,
+    alignSelf: "center",
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  dot: {
+    height: 6,
+    borderRadius: 3,
+  },
+  badge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.md,
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 10,
+    fontFamily: "Poppins-Medium",
+  },
+});

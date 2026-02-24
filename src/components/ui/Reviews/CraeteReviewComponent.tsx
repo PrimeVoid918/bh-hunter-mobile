@@ -1,8 +1,17 @@
 import React from "react";
 import { View, StyleSheet, Alert } from "react-native";
-import { Text, Button, HelperText, useTheme } from "react-native-paper";
+import {
+  Text,
+  Button,
+  HelperText,
+  useTheme,
+  Surface,
+} from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { VStack, HStack } from "@gluestack-ui/themed";
+
 import {
   CreateReviewInput,
   CreateReviewSchema,
@@ -28,7 +37,7 @@ export function CreateReviewComponent({
   onCancel,
   onSubmitSuccess,
 }: CreateReviewComponentInterface) {
-  const theme = useTheme();
+  const { colors } = useTheme();
   const { selectedUser: userData } = useDynamicUserApi();
   const currentUser = userData!.id;
 
@@ -41,7 +50,7 @@ export function CreateReviewComponent({
     resolver: zodResolver(CreateReviewSchema),
     defaultValues: {
       tenantId: currentUser,
-      rating: 0, // Start at 0 to encourage a conscious choice
+      rating: 0,
       comment: "",
     },
   });
@@ -50,21 +59,28 @@ export function CreateReviewComponent({
 
   const onSubmit = (data: CreateReviewInput) => {
     if (data.rating === 0) {
-      Alert.alert("Rating Required", "Please select a star rating.");
+      Alert.alert(
+        "Rating Required",
+        "Please select a star rating to help others.",
+      );
       return;
     }
 
-    Alert.alert("Post Review?", "Share your feedback with the community?", [
-      { text: "Not yet", style: "cancel" },
+    // High-Trust Feedback: Standard M3 Alert
+    Alert.alert("Post Review?", "Your feedback will be visible to everyone.", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: "Post now",
+        text: "Post Now",
         onPress: async () => {
           try {
             await createReview({ boardingHouseId, data }).unwrap();
             reset();
             onSubmitSuccess();
           } catch (e: any) {
-            Alert.alert("Error", e?.data?.message || "Failed to post review.");
+            Alert.alert(
+              "Post Failed",
+              e?.data?.message || "Something went wrong.",
+            );
           }
         },
       },
@@ -72,14 +88,17 @@ export function CreateReviewComponent({
   };
 
   return (
-    <View style={s.root}>
-      {/* Interaction Area */}
-      <View style={s.ratingContainer}>
+    <VStack style={s.root}>
+      {/* 1. Star Selection Area */}
+      <Surface style={s.ratingSurface} elevation={0}>
+        <Text variant="labelMedium" style={s.label}>
+          TAP TO RATE
+        </Text>
         <Controller
           control={control}
           name="rating"
           render={({ field }) => (
-            <View style={{ alignItems: "center" }}>
+            <VStack alignItems="center">
               <RatingStarInput
                 value={field.value!}
                 onChange={field.onChange}
@@ -91,46 +110,53 @@ export function CreateReviewComponent({
                   {errors.rating.message}
                 </HelperText>
               )}
-            </View>
+            </VStack>
           )}
         />
-      </View>
+      </Surface>
 
-      <View style={s.fieldContainer}>
+      {/* 2. Comment Field */}
+      <VStack style={s.fieldWrapper}>
         <FormField
           name="comment"
           control={control}
           isEditing={true}
           inputType="paragraph"
-          placeholder="Describe your experience (optional)..."
-          containerStyle={s.formField}
+          placeholder="What was it like living here? Describe the host, the rooms, or the location..."
           inputProps={{
             multiline: true,
-            numberOfLines: 4,
+            numberOfLines: 5,
           }}
         />
         {errors.comment && (
           <HelperText type="error">{errors.comment.message}</HelperText>
         )}
-      </View>
+      </VStack>
 
-      {/* Action Buttons */}
-      <View style={s.actionRow}>
-        <Button mode="text" onPress={onCancel} disabled={isLoading}>
+      {/* 3. Actions */}
+      <HStack style={s.actionRow}>
+        {/* <Button
+          mode="text"
+          onPress={onCancel}
+          disabled={isLoading}
+          textColor={colors.outline}
+        >
           Not now
-        </Button>
+        </Button> */}
         <Button
           mode="contained"
           onPress={handleSubmit(onSubmit)}
           loading={isLoading}
           disabled={isLoading}
-          style={s.submitButton}
-          contentStyle={s.submitButtonContent}
+          // icon="send-variant"
+          style={s.submitButtonCompact}
+          contentStyle={s.submitButtonContentCompact}
+          labelStyle={s.submitLabel}
         >
-          Post
+          Post Review?
         </Button>
-      </View>
-    </View>
+      </HStack>
+    </VStack>
   );
 }
 
@@ -138,29 +164,54 @@ const s = StyleSheet.create({
   root: {
     gap: Spacing.md,
     width: "100%",
-    paddingVertical: Spacing.sm,
   },
-  ratingContainer: {
-    paddingVertical: Spacing.sm,
+  ratingSurface: {
+    paddingVertical: Spacing.md,
     alignItems: "center",
+    backgroundColor: "#F0F0F5", // surfaceVariant
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    borderStyle: "dashed", // Visual cue that this is an interactive input area
   },
-  fieldContainer: {
+  label: {
+    marginBottom: Spacing.xs,
+    letterSpacing: 1,
+    opacity: 0.6,
+  },
+  fieldWrapper: {
     width: "100%",
   },
-  formField: {
-    minHeight: 120, // Enough for a good comment
-  },
   actionRow: {
-    flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
     gap: Spacing.sm,
     marginTop: Spacing.xs,
   },
   submitButton: {
-    borderRadius: BorderRadius.pill,
+    borderRadius: BorderRadius.md,
+    margin: 0,
   },
   submitButtonContent: {
-    paddingHorizontal: Spacing.md,
+    flexDirection: "row-reverse", // Icon on the right for M3 feel
+    paddingHorizontal: Spacing.sm,
+    height: 48,
+    padding: 0,
+  },
+
+  submitButtonCompact: {
+    borderRadius: BorderRadius.md,
+    // minWidth: 150, // Explicitly smaller minWidth
+    alignSelf: "flex-end", // Prevents the button from stretching to parent width
+  },
+  submitButtonContentCompact: {
+    height: 40, // M3 standard height for compact buttons is 40dp
+    paddingHorizontal: 4, // Tighten the internal horizontal padding
+    flexDirection: "row-reverse", // Keeps the icon on the right
+  },
+  submitLabel: {
+    fontSize: 13,
+    fontFamily: "Poppins-Medium",
+    // marginHorizontal: 8, // Controls distance between text and icon
   },
 });

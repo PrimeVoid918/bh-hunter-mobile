@@ -23,7 +23,7 @@ import {
 } from "../navigation/booking.types";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import Container from "@/components/layout/Container/Container";
+import RoomDetailsRender from "@/features/shared/rooms/RoomDetailsRender";
 
 type RoomsDetailsScreenProps = NativeStackScreenProps<
   TenantBookingStackParamList,
@@ -43,98 +43,36 @@ export default function RoomsDetailsScreen({
     return <Text>Could not load Information!</Text>;
   }
 
-  //!
+  const [refreshing, setRefreshing] = React.useState(false);
+
   const {
-    data: roomData,
-    isLoading: isRoomDataLoading,
-    isError: isRoomDataError,
-    error: roomDataError,
+    data: room,
+    isLoading,
+    isError,
+    refetch,
   } = useGetOneQuery({ boardingHouseId, roomId });
 
-  if (isRoomDataError) {
-    console.log("Room data error:", roomDataError);
-  }
-
-  const gotoBooking = (roomId: number) => {
+  const gotoBooking = () => {
     navigate.navigate("RoomsCheckoutScreen", {
-      roomId: roomId,
-      ownerId: ownerId,
+      roomId,
+      ownerId,
     });
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    refetch().finally(() => setRefreshing(false));
   };
 
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer, s.container]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
+      variant="list"
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      loading={isLoading}
+      error={[isError ? "Failed to load room" : null]}
     >
-      {isRoomDataLoading && <FullScreenLoaderAnimated />}
-      {isRoomDataError && <FullScreenErrorModal />}
-      <Container>
-        {roomData && (
-          <VStack>
-            <Box>
-              <Text style={[s.textColor, { fontSize: Fontsize.display1 }]}>
-                {roomData.roomNumber}
-              </Text>
-            </Box>
-            <Box>
-              <Image
-                source={
-                  roomData?.thumbnail?.[0]?.url
-                    ? { uri: roomData.thumbnail[0].url }
-                    : require("@/assets/static/no-image.jpg")
-                }
-                style={{
-                  margin: "auto",
-                  width: "98%",
-                  height: 200,
-                  borderRadius: BorderRadius.md,
-                }}
-              />
-            </Box>
-            <ImageCarousel
-              images={roomData.gallery ?? []}
-              variant="secondary"
-            ></ImageCarousel>
-            <Box>
-              <Box>
-                <Text style={[s.textColor]}>{roomData.price}</Text>
-              </Box>
-              <Button onPress={() => gotoBooking(roomData.id)}>
-                <Text style={[s.textColor]}>Book Now</Text>
-              </Button>
-            </Box>
-
-            <Box>
-              <ScrollView
-                style={{ height: 150 }}
-                contentContainerStyle={{
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: 10,
-                  justifyContent: "flex-start",
-                  alignContent: "flex-start",
-                }}
-                nestedScrollEnabled={true} // important when inside another scrollable parent
-                keyboardShouldPersistTaps="handled" // helps with form fields
-              >
-                {(roomData.tags ?? []).map((item, index) => (
-                  <Box
-                    key={index}
-                    style={{
-                      borderRadius: BorderRadius.md,
-                      padding: 5,
-                      // backgroundColor: Colors.
-                    }}
-                  >
-                    <Text style={[s.generic_text, s.textColor]}>{item}</Text>
-                  </Box>
-                ))}
-              </ScrollView>
-            </Box>
-          </VStack>
-        )}
-      </Container>
+      <RoomDetailsRender mode="view" data={room!} goToBook={gotoBooking} />
     </StaticScreenWrapper>
   );
 }

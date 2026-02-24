@@ -13,14 +13,13 @@ import {
 import { VStack } from "@gluestack-ui/themed";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-export default function BookingMainScreen(){
+export default function BookingMainScreen() {
   return (
     <StaticScreenWrapper
       style={[GlobalStyle.GlobalsContainer, s.StaticScreenWrapper]}
       contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
     >
       <VStack
-      
         style={{
           // justifyContent: "center",
           // alignItems: "center",
@@ -34,9 +33,7 @@ export default function BookingMainScreen(){
         <VStack style={[s.Widget]}>
           <Box style={[s.Widget_item]}>
             <Ionicons name="notifications" color="white" size={25} />
-            <Text style={[s.generic_text_lg]}>
-              Total Properties
-            </Text>
+            <Text style={[s.generic_text_lg]}>Total Properties</Text>
           </Box>
           <Box style={[s.Widget_item]}>
             <Ionicons name="build-outline" color="white" size={25} />
@@ -46,7 +43,7 @@ export default function BookingMainScreen(){
       </VStack>
     </StaticScreenWrapper>
   );
-};
+}
 
 const s = StyleSheet.create({
   StaticScreenWrapper: {

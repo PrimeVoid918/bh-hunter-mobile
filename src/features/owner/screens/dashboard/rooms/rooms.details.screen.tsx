@@ -1,449 +1,360 @@
-import { View, Text, StyleSheet, ScrollView, Image, Alert } from "react-native";
-import React from "react";
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View, Alert } from "react-native";
 import {
-  useGetOneQuery,
-  usePatchRoomMutation,
-} from "@/infrastructure/room/rooms.redux.api";
-import ImageCarousel from "@/components/ui/ImageCarousel";
-import {
-  BorderRadius,
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-} from "@/constants";
-
-import {
-  NativeStackNavigationProp,
-  NativeStackScreenProps,
-} from "@react-navigation/native-stack";
-import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
-import {
-  useIsFocused,
   useNavigation,
   useRoute,
+  useIsFocused,
 } from "@react-navigation/native";
-import Container from "@/components/layout/Container/Container";
-import { OwnerDashboardStackParamList } from "../navigation/dashboard.types";
-import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
-import { Ionicons } from "@expo/vector-icons";
-import { useEditStateContextSwitcherButtons } from "@/components/ui/Portals/GlobalEditStateContextSwitcherButtonsProvider";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  BackendRoomFurnishingType,
-  BackendRoomType,
+  FAB,
+  Portal,
+  useTheme,
+  Text,
+  Button as PaperButton,
+} from "react-native-paper";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Components & Logic
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import RoomDetailsRender from "@/features/shared/rooms/RoomDetailsRender";
+import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
+import { useDecisionModal } from "@/components/ui/Modals/DecisionModalWrapper";
+
+// Infrastructure
+import {
+  useDeleteMutation,
+  useGetOneQuery,
+  usePatchRoomMutation,
+  // useDeleteRoomMutation // Ensure this is in your API
+} from "@/infrastructure/room/rooms.redux.api";
+import {
   PatchRoomInput,
   PatchRoomInputSchema,
-  RoomFurnishingType,
-  roomFurnishingTypeOptions,
-  RoomType,
-  RoomTypeEnumSchema,
-  RoomTypeLabels,
   roomTypeOptions,
-} from "../../../../../infrastructure/room/rooms.schema";
-import {
-  Box,
-  FormControl,
-  Input,
-  InputField,
-  HStack,
-  VStack,
-  Button,
-} from "@gluestack-ui/themed";
+  roomFurnishingTypeOptions,
+} from "@/infrastructure/room/rooms.schema";
+import { BorderRadius, Colors, Fontsize, Spacing } from "@/constants";
 
-// Form & Validation
-import { Controller, useForm } from "react-hook-form";
-import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
-import { BottomSheetTriggerField } from "../../../../../components/ui/BottomSheet/BottomSheetTriggerField";
-import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
-import { BackendFurnishingToFrontend } from "../../../../../infrastructure/room/rooms.schema";
-import { FormField } from "@/components/ui/FormFields/FormField";
-// import AmenitiesList from "@/components/ui/AmenitiesAndTagsLists/TagListStateful";
-import { TagListStateful } from "@/components/ui/AmenitiesAndTagsLists/TagListStateful";
-import { ROOM_FEATURE_TAGS } from "@/infrastructure/room/rooms.constants";
-
-export default function RoomsDetailsScreen({ route }) {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
+export default function RoomsDetailsScreen() {
+  const theme = useTheme();
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
+  const { showDecision, hideDecision } = useDecisionModal();
 
   const { boardingHouseId, roomId } = route.params;
 
-  const isFocused = useIsFocused();
-  const [isActionSheetRoomTypeOpen, setIsActionSheetRoomTypeOpen] =
-    React.useState(false);
-  const [isActionSheetFurnishingOpen, setIsActionSheetFurnishingOpen] =
-    React.useState(false);
+  // UI Local States
+  const [fabOpen, setFabOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeSheet, setActiveSheet] = useState<
+    "roomType" | "furnishing" | null
+  >(null);
 
+  // API Hooks
   const {
-    showButtons,
-    hideButtons,
-    isEditing: globalIsEditing,
-    setIsEditing: setGlobalIsEditing,
-  } = useEditStateContextSwitcherButtons();
-
-  if (!boardingHouseId || !roomId) {
-    return <Text>Invalid room or boarding house</Text>;
-  }
-
-  const {
-    data: roomData,
+    data: room,
     isLoading,
     isError,
     refetch,
   } = useGetOneQuery({ boardingHouseId, roomId });
-
-  const [patchRoom] = usePatchRoomMutation();
+  const [patchRoom, { isLoading: isPatching }] = usePatchRoomMutation();
+  const [deleteRoom, { isLoading: isDelteing }] = useDeleteMutation();
 
   const {
     control,
     reset,
     getValues,
     setValue,
-    formState: { errors },
     watch,
+    handleSubmit,
+    formState: { errors, isDirty },
   } = useForm<PatchRoomInput>({
     resolver: zodResolver(PatchRoomInputSchema),
     defaultValues: {
       roomNumber: "",
       description: "",
-      maxCapacity: "",
-      price: "",
+      maxCapacity: 0,
+      price: 0,
       roomType: "SINGLE",
       furnishingType: "UNFURNISHED",
-      availabilityStatus: false,
+      availabilityStatus: true,
       tags: [],
     },
   });
 
-  React.useEffect(() => {
-    if (roomData) {
+  // Sync data to form
+  useEffect(() => {
+    if (room) {
       reset({
-        roomNumber: roomData.roomNumber,
-        description: roomData.description ?? "",
-        maxCapacity: roomData.maxCapacity,
-        price: roomData.price,
-        roomType: roomData.roomType,
-        furnishingType: roomData.furnishingType,
-        tags: roomData.tags ?? [],
+        roomNumber: room.roomNumber,
+        description: room.description ?? "",
+        maxCapacity: room.maxCapacity,
+        price: room.price,
+        roomType: room.roomType,
+        furnishingType: room.furnishingType,
+        availabilityStatus: room.availabilityStatus,
+        tags: room.tags ?? [],
       });
     }
-  }, [roomData, reset]);
+  }, [room, reset]);
 
-  const selectedAmenities = watch("tags") ?? [];
-  React.useEffect(() => {
-    if (!isFocused) {
-      hideButtons();
-      return;
+  // --- Handlers ---
+
+  const handleToggleEdit = () => {
+    ReactNativeHapticFeedback.trigger("impactLight");
+    if (isEditing && isDirty) {
+      showDecision({
+        title: <Text variant="titleLarge">Discard Changes?</Text>,
+        body: (
+          <Text variant="bodyMedium">
+            You have unsaved changes. Discard and exit edit mode?
+          </Text>
+        ),
+        footer: (
+          <>
+            <PaperButton onPress={hideDecision}>Stay</PaperButton>
+            <PaperButton
+              mode="contained"
+              buttonColor={theme.colors.error}
+              onPress={() => {
+                setIsEditing(false);
+                reset();
+                hideDecision();
+              }}
+            >
+              Discard
+            </PaperButton>
+          </>
+        ),
+      });
+    } else {
+      setIsEditing(!isEditing);
     }
+  };
 
-    showButtons({
-      onEdit: () => setGlobalIsEditing(true),
-
-      onSave: () => {
-        showModal({
-          title: "Save Changes?",
-          message: "This will update the room details.",
-          cancelText: "Cancel",
-          confirmText: "Save",
-          onConfirm: async () => {
-            try {
-              const payload = getValues();
-              await patchRoom({
-                boardingHouseId,
-                roomId,
-                data: payload,
-              }).unwrap();
-              Alert.alert("Success", "Room updated");
-              setGlobalIsEditing(false);
-            } catch (err: any) {
-              // err is a serialized RTK Query error
-              console.error("PATCH failed:", err);
-
-              let message = "Unknown error";
-              if (err?.data) {
-                // Backend sent error body
-                message = JSON.stringify(err.data, null, 2);
-              } else if (err?.error) {
-                // Fetch-level error
-                message = err.error;
+  const handleDelete = () => {
+    ReactNativeHapticFeedback.trigger("impactHeavy");
+    showDecision({
+      title: (
+        <Text variant="titleLarge" style={{ color: theme.colors.error }}>
+          Delete Boarding House?
+        </Text>
+      ),
+      body: (
+        <Text variant="bodyMedium">
+          This action is permanent. All rooms and records associated with "
+          {room?.roomNumber}" will be removed.
+        </Text>
+      ),
+      footer: (
+        <>
+          <PaperButton onPress={hideDecision}>Cancel</PaperButton>
+          <PaperButton
+            mode="contained"
+            buttonColor={theme.colors.error}
+            onPress={async () => {
+              try {
+                await deleteRoom(roomId).unwrap();
+                ReactNativeHapticFeedback.trigger("notificationSuccess");
+                hideDecision();
+                navigation.goBack();
+              } catch (err) {
+                hideDecision();
+                Alert.alert("Error", "Could not delete boarding house.");
               }
-
-              Alert.alert("Failed to update", message);
-            }
-          },
-        });
-      },
-
-      onDiscard: () => {
-        showModal({
-          title: "Discard Changes?",
-          message: "All unsaved changes will be lost.",
-          cancelText: "Cancel",
-          confirmText: "Discard",
-          onConfirm: () => {
-            reset();
-            setGlobalIsEditing(false);
-          },
-        });
-      },
+            }}
+          >
+            Delete
+          </PaperButton>
+        </>
+      ),
     });
+  };
 
-    return () => hideButtons();
-  }, [isFocused, showButtons, hideButtons, showModal, getValues]);
+  const onSaveSubmit = handleSubmit(async (formData) => {
+    ReactNativeHapticFeedback.trigger("impactMedium");
+    showDecision({
+      title: <Text variant="titleLarge">Update Room</Text>,
+      body: (
+        <Text variant="bodyMedium">
+          Apply changes to Room {room?.roomNumber}?
+        </Text>
+      ),
+      footer: (
+        <>
+          <PaperButton onPress={hideDecision}>Cancel</PaperButton>
+          <PaperButton
+            mode="contained"
+            loading={isPatching}
+            onPress={async () => {
+              try {
+                await patchRoom({
+                  boardingHouseId,
+                  roomId,
+                  data: formData,
+                }).unwrap();
+                ReactNativeHapticFeedback.trigger("notificationSuccess");
+                setIsEditing(false);
+                hideDecision();
+              } catch (err) {
+                hideDecision();
+                Alert.alert("Error", "Failed to update room.");
+              }
+            }}
+          >
+            Confirm
+          </PaperButton>
+        </>
+      ),
+    });
+  });
 
-  if (isLoading || !roomData) return <FullScreenLoaderAnimated />;
-  if (isError) return <FullScreenErrorModal />;
+  const onRefresh = () => {
+    setRefreshing(true);
+    refetch().finally(() => setRefreshing(false));
+  };
 
   return (
-    <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer, s.container]}
-      contentContainerStyle={GlobalStyle.GlobalsContentContainer}
-    >
-      <Container>
-        <VStack>
-          {/* Header */}
-          <View style={s.header}>
-            <View style={s.header_titleBackdrop}></View>
-            <FormField
-              name="roomNumber"
-              control={control}
-              isEditing={globalIsEditing}
-              inputConfig={{
-                inputType: "singleLine",
-                placeholder: "Room number",
-                inputStyle: s.header_titleText,
-                inputContainerStyle: s.inputContainerStyle,
-              }}
-              containerStyle={s.header_title}
-              textStyle={s.header_titleText}
-            />
+    <View style={{ flex: 1 }}>
+      <StaticScreenWrapper
+        variant="list"
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        loading={isLoading && isPatching && isDelteing}
+        error={[isError ? "Failed to load room" : null]}
+      >
+        <RoomDetailsRender
+          mode="modifiable"
+          data={room!}
+          control={control}
+          isEditing={isEditing}
+          errors={errors}
+          form={{ getValues, setValue, watch }}
+          // Delegation of Sheet Openers
+          isRoomTypeSheetOpen
+          onOpenRoomTypeSheet={() => setActiveSheet("roomType")}
+          isFurnishingTypeSheetOpen
+          onOpenFurnishingTypeSheet={() => setActiveSheet("furnishing")}
+        />
 
-            <PressableImageFullscreen
-              image={roomData.thumbnail?.[0]}
-              containerStyle={{ width: "100%", aspectRatio: 2 }}
-              imageStyleConfig={{
-                resizeMode: "cover",
-                containerStyle: { borderRadius: BorderRadius.md },
-              }}
-            />
-          </View>
-
-          {/* Body */}
-          <VStack style={{ paddingVertical: Spacing.md }}>
-            <FormField
-              name="description"
-              control={control}
-              isEditing={globalIsEditing}
-              inputConfig={{
-                inputType: "paragraph",
-                placeholder: "Room description",
-                inputStyle: { fontSize: 16 },
-                inputContainerStyle: s.inputContainerStyle,
-              }}
-            />
-
-            {/* Price & Capacity */}
-            <VStack>
-              <FormField
-                name="price"
-                control={control}
-                isEditing={globalIsEditing}
-                inputConfig={{
-                  inputType: "singleLine",
-                  placeholder: "Price",
-                  inputContainerStyle: s.inputContainerStyle,
-                }}
-                textAffix={{ textPrefix: "₱ " }}
-              />
-
-              <FormField
-                name="maxCapacity"
-                control={control}
-                isEditing={globalIsEditing}
-                inputConfig={{
-                  inputType: "singleLine",
-                  placeholder: "Max Capacity",
-                  inputContainerStyle: s.inputContainerStyle,
-                }}
-              />
-            </VStack>
-
-            {/* Room Type */}
-            <BottomSheetTriggerField
-              name="roomType"
-              control={control}
-              label="Room Type"
-              options={roomTypeOptions}
-              isEditing={globalIsEditing}
-              placeholder="Select Furnishing Type"
-              error={errors.furnishingType?.message}
-              onOpen={() => setIsActionSheetRoomTypeOpen(true)}
-            />
-
-            {/* Furnishing */}
-            <BottomSheetTriggerField
-              name="furnishingType"
-              control={control}
-              label="Furnishing Type"
-              options={roomFurnishingTypeOptions}
-              isEditing={globalIsEditing}
-              placeholder="Select Furnishing Type"
-              error={errors.furnishingType?.message}
-              onOpen={() => setIsActionSheetFurnishingOpen(true)}
-            />
-
-            <ImageCarousel
-              images={roomData.gallery ?? []}
-              variant="secondary"
-            />
-          </VStack>
-
-          <VStack style={s.tagsContainer}>
-            <Text style={s.sectionTitle}>Amenities: </Text>
-            <TagListStateful
-              name="tags"
-              items={ROOM_FEATURE_TAGS}
-              isEditing={globalIsEditing}
-              form={{ getValues, setValue, watch }}
-            />
-          </VStack>
-        </VStack>
-
+        {/* Action Selectors */}
         <BottomSheetSelector
           options={roomTypeOptions}
-          isOpen={isActionSheetRoomTypeOpen}
-          onClose={() => setIsActionSheetRoomTypeOpen(false)}
+          isOpen={activeSheet === "roomType"}
+          onClose={() => setActiveSheet(null)}
           onSelect={(value) => {
             setValue("roomType", value, { shouldDirty: true });
-            setIsActionSheetRoomTypeOpen(false);
+            setActiveSheet(null);
           }}
         />
-
         <BottomSheetSelector
           options={roomFurnishingTypeOptions}
-          isOpen={isActionSheetFurnishingOpen}
-          onClose={() => setIsActionSheetFurnishingOpen(false)}
+          isOpen={activeSheet === "furnishing"}
+          onClose={() => setActiveSheet(null)}
           onSelect={(value) => {
             setValue("furnishingType", value, { shouldDirty: true });
-            setIsActionSheetFurnishingOpen(false);
+            setActiveSheet(null);
           }}
         />
-      </Container>
-    </StaticScreenWrapper>
+      </StaticScreenWrapper>
+
+      {/* Portal FAB Management */}
+      <Portal>
+        {isFocused && (
+          <FAB.Group
+            open={fabOpen}
+            visible={isFocused}
+            icon={
+              fabOpen
+                ? "chevron-down"
+                : isEditing
+                  ? "content-save"
+                  : "dots-vertical"
+            }
+            actions={[
+              // 1. SAVE ACTION (Edit Mode Only)
+              ...(isEditing
+                ? [
+                    {
+                      icon: "check",
+                      label: "Save Changes",
+                      onPress: onSaveSubmit,
+                      style: { backgroundColor: theme.colors.primary },
+                      color: theme.colors.onPrimary,
+                    },
+                  ]
+                : []),
+
+              // 2. EDIT ACTION (View Mode Only)
+              ...(!isEditing
+                ? [
+                    {
+                      icon: "pencil",
+                      label: "Edit Details",
+                      onPress: handleToggleEdit,
+                      style: { backgroundColor: theme.colors.primaryContainer },
+                      color: theme.colors.onPrimaryContainer,
+                    },
+                  ]
+                : []),
+
+              // 3. DELETE ACTION (View Mode Only)
+              ...(!isEditing
+                ? [
+                    {
+                      icon: "delete",
+                      label: "Delete Room",
+                      onPress: handleDelete,
+                      style: { backgroundColor: theme.colors.errorContainer },
+                      color: theme.colors.onErrorContainer,
+                    },
+                  ]
+                : []),
+
+              // 4. CANCEL ACTION (Edit Mode Only)
+              ...(isEditing
+                ? [
+                    {
+                      icon: "close",
+                      label: "Cancel Edit",
+                      onPress: handleToggleEdit,
+                    },
+                  ]
+                : []),
+            ]}
+            onStateChange={({ open }) => setFabOpen(open)}
+            fabStyle={[
+              {
+                backgroundColor: isEditing
+                  ? theme.colors.primary
+                  : theme.colors.secondaryContainer,
+              },
+            ]}
+            style={{
+              paddingBottom: 80,
+            }}
+          />
+        )}
+      </Portal>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, padding: Spacing.md, gap: Spacing.md },
-  header: { gap: Spacing.md, position: "relative", overflow: "hidden" },
-  header_titleBackdrop: {
+  fabStack: {
     position: "absolute",
-    height: "35%",
-    width: "110%",
-    top: "70%",
-    paddingLeft: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
-    left: -10,
-    filter: [{ blur: 6 }],
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    zIndex: 10,
-    elevation: 10, // Android
+    right: 16,
+    bottom: 90,
+    alignItems: "center",
+    gap: 12, // Space between Delete and Edit FABs
   },
-  header_title: {
-    position: "absolute",
-    top: "65%",
-    width: "100%",
-    paddingLeft: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
-    left: 0,
-    borderColor: "green",
-    zIndex: 2000,
-    elevation: 2000, // Android
-  },
-  header_titleText: {
-    fontSize: Fontsize.h1,
-    fontWeight: "900",
-    color: Colors.TextInverse[2],
-  },
-  body: { gap: Spacing.xl },
-
-  boxStyle: {
-    marginTop: Spacing.md,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 5,
-    overflow: "hidden",
-    borderBottomRightRadius: BorderRadius.md,
-  },
-
-  debug_border: {
-    borderWidth: 2,
-  },
-
-  textColor: {
-  },
-  text_title: {
-    fontSize: Fontsize.h1,
-    fontWeight: "900",
-  },
-  text_subTitle: {
-    fontSize: Fontsize.h3,
-    fontWeight: "900",
-  },
-  text_address: {
-    fontSize: Fontsize.md,
-  },
-  text_description: {
-    fontSize: Fontsize.lg,
-    lineHeight: 26,
-  },
-  rating: {
-    fontSize: Fontsize.sm,
-  },
-  viewRoomsBtn: {
-    marginTop: 10,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
-  sectionTitle: {
-    fontSize: Fontsize.lg,
-    fontWeight: "600",
-  },
-  tagsContainer: {
-    padding: 16,
-    borderRadius: BorderRadius.md,
-  },
-  tagsChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.md,
-  },
-  tagsChipSelected: {
-    backgroundColor: "#10b981",
-  },
-  tagsText: {
-    fontSize: Fontsize.sm,
-  },
-  tagsTextSelected: {
-    color: "white",
-    fontWeight: "600",
-  },
-  tagsDisplay: {
-    padding: 10,
-    borderRadius: BorderRadius.md,
-    fontSize: Fontsize.md,
-  },
-  errorText: {
-    color: "red",
-    marginTop: 4,
-    fontSize: Fontsize.sm,
-  },
-  inputContainerStyle: {
-    borderWidth: 3,
-    borderColor: "green",
-    borderRadius: BorderRadius.md,
+  fab: {
+    borderRadius: 16, // MD3 xl-style
+    elevation: 4,
+    // Removed borderWidth/borderColor to match M3 FAB flat style
   },
 });

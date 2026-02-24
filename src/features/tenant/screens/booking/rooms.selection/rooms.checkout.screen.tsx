@@ -7,12 +7,11 @@ import {
   Checkbox,
   useTheme,
   Divider,
-  Avatar,
-  IconButton,
+  Button as PaperButton, // Added for footer
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSelector } from "react-redux";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import UserInformatioCard from "@/components/ui/Information/UserInformatioCard";
@@ -20,6 +19,9 @@ import { Spacing, BorderRadius } from "@/constants";
 import { useCreateBookingMutation } from "@/infrastructure/booking/booking.redux.api";
 import { useGetOneQuery as useGetOwnerQuery } from "@/infrastructure/owner/owner.redux.api";
 import { RootState } from "@/application/store/stores";
+import { useDecisionModal } from "@/components/ui/Modals/DecisionModalWrapper";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { VStack } from "@gluestack-ui/themed";
 
 export default function RoomsCheckoutScreen() {
   const theme = useTheme();
@@ -30,11 +32,12 @@ export default function RoomsCheckoutScreen() {
   const tenantId = useSelector(
     (state: RootState) => state.tenants.selectedUser?.id,
   );
+
   const { data: ownerData } = useGetOwnerQuery(ownerId, { skip: !ownerId });
   const [createBooking, { isLoading }] = useCreateBookingMutation();
+  const { showDecision, hideDecision } = useDecisionModal();
 
   // State
-  const [showModal, setShowModal] = useState(false);
   const [checkIn, setCheckIn] = useState(new Date());
   const [checkOut, setCheckOut] = useState(
     new Date(new Date().setMonth(new Date().getMonth() + 1)),
@@ -54,8 +57,50 @@ export default function RoomsCheckoutScreen() {
     }
   };
 
-  const handleConfirm = async () => {
+  const handleConfirmRequest = () => {
+    ReactNativeHapticFeedback.trigger("impactMedium");
+
+    showDecision({
+      title: (
+        <Text variant="titleLarge" style={s.bold}>
+          Send Reservation Request?
+        </Text>
+      ),
+      body: (
+        <VStack space="xs">
+          <Text variant="bodyMedium">
+            You are about to send a booking intent for{" "}
+            <Text style={s.bold}>{checkIn.toLocaleDateString()}</Text>.
+          </Text>
+          <Text
+            variant="bodySmall"
+            style={{ marginTop: 8, color: theme.colors.outline }}
+          >
+            The owner will be notified to review your profile.
+          </Text>
+        </VStack>
+      ),
+      footer: (
+        <View style={s.modalFooter}>
+          <PaperButton onPress={hideDecision} mode="text">
+            Cancel
+          </PaperButton>
+          <PaperButton
+            mode="contained"
+            loading={isLoading}
+            onPress={submitBooking}
+            style={{ borderRadius: BorderRadius.sm }}
+          >
+            Confirm & Send
+          </PaperButton>
+        </View>
+      ),
+    });
+  };
+
+  const submitBooking = async () => {
     if (!tenantId || !roomId) return;
+
     try {
       await createBooking({
         roomId,
@@ -66,18 +111,20 @@ export default function RoomsCheckoutScreen() {
         },
       }).unwrap();
 
+      hideDecision();
+      ReactNativeHapticFeedback.trigger("notificationSuccess");
+
       Alert.alert(
-        "Request Sent",
-        "Your reservation request is now pending owner approval.",
-        [
-          {
-            text: "View Dashboard",
-            onPress: () => navigation.navigate("BoardingHouseLists"),
-          },
-        ],
+        "Request Sent Successfully",
+        "The owner has been notified. You can track this in your bookings list.",
+        [{ text: "Done", onPress: () => navigation.popToTop() }],
       );
     } catch (err: any) {
-      Alert.alert("Error", err?.data?.message || "Failed to create request.");
+      hideDecision();
+      Alert.alert(
+        "Request Failed",
+        err?.data?.message || "Could not process booking.",
+      );
     }
   };
 
@@ -91,13 +138,11 @@ export default function RoomsCheckoutScreen() {
           Reservation Request
         </Text>
 
-        {/* 1. Owner Section */}
         <Text variant="labelLarge" style={s.sectionLabel}>
           PROPERTY OWNER
         </Text>
         <UserInformatioCard user={ownerData} />
 
-        {/* 2. Date Selection Section */}
         <Surface elevation={1} style={s.dateCard}>
           <View style={s.dateHeader}>
             <View>
@@ -119,13 +164,11 @@ export default function RoomsCheckoutScreen() {
               Change
             </Button>
           </View>
-
           <Divider style={s.divider} />
-
           <View style={s.durationRow}>
             <Text variant="bodyMedium">Reservation Period:</Text>
             <Text variant="bodyLarge" style={s.bold}>
-              30 Days (Default)
+              1 Month (Standard)
             </Text>
           </View>
         </Surface>
@@ -140,7 +183,6 @@ export default function RoomsCheckoutScreen() {
           />
         )}
 
-        {/* 3. Notes Section */}
         <Surface
           elevation={0}
           style={[
@@ -152,14 +194,13 @@ export default function RoomsCheckoutScreen() {
             Important Notes
           </Text>
           <Text variant="bodySmall">
-            • Room is locked for 1 month upon approval.
+            • This room will be marked "Pending" for you.
           </Text>
           <Text variant="bodySmall">
-            • Final rent is negotiated directly with owner.
+            • Final move-in depends on owner approval.
           </Text>
         </Surface>
 
-        {/* 4. Terms Section */}
         <View style={s.termsContainer}>
           <View style={s.checkboxRow}>
             <Checkbox.Android
@@ -184,20 +225,17 @@ export default function RoomsCheckoutScreen() {
           </View>
         </View>
 
-        {/* Submit Action */}
         <Button
           mode="contained"
-          disabled={!canSubmit}
-          onPress={() => setShowModal(true)}
+          disabled={!canSubmit || isLoading}
+          onPress={handleConfirmRequest}
           style={s.submitBtn}
           contentStyle={{ height: 56 }}
           labelStyle={{ fontSize: 16, fontWeight: "700" }}
         >
-          Send Request
+          Send Booking Request
         </Button>
       </View>
-
-     
     </StaticScreenWrapper>
   );
 }
@@ -216,6 +254,8 @@ const s = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: "white",
     marginVertical: 12,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
   },
   dateHeader: {
     flexDirection: "row",
@@ -229,13 +269,15 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  notesCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginTop: 8,
-  },
+  notesCard: { padding: 16, borderRadius: 16, marginTop: 8 },
   termsContainer: { marginTop: 24, gap: 8 },
   checkboxRow: { flexDirection: "row", alignItems: "center", paddingRight: 32 },
   termsText: { flexShrink: 1, opacity: 0.8 },
   submitBtn: { marginTop: 32, borderRadius: 16 },
+  modalFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+    width: "100%",
+  },
 });

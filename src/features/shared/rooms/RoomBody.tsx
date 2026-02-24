@@ -4,13 +4,7 @@ import { HStack, VStack } from "@gluestack-ui/themed";
 import ImageCarousel from "@/components/ui/ImageCarousel";
 import { FormField } from "@/components/ui/FormFields/FormField";
 import { TagListStateful } from "@/components/ui/AmenitiesAndTagsLists/TagListStateful";
-import { AMENITIES } from "@/infrastructure/boarding-houses/boarding-house.constants";
 import { BorderRadius, Fontsize, Spacing } from "@/constants";
-import {
-  FindOneBoardingHouse,
-  OccupancyType,
-  PatchBoardingHouseInput,
-} from "@/infrastructure/boarding-houses/boarding-house.schema";
 import {
   FieldErrors,
   UseFormGetValues,
@@ -20,41 +14,58 @@ import {
 import TagListDumb from "@/components/ui/AmenitiesAndTagsLists/TagListDumb";
 import { Surface, useTheme } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  FindOneRoom,
+  PatchRoomInput,
+  RoomFurnishingType,
+  RoomType,
+} from "@/infrastructure/room/rooms.schema";
+import { ROOM_FEATURE_TAGS } from "@/infrastructure/room/rooms.constants";
 
-interface BoardingHouseBodyInterface {
-  data: FindOneBoardingHouse;
+interface RoomBodyInterface {
+  data: FindOneRoom;
   control: any;
   isEditing: boolean;
   onViewRooms: () => void;
-  isOccupancySheetOpen: boolean;
-  onOpenOccupancySheet: () => void;
-  onCloseOccupancySheet: () => void;
-  onSelectOccupancy: (value: OccupancyType) => void;
-  errors: FieldErrors<PatchBoardingHouseInput>;
+  errors: FieldErrors<PatchRoomInput>;
   form: {
-    getValues: UseFormGetValues<PatchBoardingHouseInput>;
-    setValue: UseFormSetValue<PatchBoardingHouseInput>;
-    watch: UseFormWatch<PatchBoardingHouseInput>;
+    getValues: UseFormGetValues<PatchRoomInput>;
+    setValue: UseFormSetValue<PatchRoomInput>;
+    watch: UseFormWatch<PatchRoomInput>;
   };
 }
 
-export function BoardingHouseBodyEdit({
+export function RoomBodyEdit({
   data,
   control,
   isEditing,
   errors,
   form,
   onViewRooms,
-  isOccupancySheetOpen,
-  onOpenOccupancySheet,
-  onCloseOccupancySheet,
-  onSelectOccupancy,
-}: BoardingHouseBodyInterface) {
+}: RoomBodyInterface) {
   const { colors } = useTheme();
 
   return (
     <VStack style={s.body}>
-      <ImageCarousel images={data.gallery ?? []} />
+      {/* Amenities Section */}
+      <Surface style={s.card} elevation={0}>
+        <HStack style={s.cardHeader}>
+          <MaterialCommunityIcons
+            name="layers"
+            size={20}
+            color={colors.primary}
+          />
+          <Text style={s.sectionTitle}>Amenities</Text>
+        </HStack>
+        <TagListStateful
+          name="tags"
+          items={ROOM_FEATURE_TAGS}
+          isEditing={isEditing}
+          form={form}
+        />
+      </Surface>
+
+      <ImageCarousel images={data?.gallery ?? []} />
 
       {/* Description Section */}
       <Surface style={s.card} elevation={0}>
@@ -70,25 +81,7 @@ export function BoardingHouseBodyEdit({
           name="description"
           control={control}
           isEditing={isEditing}
-          placeholder="Describe your boarding house..."
-        />
-      </Surface>
-
-      {/* Amenities Section */}
-      <Surface style={s.card} elevation={0}>
-        <HStack style={s.cardHeader}>
-          <MaterialCommunityIcons
-            name="layers"
-            size={20}
-            color={colors.primary}
-          />
-          <Text style={s.sectionTitle}>Amenities</Text>
-        </HStack>
-        <TagListStateful
-          name="amenities"
-          items={AMENITIES}
-          isEditing={isEditing}
-          form={form}
+          placeholder="Describe your room..."
         />
       </Surface>
     </VStack>
@@ -131,25 +124,25 @@ const s = StyleSheet.create({
   },
 });
 
-interface BoardingHouseBodyViewInteface {
+interface RoomBodyViewInteface {
   mode: "view";
-  data: FindOneBoardingHouse;
+  data: FindOneRoom;
   onViewRooms: () => void;
 }
 
-export function BoardingHouseBodyView({ data }: BoardingHouseBodyViewInteface) {
+export function RoomBodyView({ data }: RoomBodyViewInteface) {
   const { colors } = useTheme();
-  const amenities = data.amenities ?? [];
+  const amenities = data.tags ?? [];
 
   return (
     <VStack style={s.body}>
-      <ImageCarousel images={data.gallery ?? []} />
+      <ImageCarousel images={data?.gallery ?? []} />
 
       {/* Description Card */}
       <Surface style={s.card} elevation={0}>
         <Text style={s.label}>ABOUT THIS PROPERTY</Text>
         <Text style={s.descriptionText}>
-          {data.description?.trim() ||
+          {data?.description?.trim() ||
             "The owner hasn't provided a description yet."}
         </Text>
       </Surface>

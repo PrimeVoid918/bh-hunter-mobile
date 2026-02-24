@@ -6,7 +6,7 @@ import {
   PatchBoardingHouseInput,
 } from "@/infrastructure/boarding-houses/boarding-house.schema";
 import {
-  BoaBoardingHouseHeaderView,
+  BoardingHouseHeaderView,
   BoardingHouseHeaderEdit,
 } from "./BoardingHouseHeader";
 import {
@@ -21,24 +21,6 @@ import {
   BoardingHouseBodyView,
 } from "./BoardingHouseBody";
 import { Spacing } from "@/constants";
-
-// interface BoardingHouseDetailsRenderInterface {
-//   data: FindOneBoardingHouse;
-//   mode: "view" | "modifiable";
-//   control?: Control<PatchBoardingHouseInput>;
-//   isEditing?: boolean;
-//   errors?: FieldErrors<PatchBoardingHouseInput>;
-//   form?: {
-//     getValues: UseFormGetValues<PatchBoardingHouseInput>;
-//     setValue: UseFormSetValue<PatchBoardingHouseInput>;
-//     watch: UseFormWatch<PatchBoardingHouseInput>;
-//   };
-//   onViewRooms: () => void;
-//   isOccupancySheetOpen?: boolean;
-//   onOpenOccupancySheet?: () => void;
-//   onCloseOccupancySheet?: () => void;
-//   onSelectOccupancy?: (value: OccupancyType) => void;
-// }
 
 type ViewProps = {
   mode: "view";
@@ -74,7 +56,7 @@ export default function BoardingHouseDetailsRender(
   if (props.mode === "view") {
     return (
       <View gap={Spacing.base}>
-        <BoaBoardingHouseHeaderView
+        <BoardingHouseHeaderView
           data={props.data}
           onViewRooms={props.onViewRooms}
         />
@@ -102,7 +84,7 @@ export default function BoardingHouseDetailsRender(
   } = props;
 
   return (
-    <View gap={Spacing.base}>
+    <View gap={Spacing.md}>
       <BoardingHouseHeaderEdit
         mode="modifiable"
         data={data}

@@ -35,6 +35,12 @@ const theme = {
   roundness: 2,
   colors: {
     ...MD3LightTheme.colors,
+
+    availableBG: "#81C784",
+    notAvailableBG: "#E57373",
+    availableText: "#2E7D32",
+    notAvailableText: "#C62828",
+
     primary: "#357FC1",
     onPrimary: "#FFFFFF",
     primaryContainer: "#D6ECFA",

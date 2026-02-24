@@ -141,64 +141,64 @@ export function useDynamicUserApi() {
     role === UserRoleEnum.TENANT
       ? tenantAll
       : role === UserRoleEnum.OWNER
-      ? ownerAll
-      : role === UserRoleEnum.ADMIN
-      ? adminAll
-      : undefined;
+        ? ownerAll
+        : role === UserRoleEnum.ADMIN
+          ? adminAll
+          : undefined;
 
   const oneQuery =
     role === UserRoleEnum.TENANT
       ? tenantOne
       : role === UserRoleEnum.OWNER
-      ? ownerOne
-      : role === UserRoleEnum.ADMIN
-      ? adminOne
-      : undefined;
+        ? ownerOne
+        : role === UserRoleEnum.ADMIN
+          ? adminOne
+          : undefined;
 
   const createMutation =
     role === UserRoleEnum.TENANT
       ? tenantCreate
       : role === UserRoleEnum.OWNER
-      ? ownerCreate
-      : role === UserRoleEnum.ADMIN
-      ? adminCreate
-      : undefined;
+        ? ownerCreate
+        : role === UserRoleEnum.ADMIN
+          ? adminCreate
+          : undefined;
 
   const patchMutation =
     role === UserRoleEnum.TENANT
       ? tenantPatch
       : role === UserRoleEnum.OWNER
-      ? ownerPatch
-      : role === UserRoleEnum.ADMIN
-      ? adminPatch
-      : undefined;
+        ? ownerPatch
+        : role === UserRoleEnum.ADMIN
+          ? adminPatch
+          : undefined;
 
   const deleteMutation =
     role === UserRoleEnum.TENANT
       ? tenantDelete
       : role === UserRoleEnum.OWNER
-      ? ownerDelete
-      : role === UserRoleEnum.ADMIN
-      ? adminDelete
-      : undefined;
+        ? ownerDelete
+        : role === UserRoleEnum.ADMIN
+          ? adminDelete
+          : undefined;
 
   // ✅ Select user slice
   const selectedTenant = useSelector(
-    (state: RootState) => state.tenants.selectedUser
+    (state: RootState) => state.tenants.selectedUser,
   );
   const selectedOwner = useSelector(
-    (state: RootState) => state.owners.selectedUser
+    (state: RootState) => state.owners.selectedUser,
   );
   const selectedAdmin = useSelector(
-    (state: RootState) => state.admins.selectedUser
+    (state: RootState) => state.admins.selectedUser,
   );
 
   const selectedUser =
     role === UserRoleEnum.TENANT
       ? selectedTenant
       : role === UserRoleEnum.OWNER
-      ? selectedOwner
-      : selectedAdmin;
+        ? selectedOwner
+        : selectedAdmin;
 
   // ✅ fetchAndSelect helper
   const fetchAndSelect = async (id: number) => {
@@ -228,7 +228,26 @@ export function useDynamicUserApi() {
       result = await adminPatch({ id, data: data as Partial<Admin> }).unwrap();
     }
 
+    await refetchUser();
+
     return result;
+  };
+
+  const refetchUser = async () => {
+    if (!id) return;
+
+    const res = await oneQuery?.refetch?.();
+
+    if (res?.data) {
+      if (role === UserRoleEnum.TENANT)
+        dispatch(selectTenant(res.data as Tenant));
+      else if (role === UserRoleEnum.OWNER)
+        dispatch(selectOwner(res.data as Owner));
+      else if (role === UserRoleEnum.ADMIN)
+        dispatch(selectAdmin(res.data as Admin));
+    }
+
+    return res;
   };
 
   return {
@@ -241,6 +260,7 @@ export function useDynamicUserApi() {
     patchUser,
     deleteMutation,
     fetchAndSelect,
+    refetch: refetchUser,
   };
 }
 

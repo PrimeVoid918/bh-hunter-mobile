@@ -1,74 +1,66 @@
 import React, { useState, useMemo } from "react";
-import { View, StyleSheet, Pressable, ScrollView } from "react-native";
-import {
-  Text,
-  Surface,
-  Button,
-  Searchbar,
-  useTheme,
-  Avatar,
-  Card,
-  Icon,
-} from "react-native-paper";
-import { Ionicons } from "@expo/vector-icons";
+import { View, StyleSheet, Pressable } from "react-native";
+import { Text, Button, useTheme, Avatar } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import PropertyCard from "../../../../components/ui/BoardingHouseItems/PropertyCard";
 import VerificationIndicatorComponent from "../../../../components/ui/Verification/VerificationIndicatorComponent";
-import { Lists } from "@/components/layout/Lists/Lists";
-
-import { Spacing, BorderRadius, GlobalStyle } from "@/constants";
+import { Spacing, BorderRadius } from "@/constants";
 import { useGetAllQuery as useGetAllQueryBH } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
-import { Owner } from "@/infrastructure/owner/owner.types";
 import { OwnerDashboardStackParamList } from "./navigation/dashboard.types";
 import DashboardStateCard from "@/components/ui/Dashboard/DashboardStateCard";
-import { useGetAllQuery as useGetAllQueryBooking } from "@/infrastructure/booking/booking.redux.api";
 import { useGetOverviewMetricsQuery } from "@/infrastructure/metrics/metric.redux.api";
-import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import PaginatedSearchList from "@/components/layout/PaginatedSearchList/PaginatedSearchList";
+import { QueryBoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.schema";
+import { navigationRef } from "../../../../application/navigation/navigationRef";
 
 export default function DashboardMainScreen() {
   const theme = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+
   const navigate =
     useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
 
   const { selectedUser } = useDynamicUserApi();
-  const owner = selectedUser as Owner;
+  const owner = selectedUser;
 
   const {
     data: boardingHouses,
     isLoading,
-    isError,
     refetch,
-  } = useGetAllQueryBH({ ownerId: owner?.id });
+  } = useGetAllQueryBH(
+    { ownerId: owner?.id, isDeleted: false },
+    { skip: !owner?.id, refetchOnMountOrArgChange: true },
+  );
 
   const { data: metrics } = useGetOverviewMetricsQuery({
     role: "OWNER",
-    userId: owner.id,
+    userId: owner?.id,
   });
+
+  const triggerHaptic = () => ReactNativeHapticFeedback.trigger("impactLight");
 
   const stats = useMemo(() => {
     if (!boardingHouses || !metrics) {
       return { totalProperties: 0, totalRooms: 0, activeBookings: 0 };
     }
-
     const activeBookings =
       metrics.bookings?.statusCounts
-        ?.filter((s) => s.status === "COMPLETED_BOOKING" || s.status === "PAID")
-        .reduce((acc, curr) => acc + curr._count.status, 0) ?? 0;
+        ?.filter(
+          (s: any) => s.status === "COMPLETED_BOOKING" || s.status === "PAID",
+        )
+        .reduce((acc: number, curr: any) => acc + curr._count.status, 0) ?? 0;
 
     return {
       totalProperties: boardingHouses.length,
-
       totalRooms: boardingHouses.reduce(
         (acc, bh) => acc + (bh.rooms?.length || 0),
         0,
       ),
-
       activeBookings,
     };
   }, [boardingHouses, metrics]);
@@ -82,39 +74,54 @@ export default function DashboardMainScreen() {
   return (
     <StaticScreenWrapper
       variant="list"
+      style={{ backgroundColor: theme.colors.background }}
       refreshing={refreshing}
       onRefresh={handlePageRefresh}
       loading={isLoading}
     >
-      <View style={[s.container]}>
-        {/* 1. Header Section */}
+      <View style={s.mainContainer}>
         <View style={s.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text variant="displaySmall" style={s.welcomeText}>
               Hi, {owner?.firstname || "Owner"}
             </Text>
-            <Text
-              variant="titleMedium"
-              style={{ color: theme.colors.onSurfaceVariant }}
-            >
+            <Text variant="bodyMedium" style={s.subtitle}>
               Property Portfolio
             </Text>
           </View>
-          <Pressable onPress={() => navigate.navigate("Settings" as any)}>
-            <Avatar.Icon size={48} icon="account-circle" />
+          <Pressable
+            onPress={() => {
+              triggerHaptic();
+              navigate.navigate("Settings" as any);
+            }}
+          >
+            <Avatar.Text
+              size={48}
+              label={owner?.firstname?.[0] || "O"}
+              style={{ backgroundColor: theme.colors.primaryContainer }}
+              labelStyle={{
+                color: theme.colors.onPrimaryContainer,
+                fontFamily: "Poppins-Medium",
+              }}
+            />
           </Pressable>
         </View>
 
-        {/* 3. Verification - Tonal Surface */}
-        <VerificationIndicatorComponent
-          onPress={() => navigate.navigate("VerificationMainScreen")}
-          isVerified={
-            owner?.registrationStatus === "COMPLETED" &&
-            owner?.verificationLevel === "FULLY_VERIFIED"
-          }
-        />
+        {/* 2. VERIFICATION (Contained Component) */}
+        <View style={s.sectionSpacing}>
+          <VerificationIndicatorComponent
+            onPress={() => {
+              triggerHaptic();
+              navigate.navigate("VerificationMainScreen");
+            }}
+            isVerified={
+              owner?.registrationStatus === "COMPLETED" &&
+              owner?.verificationLevel === "FULLY_VERIFIED"
+            }
+          />
+        </View>
 
-        {/* 4. Stats Row - Elevated Tonal Cards */}
+        {/* 3. STATS ROW (Dashboard Identity) */}
         <View style={s.statsRow}>
           <DashboardStateCard
             label="Properties"
@@ -131,109 +138,93 @@ export default function DashboardMainScreen() {
             textColor={theme.colors.onSecondaryContainer}
           />
           <DashboardStateCard
-            label="Listings"
+            label="Active"
             value={stats.activeBookings}
             icon="calendar-check"
-            bgColor={theme.colors.tertiaryContainer}
-            textColor={theme.colors.onTertiaryContainer}
+            bgColor={theme.colors.surfaceVariant}
+            textColor={theme.colors.onSurfaceVariant}
           />
         </View>
 
-        {/* 5. List Header */}
+        {/* 4. LIST HEADER ACTIONS */}
         <View style={s.listHeader}>
-          <Text variant="titleLarge" style={{ fontWeight: "700" }}>
-            Properties
+          <Text variant="titleLarge" style={s.sectionTitle}>
+            Your Properties
           </Text>
           <Button
             mode="contained"
             icon="plus"
-            onPress={() => navigate.navigate("PropertyCreate" as any)}
+            onPress={() => {
+              triggerHaptic();
+              navigationRef.navigate("Properties" as any, {
+                screen: "PropertyCreate",
+              });
+            }}
             style={s.fabReplica}
+            labelStyle={s.buttonLabel}
           >
             Create
           </Button>
         </View>
 
-        <Searchbar
-          placeholder="Search properties"
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={[
-            s.searchBar,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.outlineVariant,
-              borderRadius: BorderRadius.md,
-            },
-          ]}
-          inputStyle={s.searchInput}
-          placeholderTextColor={theme.colors.placeholder}
-          iconColor={theme.colors.primary}
-          mode="bar"
-          elevation={0} // Stays flat as per your Design Anchor
-        />
-
-        {/* 6. Main List */}
-        <View style={{ paddingBottom: 120 }}>
-          {boardingHouses?.length === 0 ? (
-            <View style={s.emptyState}>
-              <Icon
-                source="home-off-outline"
-                size={64}
-                color={theme.colors.outline}
-              />
-              <Text variant="bodyLarge" style={{ marginTop: 16 }}>
-                Start your journey here
-              </Text>
-            </View>
-          ) : (
-            <Lists
-              list={
-                boardingHouses?.filter((bh) =>
-                  bh.name.toLowerCase().includes(searchQuery.toLowerCase()),
-                ) || []
-              }
-              contentContainerStyle={{ gap: 16 }}
-              renderItem={({ item }) => (
-                <PropertyCard data={item}>
-                  <Button
-                    mode="contained-tonal"
-                    icon="cog"
-                    onPress={() =>
-                      navigate.navigate("BoardingHouseDetailsScreen", {
-                        id: item.id,
-                      })
-                    }
-                    style={{ marginTop: 8 }}
-                  >
-                    Manage
-                  </Button>
-                </PropertyCard>
-              )}
-            />
+        {/* 5. SEARCH & LIST */}
+        <PaginatedSearchList<QueryBoardingHouse>
+          ownerId={owner?.id}
+          useApi={useGetAllQueryBH}
+          apiParams={{ minPrice: 1500 }}
+          searchKey="name"
+          renderItem={({ item }) => (
+            <PropertyCard data={item}>
+              <Button
+                mode="contained-tonal"
+                icon="cog"
+                onPress={() => {
+                  triggerHaptic();
+                  navigate.navigate("BoardingHouseDetailsScreen", {
+                    id: item.id,
+                  });
+                }}
+                style={s.manageBtn}
+                labelStyle={s.manageLabel}
+              >
+                Manage Property
+              </Button>
+            </PropertyCard>
           )}
-        </View>
+          searchPlaceholder="Search properties"
+          renderEmpty={() => (
+            <View style={s.emptyContainer}>
+              <Text style={s.emptyText}>No boarding houses found</Text>
+            </View>
+          )}
+        />
       </View>
     </StaticScreenWrapper>
   );
 }
 
 const s = StyleSheet.create({
-  container: {
+  mainContainer: {
     gap: Spacing.md,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 8,
   },
   welcomeText: {
-    fontWeight: "900",
-    letterSpacing: -1,
+    fontFamily: "Poppins-Bold",
+    color: "#1A1A1A",
+    letterSpacing: -0.5,
   },
-  verifSurface: {
-    borderRadius: BorderRadius.lg,
-    overflow: "hidden",
+  subtitle: {
+    fontFamily: "Poppins-Regular",
+    color: "#767474",
+    marginTop: -4,
+  },
+  sectionSpacing: {
+    marginBottom: 4,
   },
   statsRow: {
     flexDirection: "row",
@@ -245,23 +236,31 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  sectionTitle: {
+    fontFamily: "Poppins-Bold",
+    color: "#1A1A1A",
+  },
   fabReplica: {
     borderRadius: BorderRadius.md,
   },
-  emptyState: {
+  buttonLabel: {
+    fontFamily: "Poppins-SemiBold",
+  },
+  manageBtn: {
+    marginTop: 8,
+    borderRadius: BorderRadius.md,
+  },
+  manageLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 13,
+  },
+  emptyContainer: {
     alignItems: "center",
-    paddingVertical: 60,
-    opacity: 0.5,
+    marginTop: 40,
+    padding: Spacing.lg,
   },
-
-  searchBar: {
-    height: 52,
-    borderWidth: 1,
-    borderColor: "transparent", // Default state
-  },
-  searchInput: {
+  emptyText: {
     fontFamily: "Poppins-Regular",
-    fontSize: 16,
-    minHeight: 0,
+    color: "#CCCCCC",
   },
 });

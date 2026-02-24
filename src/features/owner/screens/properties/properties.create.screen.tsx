@@ -283,7 +283,7 @@ export default function PropertiesCreateScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { padding: Spacing.md, gap: Spacing.lg },
+  root: { gap: Spacing.lg },
   headerMeta: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
   titleText: { fontSize: Fontsize.h1, fontWeight: "900" },
   locationRow: {

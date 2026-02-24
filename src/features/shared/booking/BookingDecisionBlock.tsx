@@ -1,18 +1,23 @@
-import { View, Text } from "react-native";
 import React from "react";
-import { UserRole } from "@/infrastructure/user/user.types";
+import { View, StyleSheet, Vibration } from "react-native";
+import {
+  Text,
+  Surface,
+  Button,
+  TextInput,
+  useTheme,
+  HelperText,
+} from "react-native-paper";
 import { GetBooking } from "@/infrastructure/booking/booking.schema";
-import { Button } from "@gluestack-ui/themed";
-import { TextInput } from "react-native-gesture-handler";
+import { Spacing } from "@/constants";
+import { VStack, HStack } from "@gluestack-ui/themed";
 
 interface BookingDecisionBlockInterface {
   booking: GetBooking;
   viewerRole: "TENANT" | "OWNER";
-
-  onApprove: (reason: string) => void;
+  onApprove: (message: string) => void;
   onReject: (reason: string) => void;
   onCancel: (reason: string) => void;
-  onUploadProof?: () => void;
   onVerifyPayment?: () => void;
 }
 
@@ -21,63 +26,123 @@ export default function BookingDecisionBlock({
   viewerRole,
   onApprove,
   onReject,
-  onUploadProof,
   onCancel,
   onVerifyPayment,
 }: BookingDecisionBlockInterface) {
+  const theme = useTheme();
   const { status } = booking;
 
   const isOwner = viewerRole === "OWNER";
   const isTenant = viewerRole === "TENANT";
 
-  const [rejectReason, setRejectReason] = React.useState("");
-  const [cancelMessage, setCancelMessage] = React.useState("");
+  const [message, setMessage] = React.useState("");
 
-  return (
-    <View>
-      {/* STATUS TEXT */}
-      {/* <Text>Status: {status}</Text> */}
+  const handlePress = (action: () => void) => {
+    Vibration.vibrate(10);
+    action();
+  };
 
-      {/* OWNER ACTIONS */}
-      {isOwner && status === "PENDING_REQUEST" && (
-        <>
-          <Button onPress={() => onApprove(rejectReason)}>
-            <Text>Approve Booking</Text>
+  // 1. OWNER: Handle Pending Request
+  if (isOwner && status === "PENDING_REQUEST") {
+    return (
+      <VStack space="md">
+        <TextInput
+          mode="outlined"
+          label="Note to Tenant (Optional)"
+          placeholder="e.g. Please bring a valid ID"
+          value={message}
+          onChangeText={setMessage}
+          outlineColor={theme.colors.outlineVariant}
+          activeOutlineColor={theme.colors.primary}
+          style={s.input}
+        />
+        <HStack space="sm">
+          <Button
+            mode="contained"
+            onPress={() => handlePress(() => onApprove(message))}
+            style={s.flexButton}
+            contentStyle={s.buttonHeight}
+            labelStyle={s.buttonLabel}
+          >
+            Approve
           </Button>
-
-          <TextInput
-            placeholder="Enter reason"
-            value={rejectReason}
-            onChangeText={setRejectReason}
-            style={{ borderWidth: 1, padding: 8, marginVertical: 8 }}
-          />
-
-          <Button onPress={() => onReject(rejectReason)}>
-            <Text>Reject Booking</Text>
+          <Button
+            mode="outlined"
+            onPress={() => handlePress(() => onReject(message))}
+            textColor={theme.colors.error}
+            style={[s.flexButton, { borderColor: theme.colors.error }]}
+            contentStyle={s.buttonHeight}
+            labelStyle={s.buttonLabel}
+          >
+            Reject
           </Button>
-        </>
-      )}
+        </HStack>
+      </VStack>
+    );
+  }
 
-      {isOwner && status === "PAYMENT_APPROVAL" && (
-        <Button onPress={onVerifyPayment}>
-          <Text>Verify Payment</Text>
+  // 2. OWNER: Verify Payment
+  if (isOwner && status === "PAYMENT_APPROVAL") {
+    return (
+      <Button
+        mode="contained-tonal"
+        icon="shield-check"
+        onPress={() => handlePress(onVerifyPayment!)}
+        contentStyle={s.buttonHeight}
+        labelStyle={s.buttonLabel}
+      >
+        Verify Received Payment
+      </Button>
+    );
+  }
+
+  // 3. TENANT: Cancel Booking
+  if (
+    isTenant &&
+    (status === "PENDING_REQUEST" || status === "AWAITING_PAYMENT")
+  ) {
+    return (
+      <VStack space="sm">
+        <TextInput
+          mode="outlined"
+          label="Reason for Cancellation"
+          value={message}
+          onChangeText={setMessage}
+          error={false}
+          outlineColor={theme.colors.outlineVariant}
+          style={s.input}
+        />
+        <Button
+          mode="text"
+          onPress={() => handlePress(() => onCancel(message))}
+          textColor={theme.colors.error}
+          labelStyle={s.buttonLabel}
+        >
+          Cancel Reservation
         </Button>
-      )}
+      </VStack>
+    );
+  }
 
-      {isTenant && status === "PENDING_REQUEST" && (
-        <>
-          <TextInput
-            placeholder="Enter reason for cancellation"
-            value={cancelMessage}
-            onChangeText={setCancelMessage}
-            style={{ borderWidth: 1, padding: 8, marginVertical: 8 }}
-          />
-
-          <Button onPress={() => onCancel(cancelMessage)}>
-            <Text>Cancel Booking</Text>
-          </Button>
-        </>
-      )}
-    </View>
-  );
+  return null;
 }
+
+const s = StyleSheet.create({
+  input: {
+    backgroundColor: "white",
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+  },
+  flexButton: {
+    flex: 1,
+    borderRadius: 8, // md per tokens
+  },
+  buttonHeight: {
+    height: 48,
+  },
+  buttonLabel: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+});

@@ -17,6 +17,7 @@ import { bHAndRoomShareApi } from "@/infrastructure/shared/redux.api";
 import { reviewsApi } from "@/infrastructure/reviews/reviews.redux.api";
 import { notificationApi } from "@/infrastructure/notifications/notifications.redux.api";
 import { metricsApi } from "@/infrastructure/metrics/metric.redux.api";
+import profileCompletenessSlice from "../../infrastructure/user/user.requirements.slice";
 
 export const store = configureStore({
   reducer: {
@@ -37,6 +38,7 @@ export const store = configureStore({
     [reviewsApi.reducerPath]: reviewsApi.reducer,
     [metricsApi.reducerPath]: metricsApi.reducer,
     genericSearch: genericSearchBarSlice,
+    profileCompleteness: profileCompletenessSlice,
   },
   middleware: (getDefaultMiddleware) =>
     // getDefaultMiddleware().concat(boardingHouseApi.middleware),

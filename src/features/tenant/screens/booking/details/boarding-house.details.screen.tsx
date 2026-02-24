@@ -75,14 +75,6 @@ export default function BoardingHouseDetailsScreen() {
   return (
     <StaticScreenWrapper
       variant="list"
-      style={
-        (GlobalStyle.GlobalsContainer,
-        {
-          paddingLeft: Spacing.md,
-          paddingRight: Spacing.md,
-          paddingTop: Spacing.md,
-        })
-      }
       contentContainerStyle={GlobalStyle.GlobalsContentContainer}
       refreshing={refreshing}
       onRefresh={onRefresh}

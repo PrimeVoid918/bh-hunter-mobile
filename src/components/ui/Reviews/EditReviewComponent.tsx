@@ -18,6 +18,7 @@ import { usePatchMutation } from "@/infrastructure/reviews/reviews.redux.api";
 import { FormField } from "../FormFields/FormField";
 import RatingStarInput from "../Ratings/RatingStarInput";
 import { Spacing, BorderRadius } from "@/constants";
+import { HStack, VStack } from "@gluestack-ui/themed";
 
 interface EditReviewComponentProps {
   initialReview: Review;
@@ -26,7 +27,6 @@ interface EditReviewComponentProps {
   onCancel: () => void;
   onSubmitSuccess: () => void;
 }
-
 export default function EditReviewComponent({
   initialReview,
   onCancel,
@@ -34,7 +34,7 @@ export default function EditReviewComponent({
   starFilledColor,
   starHollowedColor,
 }: EditReviewComponentProps) {
-  const theme = useTheme();
+  const { colors } = useTheme();
   const [updateReview, { isLoading }] = usePatchMutation();
 
   const {
@@ -75,74 +75,123 @@ export default function EditReviewComponent({
   };
 
   return (
-    <View style={s.root}>
-      {/* 1. Rating Selector Section */}
-      <View style={s.ratingSection}>
-        <Text variant="labelLarge" style={s.label}>
-          Tap to rate
-        </Text>
-        <Controller
-          control={control}
-          name="rating"
-          render={({ field }) => (
-            <RatingStarInput
-              value={field.value!}
-              onChange={field.onChange}
-              starFilledColor={starFilledColor}
-              starHollowedColor={starHollowedColor}
-            />
+    <VStack style={s.root}>
+      {/* 1. Rating Selector Card */}
+      <Surface style={s.inputSurface} elevation={0}>
+        <VStack alignItems="center" gap={Spacing.xs}>
+          <Text
+            variant="labelMedium"
+            style={[s.label, { color: colors.primary }]}
+          >
+            YOUR RATING
+          </Text>
+          <Controller
+            control={control}
+            name="rating"
+            render={({ field }) => (
+              <RatingStarInput
+                value={field.value!}
+                onChange={field.onChange}
+                starFilledColor={starFilledColor}
+                starHollowedColor={starHollowedColor}
+              />
+            )}
+          />
+          {errors.rating && (
+            <HelperText type="error" padding="none">
+              {errors.rating.message}
+            </HelperText>
           )}
-        />
-        {errors.rating && (
-          <HelperText type="error">{errors.rating.message}</HelperText>
-        )}
-      </View>
+        </VStack>
+      </Surface>
 
-      {/* 2. Comment Field */}
-      <View style={s.fieldSection}>
-        <Text variant="labelLarge" style={s.label}>
-          Describe your experience
+      {/* 2. Comment Field Area */}
+      <VStack gap={4}>
+        <Text variant="labelMedium" style={s.fieldLabel}>
+          Edit your feedback
         </Text>
         <FormField
           name="comment"
           control={control}
           isEditing={true}
           inputType="paragraph"
-          placeholder="What did you like or dislike?"
-          containerStyle={s.formFieldContainer}
-          inputProps={{ multiline: true, numberOfLines: 5 }}
+          placeholder="What changed? What did you like or dislike?"
+          inputProps={{
+            multiline: true,
+            numberOfLines: 5,
+          }}
         />
-      </View>
+        {errors.comment && (
+          <HelperText type="error">{errors.comment.message}</HelperText>
+        )}
+      </VStack>
 
-      {/* 3. Action Buttons */}
-      <View style={s.actions}>
-        <Button mode="text" onPress={onCancel} disabled={isLoading}>
+      {/* 3. Actions Row */}
+      <HStack style={s.actions}>
+        <Button
+          mode="text"
+          onPress={onCancel}
+          disabled={isLoading}
+          labelStyle={s.compactLabel}
+        >
           Cancel
         </Button>
         <Button
           mode="contained"
           onPress={handleSubmit(onSubmit)}
           loading={isLoading}
-          style={s.button}
+          icon="check-circle-outline"
+          style={s.submitButton}
+          contentStyle={s.submitButtonContent}
+          labelStyle={s.compactLabel}
         >
-          Update Review
+          Update
         </Button>
-      </View>
-    </View>
+      </HStack>
+    </VStack>
   );
 }
 
 const s = StyleSheet.create({
-  root: { gap: Spacing.lg, width: "100%" },
-  ratingSection: { alignItems: "center", gap: Spacing.xs },
-  fieldSection: { gap: Spacing.xs },
-  label: { opacity: 0.7, marginBottom: 4, textAlign: "center" },
-  formFieldContainer: { minHeight: 120 },
+  root: {
+    gap: Spacing.md,
+    width: "100%",
+  },
+  inputSurface: {
+    padding: Spacing.md,
+    backgroundColor: "#F0F0F5", // surfaceVariant
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#CCCCCC", // outlineVariant
+    borderStyle: "dashed",
+  },
+  label: {
+    fontFamily: "Poppins-Bold",
+    letterSpacing: 1,
+    opacity: 0.8,
+  },
+  fieldLabel: {
+    fontFamily: "Poppins-Medium",
+    color: "#767474", // outline
+    marginLeft: 4,
+  },
   actions: {
-    flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
     gap: Spacing.sm,
+    marginTop: Spacing.xs,
   },
-  button: { borderRadius: BorderRadius.pill },
+  submitButton: {
+    borderRadius: BorderRadius.md, // MD3 standard radius
+    minWidth: 100,
+  },
+  submitButtonContent: {
+    height: 40,
+    paddingHorizontal: 8,
+    flexDirection: "row-reverse",
+  },
+  compactLabel: {
+    fontSize: 13,
+    fontFamily: "Poppins-Medium",
+  },
 });

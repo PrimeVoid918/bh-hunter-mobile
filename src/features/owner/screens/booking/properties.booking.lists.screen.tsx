@@ -1,24 +1,32 @@
-import { View, Text, StyleSheet, Alert } from "react-native";
 import React, { useState } from "react";
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import { StyleSheet, View } from "react-native";
 import {
-  BorderRadius,
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-} from "@/constants";
-import { Box, Button, VStack } from "@gluestack-ui/themed";
+  Text,
+  useTheme,
+  Surface,
+  IconButton,
+  Divider,
+} from "react-native-paper";
+import {
+  VStack,
+  HStack,
+  Box,
+  Button,
+  ButtonText,
+  Badge,
+  BadgeText,
+} from "@gluestack-ui/themed";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import { Spacing, BorderRadius } from "@/constants";
 import { useGetAllQuery } from "@/infrastructure/booking/booking.redux.api";
-import { QueryBooking } from "../../../../infrastructure/booking/booking.schema";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { OwnerBookingStackParamList } from "./navigation/booking.types";
 import { useGetOneQuery } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import { parseIsoDate } from "@/infrastructure/utils/date-and-time/parseISODate.util";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import Container from "@/components/layout/Container/Container";
+import { OwnerBookingStackParamList } from "./navigation/booking.types";
+import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 import { Lists } from "@/components/layout/Lists/Lists";
 
 type RouteProps = RouteProp<
@@ -27,140 +35,205 @@ type RouteProps = RouteProp<
 >;
 
 export default function PropertiesBookingListsScreen() {
+  const { colors } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<OwnerBookingStackParamList>>();
   const route = useRoute<RouteProps>();
-  if (!route.params?.bhId) {
-    <Text>Error getting Information</Text>;
-  }
   const { bhId } = route.params;
 
-  if (!bhId) {
-    Alert.alert("Something went wrong when fetching the data!");
-  }
-
   const [refreshing, setRefreshing] = useState(false);
-  const [bookingFilters, setBookingFilters] = useState<QueryBooking>({
+  const {
+    data: bookingList,
+    isLoading: isBookingListLoading,
+    refetch,
+  } = useGetAllQuery({
     limit: 20,
     page: 1,
     boardingHouseId: bhId!,
   });
-
-  const { data: bookingList, isLoading: isBookingListLoading } =
-    useGetAllQuery(bookingFilters);
   const { data: boardingHouseData } = useGetOneQuery(bhId);
 
-  const handleGotoBookingDetails = (bookId: number) => {
-    console.log("togo book detalils", bookId);
-    if (!bookId) {
-      Alert.alert("Error", "Missing required parameter: bookId");
-      return;
-    }
-
-    navigation.navigate("BookingStatusScreen", { bookId: bookId });
-  };
-
-  const handlePageRefresh = () => {
+  const handlePageRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    await refetch();
+    setRefreshing(false);
   };
 
-  const renderBookingItem = ({
-    item,
-  }: {
-    item: (typeof bookingList)[number];
-  }) => (
-    <Box key={item.id} style={[styles.container]}>
-      <Box style={[styles.center_item]}>
-        <Text
-          style={[
-            styles.textColor,
-            styles.item_header,
-            {
-              textAlign: "center",
-              fontSize: Fontsize.xl,
-              color: "white",
-              fontWeight: "900",
-            },
-          ]}
-        >
-          {item.room.roomNumber}
-        </Text>
-      </Box>
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return { action: "success", label: "Completed", icon: "check-circle" };
+      case "PENDING":
+        return { action: "warning", label: "Pending", icon: "clock-outline" };
+      case "CANCELLED":
+        return { action: "error", label: "Cancelled", icon: "close-circle" };
+      default:
+        return { action: "muted", label: status, icon: "information" };
+    }
+  };
 
-      <Box style={[styles.body]}>
-        <Box style={[styles.infoBox]}>
-          <Text style={[styles.textColor]}>Status: {item.status}</Text>
-          <Text style={[styles.textColor]}>{item.reference}</Text>
-          <Text style={[styles.textColor]}>
-            Check In: {parseIsoDate(item.checkInDate)?.monthName}{" "}
-            {parseIsoDate(item.checkInDate)?.day}{" "}
-            {parseIsoDate(item.checkInDate)?.dayName}
-          </Text>
-          <Text style={[styles.textColor]}>
-            Check Out: {parseIsoDate(item.checkOutDate)?.monthName}{" "}
-            {parseIsoDate(item.checkOutDate)?.day}{" "}
-            {parseIsoDate(item.checkOutDate)?.dayName}
-          </Text>
-        </Box>
-        <Box style={[styles.cta]}>
-          <Button onPress={() => handleGotoBookingDetails(item.id)}>
-            <Text style={[styles.textColor]}>View Details</Text>
-          </Button>
-        </Box>
-      </Box>
-    </Box>
-  );
+  const renderBookingItem = ({ item }: { item: any }) => {
+    const statusCfg = getStatusConfig(item.status);
+    const checkIn = parseIsoDate(item.checkInDate);
+    const checkOut = parseIsoDate(item.checkOutDate);
+
+    return (
+      <Surface elevation={0} style={s.card}>
+        <VStack p={Spacing.md} gap={Spacing.sm}>
+          {/* Header Row: Room & Status */}
+          <HStack justifyContent="space-between" alignItems="center">
+            <HStack alignItems="center" gap={Spacing.sm}>
+              <Box
+                style={[
+                  s.roomBadge,
+                  { backgroundColor: colors.primaryContainer },
+                ]}
+              >
+                <Text
+                  variant="titleMedium"
+                  style={{
+                    color: colors.onPrimaryContainer,
+                    fontFamily: "Poppins-Bold",
+                  }}
+                >
+                  {item.room.roomNumber}
+                </Text>
+              </Box>
+              <VStack>
+                <Text variant="labelSmall" style={{ color: colors.outline }}>
+                  REFERENCE
+                </Text>
+                <Text variant="bodySmall" numberOfLines={1} style={s.refText}>
+                  {item.reference}
+                </Text>
+              </VStack>
+            </HStack>
+            <Badge
+              size="md"
+              variant="solid"
+              action={statusCfg.action as any}
+              borderRadius="$full"
+            >
+              <BadgeText style={s.badgeText}>{statusCfg.label}</BadgeText>
+            </Badge>
+          </HStack>
+
+          <Divider style={s.divider} />
+
+          {/* Body: Dates & Tenant */}
+          <HStack justifyContent="space-between" alignItems="center">
+            <VStack gap={2}>
+              <HStack alignItems="center" gap={4}>
+                <MaterialCommunityIcons
+                  name="calendar-import"
+                  size={14}
+                  color={colors.primary}
+                />
+                <Text variant="bodySmall" style={s.dateText}>
+                  {checkIn?.monthName} {checkIn?.day}, {checkIn?.year}
+                </Text>
+              </HStack>
+              <HStack alignItems="center" gap={4}>
+                <MaterialCommunityIcons
+                  name="calendar-export"
+                  size={14}
+                  color={colors.error}
+                />
+                <Text variant="bodySmall" style={s.dateText}>
+                  {checkOut?.monthName} {checkOut?.day}, {checkOut?.year}
+                </Text>
+              </HStack>
+            </VStack>
+
+            <Button
+              size="sm"
+              variant="outline"
+              style={s.detailsBtn}
+              onPress={() =>
+                navigation.navigate("BookingStatusScreen", { bookId: item.id })
+              }
+            >
+              <ButtonText style={s.btnText}>View Details</ButtonText>
+            </Button>
+          </HStack>
+        </VStack>
+      </Surface>
+    );
+  };
 
   return (
-    <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-      // wrapInScrollView={false}
-    >
-      {boardingHouseData && (
-        <Box>
-          <Text
-            style={{ fontSize: Fontsize.xl, color: "white", fontWeight: "900" }}
-          >
-            {boardingHouseData.name}
-          </Text>
-        </Box>
-      )}
-      {isBookingListLoading && <FullScreenLoaderAnimated />}
-      <VStack style={{ flex: 1 }}>
+    <StaticScreenWrapper variant="list" loading={isBookingListLoading}>
+      <VStack p={Spacing.md} gap={Spacing.md}>
+        {boardingHouseData && (
+          <VStack>
+            <Text
+              variant="labelLarge"
+              style={{ color: colors.primary, letterSpacing: 1 }}
+            >
+              BOOKING LOGS
+            </Text>
+            <Text variant="headlineSmall" style={s.headerTitle}>
+              {boardingHouseData.name}
+            </Text>
+          </VStack>
+        )}
+
         {bookingList && bookingList.length > 0 ? (
           <Lists
             list={bookingList}
             renderItem={renderBookingItem}
             refreshing={refreshing}
             onRefresh={handlePageRefresh}
-            contentContainerStyle={{ gap: 10, padding: 10 }}
+            contentContainerStyle={{ gap: Spacing.md, paddingBottom: 40 }}
           />
         ) : (
-          <Text style={[styles.textColor]}>Booking Empty</Text>
+          <Box py={Spacing.xl} alignItems="center">
+            <MaterialCommunityIcons
+              name="calendar-blank"
+              size={48}
+              color={colors.outlineVariant}
+            />
+            <Text
+              variant="bodyMedium"
+              style={{ color: colors.outline, marginTop: 8 }}
+            >
+              No bookings found for this property.
+            </Text>
+          </Box>
         )}
       </VStack>
     </StaticScreenWrapper>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "column",
-    borderRadius: 10,
-    padding: Spacing.md,
-    gap: Spacing.sm,
+const s = StyleSheet.create({
+  headerTitle: { fontFamily: "Poppins-Bold", color: "#1A1A1A" },
+  card: {
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
   },
-  body: { borderWidth: 3, flexDirection: "row", borderColor: "red" },
-  infoBox: {
-    borderWidth: 3,
-    flexDirection: "column",
-    borderColor: "red",
-    flex: 1,
+  roomBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  textColor: {},
-  item_header: { fontSize: Fontsize.h1 },
-  center_item: { justifyContent: "center", alignContent: "center" },
-  cta: { marginLeft: "auto" },
+  refText: { fontFamily: "Poppins-Medium", fontSize: 11, maxWidth: 120 },
+  divider: { backgroundColor: "#EEEEEE", height: 1 },
+  dateText: { fontFamily: "Poppins-Regular", color: "#444" },
+  detailsBtn: {
+    borderColor: "#357FC1",
+    height: 32,
+    borderRadius: BorderRadius.sm,
+  },
+  btnText: { fontSize: 12, color: "#357FC1", fontFamily: "Poppins-Medium" },
+  badgeText: {
+    fontSize: 10,
+    fontFamily: "Poppins-Bold",
+    textTransform: "uppercase",
+  },
 });

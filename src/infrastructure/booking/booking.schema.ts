@@ -164,6 +164,7 @@ export const GetBookingSchema = BaseBookingSchema.pick({
       id: z.number(),
       name: z.string(),
       ownerId: z.number(),
+      address: z.string(),
       thumbnail: z.array(
         z.object({
           id: z.number(),

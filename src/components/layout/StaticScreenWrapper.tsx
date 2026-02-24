@@ -141,20 +141,27 @@ export default function StaticScreenWrapper({
     height: "100%",
   };
 
-  return onRefresh ? (
-    <ScrollView
-      {...scrollProps}
-      refreshControl={
-        <RefreshControl
-          refreshing={false} // Hidden because we use our Custom Modal instead
-          onRefresh={onRefresh}
-          enabled={!refreshing} // Prevent multiple pulls
-        />
-      }
-    >
-      {renderContent()}
-    </ScrollView>
-  ) : (
+  // 1. Check for Refreshing (Usually implies a list, so keep ScrollView)
+  if (onRefresh) {
+    return (
+      <ScrollView
+        {...scrollProps}
+        refreshControl={
+          <RefreshControl refreshing={false} onRefresh={onRefresh} />
+        }
+      >
+        {renderContent()}
+      </ScrollView>
+    );
+  }
+
+  // 2. NEW: If scroll is disabled (like for Maps), return a simple View
+  if (!shouldScroll) {
+    return <View style={containerStyle}>{renderContent()}</View>;
+  }
+
+  // 3. Default to Keyboard Scroll
+  return (
     <KeyboardAwareScrollView {...scrollProps}>
       {renderContent()}
     </KeyboardAwareScrollView>

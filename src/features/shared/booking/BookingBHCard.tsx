@@ -1,48 +1,120 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Text, Surface, useTheme } from "react-native-paper";
+import { View, StyleSheet, Vibration } from "react-native";
+import {
+  Text,
+  Surface,
+  useTheme,
+  TouchableRipple,
+  Icon,
+} from "react-native-paper";
 import { GetBooking } from "@/infrastructure/booking/booking.schema";
-import { BorderRadius, Fontsize } from "@/constants";
+import { Spacing } from "@/constants";
 import PressableImageFullscreen from "@/components/ui/ImageComponentUtilities/PressableImageFullscreen";
 
-export default function BookingBHCard({ data }: { data: GetBooking }) {
+export default function BookingBHCard({
+  data,
+  onPress,
+}: {
+  data: GetBooking;
+  onPress?: () => void;
+}) {
   const { boardingHouse } = data;
   const theme = useTheme();
 
+  const handlePress = () => {
+    Vibration.vibrate(10);
+    onPress?.();
+  };
+
   return (
-    <Surface style={s.container} elevation={1}>
+    <Surface
+      style={[s.container, { borderColor: theme.colors.outlineVariant }]}
+      elevation={0}
+    >
       <PressableImageFullscreen
         image={boardingHouse?.thumbnail?.[0] ?? null}
-        containerStyle={s.image}
+        containerStyle={s.imageContainer}
         imageStyleConfig={{ resizeMode: "cover" }}
       />
-      <View style={s.overlay}>
-        <Text variant="headlineSmall" style={s.name}>
-          {boardingHouse?.name}
-        </Text>
-        <Text variant="bodyMedium" style={s.location}>
-          {boardingHouse?.address || "Check address in details"}
-        </Text>
-      </View>
+
+      <TouchableRipple onPress={handlePress} rippleColor="rgba(0, 0, 0, .05)">
+        <View style={s.textContainer}>
+          <View style={s.content}>
+            <Text style={[s.name, { color: theme.colors.onSurface }]}>
+              {boardingHouse?.name}
+            </Text>
+            <View style={s.locationWrapper}>
+              <Icon
+                source="map-marker-outline"
+                size={14}
+                color={theme.colors.primary}
+              />
+              <Text style={[s.location, { color: theme.colors.outline }]}>
+                {boardingHouse?.address || "Ormoc City"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Nav Indicator */}
+          <View
+            style={[
+              s.actionIndicator,
+              { backgroundColor: theme.colors.primaryContainer },
+            ]}
+          >
+            <Icon
+              source="arrow-top-right"
+              size={18}
+              color={theme.colors.onPrimaryContainer}
+            />
+          </View>
+        </View>
+      </TouchableRipple>
     </Surface>
   );
 }
 
 const s = StyleSheet.create({
   container: {
-    borderRadius: 24, // M3 Extra Large rounding
+    borderRadius: 16, // xl
+    borderWidth: 1,
     overflow: "hidden",
-    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
   },
-  image: { width: "100%", aspectRatio: 16 / 9 },
-  overlay: {
-    padding: 16,
-    backgroundColor: "rgba(0,0,0,0.4)", // Glassmorphism feel
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  imageContainer: {
+    width: "100%",
+    aspectRatio: 21 / 9,
   },
-  name: { color: "white", fontWeight: "900" },
-  location: { color: "rgba(255,255,255,0.8)" },
+  textContainer: {
+    padding: Spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  content: {
+    flex: 1,
+  },
+  name: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  locationWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+    gap: 4,
+  },
+  location: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 12,
+  },
+  actionIndicator: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: Spacing.md,
+  },
 });

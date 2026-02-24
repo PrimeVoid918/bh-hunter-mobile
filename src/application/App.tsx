@@ -8,7 +8,6 @@ import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { GlobalImageFullScreenProvider } from "../components/ui/ImageComponentUtilities/GlobalImageFullScreenProvider";
 import { PortalProvider, PortalHost } from "@gorhom/portal";
-import { GlobalEditStateContextSwitcherButtonsProvider } from "@/components/ui/Portals/GlobalEditStateContextSwitcherButtonsProvider";
 import { Provider as PaperProvider, MD3LightTheme } from "react-native-paper";
 
 import { Linking } from "react-native";
@@ -18,6 +17,7 @@ import theme from "./config/react-native-paper.config";
 import * as Font from "expo-font";
 import { useFonts } from "expo-font";
 import fonts from "@/constants/themes/fonts";
+import { DecisionProvider } from "@/components/ui/Modals/DecisionModalWrapper";
 
 export default function App() {
   const [fontsLoaded] = useFonts(fonts);
@@ -52,11 +52,11 @@ export default function App() {
             <PaperProvider theme={theme}>
               <GlobalImageFullScreenProvider>
                 <GlobalDocumentFullScreenProvider>
-                  <GlobalEditStateContextSwitcherButtonsProvider>
+                  <DecisionProvider>
                     <RootNavigation />
-                    <PortalHost name="ImageFullScreenPortalRoot" />
-                    <PortalHost name="DocumentFullScreenPortalRoot" />
-                  </GlobalEditStateContextSwitcherButtonsProvider>
+                  </DecisionProvider>
+                  <PortalHost name="ImageFullScreenPortalRoot" />
+                  <PortalHost name="DocumentFullScreenPortalRoot" />
                 </GlobalDocumentFullScreenProvider>
               </GlobalImageFullScreenProvider>
             </PaperProvider>

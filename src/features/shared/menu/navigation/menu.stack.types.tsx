@@ -8,4 +8,5 @@ export const MenuStackParamListArrayName = [
   "UserEdit",
   "CustomerHelp",
   "Accessibility",
+  "AccountSecurity",
 ];

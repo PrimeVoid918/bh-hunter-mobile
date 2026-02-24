@@ -37,7 +37,12 @@ export default function DashboardMainScreen() {
         <Pressable
           onPress={() => navigation.navigate("VerificationMainScreen")}
         >
-          <VerificationIndicatorComponent isVerified={user?.isVerified!} />
+          <VerificationIndicatorComponent
+            onPress={() => {
+              navigation.navigate("VerificationMainScreen");
+            }}
+            isVerified={user?.isVerified!}
+          />
         </Pressable>
       </View>
       <VStack

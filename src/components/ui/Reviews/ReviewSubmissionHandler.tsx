@@ -1,19 +1,15 @@
 import React from "react";
 import { View, StyleSheet, Alert } from "react-native";
-import {
-  Text,
-  Button,
-  useTheme,
-  Surface,
-  IconButton,
-} from "react-native-paper";
-import { Spacing, Colors, Fontsize, BorderRadius } from "@/constants";
+import { Text, Button, useTheme, Surface, Divider } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Spacing, BorderRadius } from "@/constants";
 import { Review } from "@/infrastructure/reviews/reviews.schema";
 import { ReviewInputMode } from "./types";
 import { CreateReviewComponent } from "./CraeteReviewComponent";
 import EditReviewComponent from "./EditReviewComponent";
 import ReviewItem from "./ReviewItem";
 import { useDeleteMutation } from "@/infrastructure/reviews/reviews.redux.api";
+import { VStack, HStack } from "@gluestack-ui/themed";
 
 interface ReviewSubmissionHandlerInterface {
   boardingHouseId?: number;
@@ -30,7 +26,7 @@ export default function ReviewSubmissionHandler({
   starHollowedColor,
   onReviewChange,
 }: ReviewSubmissionHandlerInterface) {
-  const theme = useTheme();
+  const { colors } = useTheme();
   const [mode, setMode] = React.useState<ReviewInputMode>("creating");
   const [deleteReview] = useDeleteMutation();
 
@@ -41,8 +37,8 @@ export default function ReviewSubmissionHandler({
   const handleDelete = () => {
     if (!myReview?.id) return;
     Alert.alert(
-      "Delete Review?",
-      "This feedback will be removed permanently.",
+      "Delete Review",
+      "This will permanently remove your feedback. Continue?",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -61,78 +57,118 @@ export default function ReviewSubmissionHandler({
           },
         },
       ],
+      { cancelable: true },
     );
   };
 
   return (
-    <View style={s.root}>
+    <VStack style={s.root}>
       {mode === "creating" && (
-        <View style={s.centerContent}>
-          <Text variant="titleMedium" style={s.headerText}>
-            How was your stay?
-          </Text>
-          <Text variant="bodyMedium" style={s.subHeaderText}>
-            Share your experience to help others find a home.
-          </Text>
-          <View style={s.formWrapper}>
-            <CreateReviewComponent
-              boardingHouseId={boardingHouseId!}
-              starFilledColor={starFilledColor}
-              starHollowedColor={starHollowedColor}
-              onSubmitSuccess={() => {
-                setMode("viewing");
-                onReviewChange?.();
-              }}
-              onCancel={() => setMode("creating")}
-            />
-          </View>
-        </View>
+        <Surface style={s.createCard} elevation={0}>
+          <VStack gap={Spacing.xs} style={{ marginBottom: Spacing.md }}>
+            <HStack alignItems="center" gap={8}>
+              <MaterialCommunityIcons
+                name="pencil-box-outline"
+                size={20}
+                color={colors.primary}
+              />
+              <Text variant="titleMedium" style={s.boldPoppins}>
+                How was your stay?
+              </Text>
+            </HStack>
+            <Text variant="bodySmall" style={{ color: colors.outline }}>
+              Help the community by sharing your experience at this property.
+            </Text>
+          </VStack>
+
+          <CreateReviewComponent
+            boardingHouseId={boardingHouseId!}
+            starFilledColor={starFilledColor}
+            starHollowedColor={starHollowedColor}
+            onSubmitSuccess={() => {
+              setMode("viewing");
+              onReviewChange?.();
+            }}
+            onCancel={() => setMode("creating")}
+          />
+        </Surface>
       )}
 
       {mode === "editing" && myReview && (
-        <View style={s.centerContent}>
-          <Text variant="titleMedium" style={s.headerText}>
-            Update your review
-          </Text>
-          <View style={s.formWrapper}>
-            <EditReviewComponent
-              initialReview={myReview}
-              onCancel={() => setMode("viewing")}
-              onSubmitSuccess={() => {
-                setMode("viewing");
-                onReviewChange?.();
-              }}
-              starFilledColor={starFilledColor}
-              starHollowedColor={starHollowedColor}
+        <Surface style={s.editCard} elevation={0}>
+          <HStack
+            justifyContent="space-between"
+            alignItems="center"
+            style={{ marginBottom: Spacing.md }}
+          >
+            <Text variant="titleMedium" style={s.boldPoppins}>
+              Update your review
+            </Text>
+            <MaterialCommunityIcons
+              name="file-edit-outline"
+              size={20}
+              color={colors.primary}
             />
-          </View>
-        </View>
+          </HStack>
+          <EditReviewComponent
+            initialReview={myReview}
+            onCancel={() => setMode("viewing")}
+            onSubmitSuccess={() => {
+              setMode("viewing");
+              onReviewChange?.();
+            }}
+            starFilledColor={starFilledColor}
+            starHollowedColor={starHollowedColor}
+          />
+        </Surface>
       )}
 
       {mode === "viewing" && myReview && (
-        <Surface
-          mode="flat" // Forces the MD3 engine to stop adding tinted overlays
-          elevation={4}
-          style={s.userReviewCard}
-        >
-          <View style={s.cardHeader}>
-            <Text variant="labelLarge" style={{ color: theme.colors.primary }}>
-              Your Review
-            </Text>
-            <View style={s.actionRow}>
-              <Button compact mode="text" onPress={() => setMode("editing")}>
+        <Surface style={s.viewCard} elevation={0}>
+          <HStack
+            justifyContent="space-between"
+            alignItems="center"
+            style={s.cardHeader}
+          >
+            <HStack alignItems="center" gap={6}>
+              <MaterialCommunityIcons
+                name="account-check"
+                size={18}
+                color={colors.success}
+              />
+              <Text
+                variant="labelLarge"
+                style={{
+                  color: colors.onSurface,
+                  fontFamily: "Poppins-Medium",
+                }}
+              >
+                Your published review
+              </Text>
+            </HStack>
+            <HStack>
+              <Button
+                compact
+                mode="text"
+                onPress={() => setMode("editing")}
+                labelStyle={s.actionLabel}
+              >
                 Edit
               </Button>
               <Button
                 compact
                 mode="text"
-                textColor={theme.colors.error}
+                textColor={colors.error}
                 onPress={handleDelete}
+                labelStyle={s.actionLabel}
               >
                 Delete
               </Button>
-            </View>
-          </View>
+            </HStack>
+          </HStack>
+
+          <Divider style={{ marginBottom: Spacing.sm, opacity: 0.5 }} />
+
           <ReviewItem
             review={myReview}
             starFilledColor={starFilledColor}
@@ -140,46 +176,43 @@ export default function ReviewSubmissionHandler({
           />
         </Surface>
       )}
-    </View>
+    </VStack>
   );
 }
 
 const s = StyleSheet.create({
   root: {
-    marginVertical: Spacing.md,
+    marginVertical: Spacing.sm,
   },
-  centerContent: {
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
+  boldPoppins: {
+    fontFamily: "Poppins-SemiBold",
   },
-  headerText: {
-    fontWeight: "700",
-    color: Colors.TextInverse[1],
-    textAlign: "center",
-  },
-  subHeaderText: {
-    color: Colors.TextInverse[1],
-    opacity: 0.7,
-    textAlign: "center",
-    marginBottom: Spacing.md,
-  },
-  formWrapper: {
-    width: "100%",
-  },
-  userReviewCard: {
+  createCard: {
     padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: "rgba(255,255,255,0.05)", // Subtle surface for dark mode
+    borderRadius: BorderRadius.xl,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "#CCCCCC", // outlineVariant
+    backgroundColor: "#FFFFFF",
+  },
+  editCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1.5,
+    borderColor: "#357FC1", // primary
+    backgroundColor: "#FFFFFF",
+  },
+  viewCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    backgroundColor: "#F7F9FC", // Slight tint to distinguish user review
   },
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
-  actionRow: {
-    flexDirection: "row",
+  actionLabel: {
+    fontSize: 12,
+    fontFamily: "Poppins-Medium",
   },
 });

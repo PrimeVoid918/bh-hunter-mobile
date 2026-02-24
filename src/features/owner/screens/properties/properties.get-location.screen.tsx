@@ -44,48 +44,45 @@ export default function PropertiesGetLocationScreen() {
 
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-      wrapInScrollView={false}
+      variant="layout"
+      wrapInScrollView={false} // THIS IS KEY
+      useStandardPadding={false} // Maps usually need edge-to-edge
+      style={{ flex: 1 }}
     >
-      <VStack style={{ flex: 1 }}>
-        <MapView
-          style={s.map}
-          mapStyle="https://tiles.openfreemap.org/styles/liberty"
-          logoEnabled={false}
-          attributionEnabled={true}
-          onPress={handleMapPress}
-        >
-          <Camera
-            // ref={cameraRef}
-            defaultSettings={{
-              centerCoordinate: DEFAULT_COORDS,
-              zoomLevel: 14,
-            }}
-          />
-          <UserLocation />
-          {location && (
-            <MarkerView coordinate={location}>
-              <Image
-                source={require("@/assets/static/green-marker.png")}
-                style={{ width: 32, height: 32 }}
-              />
-            </MarkerView>
-          )}
-        </MapView>
-
+      <MapView
+        style={[s.map, StyleSheet.absoluteFillObject]}
+        mapStyle="https://tiles.openfreemap.org/styles/liberty"
+        logoEnabled={false}
+        attributionEnabled={true}
+        onPress={handleMapPress}
+      >
+        <Camera
+          // ref={cameraRef}
+          defaultSettings={{
+            centerCoordinate: DEFAULT_COORDS,
+            zoomLevel: 14,
+          }}
+        />
+        <UserLocation />
         {location && (
-          <View style={s.infoBox}>
-            <Text>Latitude: {location[1].toFixed(5)}</Text>
-            <Text>Longitude: {location[0].toFixed(5)}</Text>
-            <Pressable onPress={handleConfirmLocation} style={s.button}>
-              <Text >
-                Set Location
-              </Text>
-            </Pressable>
-          </View>
+          <MarkerView coordinate={location}>
+            <Image
+              source={require("@/assets/static/green-marker.png")}
+              style={{ width: 32, height: 32 }}
+            />
+          </MarkerView>
         )}
-      </VStack>
+      </MapView>
+
+      {location && (
+        <View style={s.infoBox}>
+          <Text>Latitude: {location[1].toFixed(5)}</Text>
+          <Text>Longitude: {location[0].toFixed(5)}</Text>
+          <Pressable onPress={handleConfirmLocation} style={s.button}>
+            <Text>Set Location</Text>
+          </Pressable>
+        </View>
+      )}
     </StaticScreenWrapper>
   );
 }

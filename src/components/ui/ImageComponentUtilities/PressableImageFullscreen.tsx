@@ -61,8 +61,6 @@ export default function PressableImageFullscreen({
     if (image) setPickedImage(image);
   }, [image]);
 
-  // console.log("pickedImage:", pickedImage);
-
   return (
     <Box style={[s.containerStyle, containerStyle]}>
       <Box style={[s.pickImageStyle, imageStyleConfig?.containerStyle]}>

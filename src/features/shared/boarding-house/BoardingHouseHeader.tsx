@@ -10,9 +10,16 @@ import {
 } from "@/infrastructure/boarding-houses/boarding-house.schema";
 import { FormField } from "@/components/ui/FormFields/FormField";
 import { HStack, VStack } from "@gluestack-ui/themed";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { BottomSheetTriggerField } from "@/components/ui/BottomSheet/BottomSheetTriggerField";
-import { Button, Chip, Text, useTheme } from "react-native-paper";
+import {
+  Button,
+  Chip,
+  Surface,
+  Switch,
+  Text,
+  useTheme,
+} from "react-native-paper";
 import {
   Control,
   FieldErrors,
@@ -43,202 +50,231 @@ export function BoardingHouseHeaderEdit({
   data,
   control,
   isEditing,
-  errors,
   form,
   onViewRooms,
-  isOccupancySheetOpen,
   onOpenOccupancySheet,
-  onCloseOccupancySheet,
-  onSelectOccupancy,
 }: BoardingHouseHeaderInterface) {
   const { colors } = useTheme();
-  return (
-    <View style={s.header}>
-      <View style={s.header}>
-        <PressableImageFullscreen
-          image={data.thumbnail?.[0]}
-          containerStyle={{ width: "100%", aspectRatio: 2 }}
-          imageStyleConfig={{
-            resizeMode: "cover",
-            containerStyle: { borderRadius: BorderRadius.md },
-          }}
-        />
-      </View>
+  const availability = form.watch("availabilityStatus");
 
-      <HStack style={{ marginTop: 16, alignItems: "flex-start", gap: 12 }}>
-        <VStack style={{ flex: 1, gap: 12 }}>
-          {/* Title */}
-          <HStack>
+  return (
+    <Surface style={s.container} elevation={0}>
+      <PressableImageFullscreen
+        image={data.thumbnail?.[0]}
+        containerStyle={s.imageContainer}
+        imageStyleConfig={{
+          resizeMode: "cover",
+          containerStyle: { borderRadius: BorderRadius.md },
+        }}
+      />
+
+      <VStack style={s.contentWrapper}>
+        <HStack justifyContent="space-between" alignItems="flex-start">
+          <VStack style={{ flex: 1 }}>
             <FormField
               name="name"
               control={control}
               isEditing={isEditing}
-              textStyle={{ fontSize: Fontsize.h1, fontWeight: "900" }}
+              textStyle={s.titleText}
             />
-          </HStack>
-
-          {/* Address */}
-          <VStack>
-            <HStack
-              style={{
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ fontSize: Fontsize.md }}>Address: </Text>
+            <HStack style={s.locationRow}>
+              <MaterialCommunityIcons
+                name="map-marker-outline"
+                size={16}
+                color={colors.primary}
+              />
               <FormField
                 name="address"
                 control={control}
                 isEditing={isEditing}
-                containerStyle={
-                  {
-                    // borderWidth: 2,
-                  }
-                }
+                textStyle={s.addressText}
               />
-            </HStack>
-            <HStack>
-              <Ionicons name="location-outline" size={20} color="black" />
-              <HStack gap={Spacing.md}>
-                <Text>{data.location.coordinates[0].toFixed(4)}</Text>
-                <Text>{data.location.coordinates[1].toFixed(4)}</Text>
-              </HStack>
             </HStack>
           </VStack>
 
-          {/* OccupancyType */}
-          {/* <Text>Tenant Type</Text> */}
-          <BottomSheetTriggerField
-            name="occupancyType"
-            control={control}
-            label="Tenant Type"
-            options={occupancyTypeOptions}
-            isEditing={isEditing}
-            placeholder="Select Occupancy Type"
-            error={errors.occupancyType?.message}
-            onOpen={onOpenOccupancySheet}
-          />
-        </VStack>
+          <VStack alignItems="center" style={s.actionCol}>
+            <Text variant="labelSmall" style={{ color: colors.outline }}>
+              STATUS
+            </Text>
+            {isEditing ? (
+              <Switch
+                value={availability}
+                onValueChange={(val) =>
+                  form.setValue("availabilityStatus", val, {
+                    shouldDirty: true,
+                  })
+                }
+                color={colors.primary}
+              />
+            ) : (
+              <StatusChip status={data.availabilityStatus} />
+            )}
+          </VStack>
+        </HStack>
 
-        <Button onPress={onViewRooms} mode="contained">
-          View Rooms
-        </Button>
-      </HStack>
-    </View>
+        <HStack style={s.metaRow}>
+          <VStack style={{ flex: 1 }}>
+            <Text variant="labelSmall" style={s.label}>
+              TENANT POLICY
+            </Text>
+            <BottomSheetTriggerField
+              name="occupancyType"
+              control={control}
+              options={occupancyTypeOptions}
+              isEditing={isEditing}
+              onOpen={onOpenOccupancySheet}
+            />
+          </VStack>
+
+          <Button
+            onPress={onViewRooms}
+            mode="contained"
+            icon="door-open"
+            style={s.roomButton}
+          >
+            Manage Rooms
+          </Button>
+        </HStack>
+      </VStack>
+    </Surface>
   );
 }
 
-interface BoaBoardingHouseHeaderViewInterface {
-  data: FindOneBoardingHouse;
-  onViewRooms: () => void;
-}
-export function BoaBoardingHouseHeaderView({
+// --- TENANT/VIEW VERSION ---
+export function BoardingHouseHeaderView({
   data,
   onViewRooms,
-}: BoaBoardingHouseHeaderViewInterface) {
+}: BoardingHouseHeaderInterface) {
   const { colors } = useTheme();
-
   const selected = occupancyTypeOptions.find(
     (o) => o.value === data.occupancyType,
   );
 
   return (
-    <View style={s.header}>
-      <View style={s.header}>
-        <PressableImageFullscreen
-          image={data.thumbnail?.[0]}
-          containerStyle={{ width: "100%", aspectRatio: 2 }}
-          imageStyleConfig={{
-            resizeMode: "cover",
-            containerStyle: { borderRadius: BorderRadius.md },
-          }}
-        />
-      </View>
+    <Surface style={s.container} elevation={0}>
+      <PressableImageFullscreen
+        image={data.thumbnail?.[0]}
+        containerStyle={s.imageContainer}
+        imageStyleConfig={{
+          resizeMode: "cover",
+          containerStyle: { borderRadius: BorderRadius.md },
+        }}
+      />
 
-      {/* Title */}
-      <HStack>
-        <Text style={{ fontSize: Fontsize.h1, fontWeight: "900" }}>
-          {data.name}
-        </Text>
-      </HStack>
-
-      <HStack style={{ marginTop: 16, alignItems: "flex-start", gap: 12 }}>
-        <VStack style={{ flex: 1, gap: 12 }}>
-          <VStack>
-            <HStack
-              style={{
-              }}
-            >
-              <Text style={{ fontSize: Fontsize.md }}>Address: </Text>
-              <Text style={{ fontSize: Fontsize.md }}>{data.address}</Text>
-            </HStack>
-            <HStack>
-              <Ionicons name="location-outline" size={20} color="black" />
-              <HStack gap={Spacing.md}>
-                <Text>{data.location.coordinates[0].toFixed(4)}</Text>
-                <Text>{data.location.coordinates[1].toFixed(4)}</Text>
-              </HStack>
+      <VStack style={s.contentWrapper}>
+        <HStack justifyContent="space-between" alignItems="center">
+          <VStack style={{ flex: 1 }}>
+            <Text style={s.titleText}>{data.name}</Text>
+            <HStack style={s.locationRow}>
+              <MaterialCommunityIcons
+                name="map-marker-radius"
+                size={16}
+                color={colors.primary}
+              />
+              <Text style={s.addressText}>{data.address}</Text>
             </HStack>
           </VStack>
+          <StatusChip status={data.availabilityStatus} />
+        </HStack>
 
-          {/* OccupancyType */}
-          <HStack style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text>Tenant Type: </Text>
-            <Chip>{selected?.label}</Chip>
+        <HStack style={s.metaRow} alignItems="center">
+          <HStack style={s.policyContainer}>
+            <MaterialCommunityIcons
+              name="account-group-outline"
+              size={18}
+              color={colors.outline}
+            />
+            <Text variant="bodyMedium" style={{ marginLeft: 4 }}>
+              {selected?.label}
+            </Text>
           </HStack>
-        </VStack>
 
-        <Button onPress={onViewRooms} mode="contained">
-          View Rooms
-        </Button>
-      </HStack>
-    </View>
+          <Button
+            onPress={onViewRooms}
+            mode="contained-tonal"
+            icon="home-search"
+            style={s.roomButton}
+          >
+            Explore Rooms
+          </Button>
+        </HStack>
+      </VStack>
+    </Surface>
   );
 }
 
-const s = StyleSheet.create({
-  header: { gap: Spacing.md, position: "relative", overflow: "hidden" },
-  header_textContainer: {
-    position: "absolute",
-    top: "60%",
-    // borderWidth: 2,
-    // borderColor: "white",
-    // height: "35%",
-    width: "110%",
-    // top: "70%",
-  },
-  header_titleBackdrop: {
-    position: "absolute",
-    height: "35%",
-    width: "110%",
-    top: "70%",
-    paddingLeft: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
-    left: -10,
-    filter: [{ blur: 6 }],
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    zIndex: 10,
-    // elevation: 10, // Android
-  },
-  header_title: {
-    position: "absolute",
-    top: "65%",
-    width: "100%",
-    paddingLeft: Spacing.md,
-    left: 0,
-    borderColor: "green",
-    zIndex: 2000,
-    elevation: 2000, // Android
-  },
-  header_titleText: {
-    fontSize: Fontsize.h1,
-    fontWeight: "900",
-  },
+// Helper Sub-component
+const StatusChip = ({ status }: { status: boolean }) => {
+  const { colors } = useTheme();
+  return (
+    <Chip
+      icon={status ? "check-decagram" : "alert-circle-outline"}
+      textStyle={{ fontSize: 11, fontWeight: "700" }}
+      style={{
+        backgroundColor: status ? "#E8F5E9" : "#FFEBEE",
+        borderColor: status ? "#81C784" : "#E57373",
+        borderWidth: 1,
+      }}
+      selectedColor={status ? "#2E7D32" : "#C62828"}
+    >
+      {status ? "Available" : "Not Available"}
+    </Chip>
+  );
+};
 
-  inputContainerStyle: {
-    borderWidth: 3,
-    borderColor: "green",
+const s = StyleSheet.create({
+  container: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: "#CCCCCC", // outlineVariant
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+  },
+  imageContainer: {
+    width: "100%",
+    aspectRatio: 2.2,
+  },
+  contentWrapper: {
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  titleText: {
+    fontSize: Fontsize.xl,
+    fontFamily: "Poppins-Bold",
+    lineHeight: 28,
+  },
+  locationRow: {
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  addressText: {
+    fontSize: Fontsize.sm,
+    color: "#767474", // outline
+    fontFamily: "Poppins-Regular",
+  },
+  actionCol: {
+    minWidth: 80,
+    gap: 2,
+  },
+  metaRow: {
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairline,
+    borderTopColor: "#CCCCCC",
+    gap: Spacing.md,
+  },
+  label: {
+    color: "#9A9A9A",
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  policyContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  roomButton: {
     borderRadius: BorderRadius.md,
   },
 });

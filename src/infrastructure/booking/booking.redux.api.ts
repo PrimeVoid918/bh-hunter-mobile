@@ -49,6 +49,7 @@ export const bookingApi = createApi({
         response.results ?? [],
       providesTags: ["Booking"],
     }),
+
     getOne: builder.query<GetBooking | null, number | undefined>({
       query: (id) => `${bookingApiRoute}/${id}`,
       transformResponse: (response: { results: GetBooking }) =>

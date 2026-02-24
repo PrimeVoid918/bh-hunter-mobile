@@ -1,17 +1,25 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
 import React from "react";
-import { Colors, Fontsize, Spacing } from "@/constants";
-import ReviewItem from "./ReviewItem";
-import ReviewSubmissionHandler from "./ReviewSubmissionHandler";
-import RatingSummary from "./RatingSummary";
+import { View, StyleSheet } from "react-native";
+import {
+  Text,
+  Divider,
+  useTheme,
+  Surface,
+  TouchableRipple,
+} from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { HStack, VStack } from "@gluestack-ui/themed";
+
+import { Fontsize, Spacing, BorderRadius } from "@/constants";
 import {
   useGetAllQuery,
   useGetReviewSummaryQuery,
 } from "@/infrastructure/reviews/reviews.redux.api";
-import { Lists } from "@/components/layout/Lists/Lists";
-import { ReviewSummary } from "@/infrastructure/reviews/reviews.schema";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
-import { Divider } from "react-native-paper";
+
+import RatingSummary from "./RatingSummary";
+import ReviewItem from "./ReviewItem";
+import ReviewSubmissionHandler from "./ReviewSubmissionHandler";
 
 interface ReviewSectionInterface {
   isOwner?: boolean;
@@ -22,105 +30,165 @@ export default function ReviewSection({
   boardingHouseId,
   isOwner,
 }: ReviewSectionInterface) {
+  const { colors } = useTheme();
+
+  // Data Fetching
   const {
     data: reviewsData,
-    isError: isReviewDataError,
-    isLoading: isReviewDataLoading,
-    error,
     refetch,
+    isLoading,
   } = useGetAllQuery(boardingHouseId!);
-
   const { data: reviewSummaryData } = useGetReviewSummaryQuery(
     boardingHouseId!,
   );
-
-  // 1. Identify if the user has already reviewed this place
   const { selectedUser: userData } = useDynamicUserApi();
-  const currentUserId = userData!.id;
 
+  const currentUserId = userData?.id;
   const myReview = !isOwner
     ? reviewsData?.find((r) => r.tenantId === currentUserId)
     : undefined;
-
   const displayReviews = !isOwner
-    ? reviewsData?.filter((r) => r.tenantId !== currentUserId) // Exclude mine
-    : reviewsData; // Owner sees everything
+    ? reviewsData?.filter((r) => r.tenantId !== currentUserId)
+    : reviewsData;
 
-  // console.log("Others reviews: ", otherReviews);
-
-  const starFilledColor = Colors.PrimaryLight[1];
-  const starHollowedColor = Colors.PrimaryLight[8];
+  // Star Colors from Theme
+  const starFilledColor = colors.secondary; // #FDD85D
+  const starHollowedColor = colors.outlineVariant; // #CCCCCC
 
   return (
-    <View style={[, s.container]}>
-      <Text style={{ fontSize: Fontsize.h2, color: Colors.TextInverse[1] }}>
-        Ratings and reviews
-      </Text>
-      <RatingSummary
-        starFilledColor={starFilledColor}
-        starHollowedColor={starHollowedColor}
-        metaData={
-          reviewSummaryData ?? {
-            average: 0,
-            total: 0,
-            distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-          }
-        }
-      ></RatingSummary>
+    <VStack style={s.mainContainer}>
+      {/* SECTION HEADER */}
+      <HStack
+        justifyContent="space-between"
+        alignItems="center"
+        style={s.headerRow}
+      >
+        <VStack>
+          <Text style={s.title}>Ratings & reviews</Text>
+          <Text variant="labelSmall" style={{ color: colors.outline }}>
+            Verified feedback from Ormoc tenants
+          </Text>
+        </VStack>
+        {/* <MaterialCommunityIcons
+          name="chevron-right"
+          size={24}
+          color={colors.outline}
+        /> */}
+      </HStack>
 
-      <Divider bold />
-      {!isOwner && (
-        <ReviewSubmissionHandler
-          boardingHouseId={boardingHouseId!}
-          myReview={myReview}
+      {/* RATING SUMMARY CARD */}
+      <Surface style={s.summaryCard} elevation={0}>
+        <RatingSummary
           starFilledColor={starFilledColor}
           starHollowedColor={starHollowedColor}
-          onReviewChange={refetch} //
-        ></ReviewSubmissionHandler>
-      )}
-      <Divider bold/>
-
-      {reviewsData ? (
-        <Lists
-          list={displayReviews!}
-          renderItem={({ item, index }) => (
-            <ReviewItem
-              review={item}
-              starFilledColor={starFilledColor}
-              starHollowedColor={starHollowedColor}
-            ></ReviewItem>
-          )}
+          metaData={
+            reviewSummaryData ?? {
+              average: 0,
+              total: 0,
+              distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+            }
+          }
         />
-      ) : (
-        <View>
-          <Text>No Reviews Yet...</Text>
-        </View>
+      </Surface>
+
+      {/* USER'S PERSONAL ACTION AREA */}
+      {!isOwner && (
+        <VStack style={s.submissionArea}>
+          <Text variant="titleSmall" style={s.subTitle}>
+            {myReview ? "Your Review" : "Rate this property"}
+          </Text>
+          <ReviewSubmissionHandler
+            boardingHouseId={boardingHouseId!}
+            myReview={myReview}
+            starFilledColor={starFilledColor}
+            starHollowedColor={starHollowedColor}
+            onReviewChange={refetch}
+          />
+        </VStack>
       )}
-    </View>
+
+      <Divider style={s.divider} />
+
+      {/* REVIEWS LIST */}
+      <VStack style={s.reviewsList}>
+        {displayReviews && displayReviews.length > 0 ? (
+          displayReviews.map((item, index) => (
+            <VStack key={item.id || index}>
+              <ReviewItem
+                review={item}
+                starFilledColor={starFilledColor}
+                starHollowedColor={starHollowedColor}
+              />
+              {index < displayReviews.length - 1 && (
+                <Divider style={s.itemDivider} />
+              )}
+            </VStack>
+          ))
+        ) : (
+          <View style={s.emptyState}>
+            <MaterialCommunityIcons
+              name="message-draw"
+              size={48}
+              color={colors.surfaceVariant}
+            />
+            {/* <Text
+              variant="bodyMedium"
+              style={{ color: colors.outline, marginTop: 8 }}
+            >
+              No reviews yet. Be the first to share!
+            </Text> */}
+          </View>
+        )}
+      </VStack>
+    </VStack>
   );
 }
 
 const s = StyleSheet.create({
-  container: {
-    paddingTop: Spacing.md,
+  mainContainer: {
+    paddingVertical: Spacing.lg,
     gap: Spacing.md,
-
-    // borderWidth: 3,
-    // borderColor: "red",
   },
-  text_color: {
-    color: Colors.TextInverse[1],
+  headerRow: {
+    paddingHorizontal: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
-
-  comment_container: {
-    // borderWidth: 4,
-  },
-  commentor_nameContainer: {
-    marginLeft: Spacing.md,
-    // borderWidth: 4,
-  },
-  commentor_name: {
-    fontWeight: "900",
+  title: {
     fontSize: Fontsize.xl,
+    fontFamily: "Poppins-Bold",
+    color: "#1A1A1A",
+  },
+  summaryCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: "#CCCCCC", // outlineVariant
+    backgroundColor: "#FFFFFF",
+  },
+  submissionArea: {
+    paddingHorizontal: Spacing.sm,
+    marginVertical: Spacing.sm,
+  },
+  subTitle: {
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: Spacing.xs,
+  },
+  reviewsList: {
+    gap: Spacing.md,
+  },
+  divider: {
+    marginVertical: Spacing.sm,
+    height: 1,
+    backgroundColor: "#EEEEEE",
+  },
+  itemDivider: {
+    marginVertical: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    opacity: 0.5,
+  },
+  emptyState: {
+    alignItems: "center",
+    padding: Spacing.xl,
+    opacity: 0.6,
   },
 });

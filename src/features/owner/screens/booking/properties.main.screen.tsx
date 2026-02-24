@@ -1,141 +1,200 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import React, { useEffect, useState } from "react";
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import {
-  BorderRadius,
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-} from "@/constants";
-import { Box, Button, Image, Spinner, VStack } from "@gluestack-ui/themed";
-import { useGetAllQuery as useGetAllBoardingHouses } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
-import {
-  GetBoardingHouse,
-  QueryBoardingHouse,
-} from "@/infrastructure/boarding-houses/boarding-house.schema";
-import { ScrollView } from "react-native-gesture-handler";
-import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import React, { useState } from "react";
+import { StyleSheet, Pressable, View } from "react-native";
+import { Text, useTheme, Surface, IconButton } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { OwnerTabsParamList } from "../../navigation/owner.tabs.type";
-import { BoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.schema";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useSelector } from "react-redux";
+import { VStack, HStack, Badge, BadgeText } from "@gluestack-ui/themed";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import { Spacing, BorderRadius } from "@/constants";
+import { useGetAllQuery as useGetAllBoardingHouses } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import { RootState } from "@/application/store/stores";
-import ScreenHeaderComponent from "@/components/layout/ScreenHeaderComponent";
+import { OwnerTabsParamList } from "../../navigation/owner.tabs.type";
 import { Lists } from "@/components/layout/Lists/Lists";
-import BoardingHouseBookingItem from "@/components/ui/Bookings/BoardingHouseBookingItem";
-import Container from "@/components/layout/Container/Container";
 
 export default function PropertiesMainScreen() {
-  const ownerId = useSelector(
-    (state: RootState) => state.owners.selectedUser?.id,
-  );
+  const { colors } = useTheme();
   const navigation =
     useNavigation<BottomTabNavigationProp<OwnerTabsParamList>>();
 
-  const [refreshing, setRefreshing] = React.useState(false);
-
-  const [filters, setFilters] = useState<QueryBoardingHouse>({
-    minPrice: 1500,
-    offset: 50,
-    ownerId: ownerId,
-  });
+  const ownerId = useSelector(
+    (state: RootState) => state.owners.selectedUser?.id,
+  );
+  const [refreshing, setRefreshing] = useState(false);
 
   const {
     data: boardinghouses,
-    isLoading: isBoardingHousesLoading,
-    isError: isBoardingHousesError,
+    isLoading,
     refetch,
-  } = useGetAllBoardingHouses(filters);
+  } = useGetAllBoardingHouses({ ownerId });
 
-  const handlePageRefresh = () => {
+  const handlePageRefresh = async () => {
     setRefreshing(true);
-    refetch();
+    await refetch();
     setRefreshing(false);
   };
+
+  const handleNavigate = (id: number) => {
+    ReactNativeHapticFeedback.trigger("impactLight");
+    navigation.navigate("Booking", {
+      screen: "PropertiesBookingListsScreen",
+      params: { bhId: id },
+    });
+  };
+
   return (
     <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer, styles.GlobalsContainer]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
+      variant="list"
+      style={{ backgroundColor: colors.background }}
+      loading={isLoading}
       refreshing={refreshing}
       onRefresh={handlePageRefresh}
     >
-      <Container>
-        {isBoardingHousesLoading && <FullScreenLoaderAnimated />}
-        {isBoardingHousesError && <FullScreenErrorModal />}
-        <ScreenHeaderComponent text={{ textValue: "Bookings" }} />
+      <View style={s.mainContainer}>
+        {/* --- TITLE SECTION --- */}
+        <VStack style={s.headerSection}>
+          <Text variant="displaySmall" style={s.title}>
+            Select Property
+          </Text>
+          <Text variant="bodyMedium" style={s.subtitle}>
+            Choose a boarding house to manage its bookings.
+          </Text>
+        </VStack>
+
+        {/* --- LIST SECTION --- */}
         {boardinghouses && (
           <Lists
             list={boardinghouses}
-            renderItem={({ item, index }) => (
-              <BoardingHouseBookingItem
-                data={item}
-                goToDetails={() => {
-                  // console.log("handleGotoPress", item.id);
-                  navigation.navigate("Booking", {
-                    screen: "PropertiesBookingListsScreen",
-                    params: { bhId: item.id },
-                    // params: { bhId: id, fromMaps: true },
-                  });
-                }}
+            contentContainerStyle={s.listPadding}
+            renderItem={({ item }) => (
+              <Surface
+                elevation={0}
+                style={[s.navCard, { borderColor: colors.outlineVariant }]}
               >
-                <Button>
-                  <Text>Show Bookings</Text>
-                </Button>
-              </BoardingHouseBookingItem>
+                <Pressable
+                  android_ripple={{ color: "rgba(0,0,0,0.05)" }}
+                  onPress={() => handleNavigate(item.id)}
+                  style={s.pressableArea}
+                >
+                  <HStack justifyContent="space-between" alignItems="center">
+                    <HStack flex={1} gap={Spacing.md} alignItems="center">
+                      {/* Visual Anchor */}
+                      <Surface
+                        style={[
+                          s.iconContainer,
+                          { backgroundColor: colors.primaryContainer },
+                        ]}
+                        elevation={0}
+                      >
+                        <MaterialCommunityIcons
+                          name="office-building-marker"
+                          size={24}
+                          color={colors.primary}
+                        />
+                      </Surface>
+
+                      <VStack flex={1}>
+                        <Text
+                          variant="titleMedium"
+                          style={s.bhName}
+                          numberOfLines={1}
+                        >
+                          {item.name}
+                        </Text>
+                        <HStack gap={Spacing.xs} alignItems="center">
+                          <MaterialCommunityIcons
+                            name="door-open"
+                            size={14}
+                            color={colors.outline}
+                          />
+                          <Text variant="bodySmall" style={s.metaText}>
+                            {item.rooms?.length || 0} Rooms
+                          </Text>
+                        </HStack>
+                      </VStack>
+                    </HStack>
+
+                    <HStack alignItems="center" gap={Spacing.sm}>
+                      <Badge
+                        size="md"
+                        variant="solid"
+                        borderRadius="$full"
+                        style={s.badge}
+                      >
+                        <BadgeText style={s.badgeText}>Action</BadgeText>
+                      </Badge>
+                      <MaterialCommunityIcons
+                        name="chevron-right"
+                        size={22}
+                        color={colors.outlineVariant}
+                      />
+                    </HStack>
+                  </HStack>
+                </Pressable>
+              </Surface>
             )}
-            contentContainerStyle={{
-              gap: Spacing.base,
-            }}
-          ></Lists>
+          />
         )}
-      </Container>
+      </View>
     </StaticScreenWrapper>
   );
 }
 
-const styles = StyleSheet.create({
-  GlobalsContainer: {
-    padding: Spacing.md,
+const s = StyleSheet.create({
+  mainContainer: {},
+  headerSection: {
+    marginBottom: 24,
+    marginTop: 8,
   },
-
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    height: "100%",
-    width: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // semi-transparent dark background
+  title: {
+    fontFamily: "Poppins-Bold",
+    color: "#1A1A1A",
+  },
+  subtitle: {
+    fontFamily: "Poppins-Regular",
+    color: "#767474",
+    marginTop: -4,
+  },
+  listPadding: {
+    paddingBottom: 40,
+    gap: Spacing.md,
+  },
+  navCard: {
+    borderRadius: BorderRadius.xl, // MD3 Contained Card
+    borderWidth: 1,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+  },
+  pressableArea: {
+    padding: Spacing.base,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000, // ensure it's above everything
   },
-  generic_text: {
-    color: Colors.TextInverse[2],
+  bhName: {
+    fontFamily: "Poppins-SemiBold",
+    color: "#1A1A1A",
   },
-  Item_Label: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.md,
-    marginBottom: 6,
-    flexWrap: "wrap",
-    // flexShrink: 1,
+  metaText: {
+    fontFamily: "Poppins-Regular",
+    color: "#767474",
   },
-  Item_SubLabel: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.md,
-    marginBottom: 6,
+  badge: {
+    paddingHorizontal: 8,
+    backgroundColor: "#FDD85D", // Secondary yellow
+    borderWidth: 0,
   },
-  Item_Normal: {
-    color: Colors.TextInverse[2],
-    fontWeight: "bold",
-    fontSize: Fontsize.sm,
-  },
-  Item_Input_Placeholder: {
-    color: Colors.TextInverse[2],
-    fontSize: Fontsize.sm,
+  badgeText: {
+    fontSize: 10,
+    fontFamily: "Poppins-Bold",
+    color: "#3A3A3A",
+    textTransform: "uppercase",
   },
 });

@@ -1,8 +1,86 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { GetPermit, CreatePermit } from "./permits.types";
+import { VerificationDocumentStatus } from "./verification-document.schema";
 
-interface initialOwnerPermitVerificationStatus {}
+type VerificationUXState = {
+  isProfileComplete: boolean;
+  isFullyVerified: boolean;
+  hasPending: boolean;
+  hasRejected: boolean;
+  missingRequirements: string[];
+  nextStep:
+    | "COMPLETE_PROFILE"
+    | "UPLOAD_DOCUMENTS"
+    | "WAITING_APPROVAL"
+    | "VERIFIED"
+    | null;
+};
 
-const initialState: initialOwnerPermitVerificationStatus = {};
+const initialState: VerificationUXState = {
+  isProfileComplete: false,
+  isFullyVerified: false,
+  hasPending: false,
+  hasRejected: false,
+  missingRequirements: [],
+  nextStep: null,
+};
 
-// export const sw
+export const verificationSlice = createSlice({
+  name: "verification",
+  initialState,
+  reducers: {
+    computeVerificationState: (
+      state,
+      action: PayloadAction<{
+        profile: { firstName?: string | null; lastName?: string | null };
+        verificationStatus: VerificationDocumentStatus;
+      }>,
+    ) => {
+      const { profile, verificationStatus } = action.payload;
+
+      // 1️⃣ Profile completeness
+      const isProfileComplete = !!profile.firstName && !!profile.lastName;
+
+      state.isProfileComplete = isProfileComplete;
+
+      // 2️⃣ Documents evaluation
+      const docs = verificationStatus.verificationDocuments ?? [];
+
+      state.hasPending = docs.some((d) => d.verificationStatus === "PENDING");
+
+      state.hasRejected = docs.some((d) => d.verificationStatus === "REJECTED");
+
+      state.isFullyVerified = verificationStatus.verified;
+
+      // 3️⃣ Missing requirements logic
+      const missing: string[] = [];
+
+      if (!isProfileComplete) missing.push("PROFILE");
+
+      if (!verificationStatus.verified) {
+        if (docs.length === 0) missing.push("DOCUMENTS");
+      }
+
+      state.missingRequirements = missing;
+
+      // 4️⃣ Next step decision tree
+      if (!isProfileComplete) {
+        state.nextStep = "COMPLETE_PROFILE";
+      } else if (state.hasRejected) {
+        state.nextStep = "UPLOAD_DOCUMENTS";
+      } else if (state.hasPending) {
+        state.nextStep = "WAITING_APPROVAL";
+      } else if (state.isFullyVerified) {
+        state.nextStep = "VERIFIED";
+      } else {
+        state.nextStep = "UPLOAD_DOCUMENTS";
+      }
+    },
+
+    resetVerificationState: () => initialState,
+  },
+});
+
+export const { computeVerificationState, resetVerificationState } =
+  verificationSlice.actions;
+
+export default verificationSlice.reducer;
