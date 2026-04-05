@@ -28,7 +28,14 @@ export const uploadBoardingHouse = async (
       },
       { name: "amenities", data: JSON.stringify(data.amenities ?? []) },
       { name: "location", data: JSON.stringify(data.location ?? {}) },
-      { name: "rooms", data: JSON.stringify(data.rooms ?? []) },
+      {
+        name: "rooms",
+        data: JSON.stringify(
+          (data.rooms ?? []).map(
+            ({ tempId, gallery, thumbnail, ...rest }) => rest,
+          ),
+        ),
+      },
     ];
 
     // --- Thumbnail ---

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import {
   Text,
@@ -7,7 +7,8 @@ import {
   useTheme,
   TouchableRipple,
   HelperText,
-  ActivityIndicator,
+  Portal,
+  Dialog,
 } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
@@ -15,7 +16,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Shared Logic/Components (Preserved)
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import {
   CreateVerificationDocumentDto,
@@ -26,8 +26,13 @@ import { useCreateVerificaitonDocumentMutation } from "@/infrastructure/valid-do
 import PressableDocumentPicker from "@/components/ui/DocumentComponentUtilities/PressableDocumentPicker";
 import PressableImagePicker from "@/components/ui/ImageComponentUtilities/PressableImagePicker";
 import { getVerificationRole } from "./verificationConfig";
+import { expoStorageCleaner } from "@/infrastructure/utils/expo-utils/expo-utils.service";
 
-export default function VerificationSubmitScreen({ route }: any) {
+export default function VerificationSubmitScreen({ route, navigation }: any) {
+  React.useEffect(() => {
+    return () => expoStorageCleaner(["images", "documents"]);
+  }, []);
+
   const theme = useTheme();
   const userId: number = route.params.userId;
   const documentFormMeta = route.params.meta;
@@ -35,33 +40,35 @@ export default function VerificationSubmitScreen({ route }: any) {
   const fileFormatOptions =
     documentFormMeta.role === "TENANT" ? "IMAGE" : "PDF";
 
+  // --- Modal State ---
+  const [visible, setVisible] = useState(false);
+  const [formData, setFormData] =
+    useState<CreateVerificationDocumentDto | null>(null);
+
   const [createVerificationDocument, { isLoading, isError, isSuccess }] =
     useCreateVerificaitonDocumentMutation();
-  const [showPicker, setShowPicker] = React.useState(false);
-  const [pickedDocument, setPickedDocument] = React.useState<any>();
-  const [pickedValidId, setPickedValidId] = React.useState<any>();
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickedDocument, setPickedDocument] = useState<any>();
+  const [pickedValidId, setPickedValidId] = useState<any>();
 
   const triggerHaptic = () => ReactNativeHapticFeedback.trigger("impactLight");
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<CreateVerificationDocumentDto>({
-    resolver: zodResolver(CreateVerificationDocumentSchema),
-    defaultValues: {
-      userId: userId,
-      type: documentFormMeta.type,
-      fileFormat: fileFormatOptions,
-      expiresAt: new Date().toISOString(),
-    },
-  });
+  const { control, handleSubmit, watch } =
+    useForm<CreateVerificationDocumentDto>({
+      resolver: zodResolver(CreateVerificationDocumentSchema),
+      defaultValues: {
+        userId: userId,
+        type: documentFormMeta.type,
+        fileFormat: fileFormatOptions,
+        expiresAt: new Date().toISOString(),
+      },
+    });
 
   const selectedFileFormat = watch("fileFormat");
   const selectedType = watch("type");
 
-  const onSubmit = (data: CreateVerificationDocumentDto) => {
+  // Step 1: Validate and show the Confirmation Dialog
+  const onPreSubmit = (data: CreateVerificationDocumentDto) => {
     if (!pickedDocument && selectedFileFormat === "PDF") {
       Alert.alert("Missing File", "Please pick a document before submitting.");
       return;
@@ -70,31 +77,64 @@ export default function VerificationSubmitScreen({ route }: any) {
       Alert.alert("Missing Image", "Please pick a Valid ID before submitting.");
       return;
     }
+    setFormData(data);
+    setVisible(true);
+  };
+
+  // Step 2: The actual API call
+  const handleConfirmSubmit = async () => {
+    if (!formData) return;
+    setVisible(false);
+    triggerHaptic();
 
     const pickedFile = pickedValidId ?? pickedDocument;
 
-    showModal({
-      title: "Submit Document",
-      message: `Confirm submission of your ${documentFormMeta.displayName}?`,
-      onConfirm: async () => {
-        triggerHaptic();
-        try {
-          await createVerificationDocument({
-            data,
-            file: pickedFile,
-            sourceTarget: userRole,
-          }).unwrap();
-          ReactNativeHapticFeedback.trigger("notificationSuccess");
-          Alert.alert("Success", "Document submitted successfully!");
-        } catch (e) {
-          Alert.alert("Error", "Failed to submit document.");
-        }
-      },
-    });
+    try {
+      await createVerificationDocument({
+        data: formData,
+        file: pickedFile,
+        sourceTarget: userRole,
+      }).unwrap();
+
+      ReactNativeHapticFeedback.trigger("notificationSuccess");
+      Alert.alert("Success", "Document submitted successfully!", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
+      await expoStorageCleaner(["images", "documents"]);
+    } catch (e) {
+      Alert.alert("Error", "Failed to submit document.");
+    }
   };
 
   return (
     <StaticScreenWrapper variant="form">
+      {/* 1. CONFIRMATION MODAL (PORTAL) */}
+      <Portal>
+        <Dialog
+          visible={visible}
+          onDismiss={() => setVisible(false)}
+          style={s.dialog}
+        >
+          <Dialog.Title style={s.dialogTitle}>Submit Document</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Are you sure you want to submit your{" "}
+              {documentFormMeta.displayName} for verification?
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setVisible(false)}>Cancel</Button>
+            <Button
+              mode="contained"
+              onPress={handleConfirmSubmit}
+              labelStyle={{ color: "white" }}
+            >
+              Confirm
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
       {/* Header Info Card */}
       <Surface elevation={0} style={s.headerCard}>
         <View style={s.iconCircle}>
@@ -107,13 +147,7 @@ export default function VerificationSubmitScreen({ route }: any) {
         <Text variant="headlineSmall" style={s.title}>
           Submit Document
         </Text>
-        <Text
-          variant="titleMedium"
-          style={{
-            color: theme.colors.primary,
-            fontFamily: "Poppins-SemiBold",
-          }}
-        >
+        <Text variant="titleMedium" style={s.roleText}>
           {documentFormMeta.displayName}
         </Text>
         <Text variant="bodySmall" style={s.description}>
@@ -188,10 +222,9 @@ export default function VerificationSubmitScreen({ route }: any) {
           )}
         </View>
 
-        {/* Action Buttons */}
         <Button
           mode="contained"
-          onPress={handleSubmit(onSubmit)}
+          onPress={handleSubmit(onPreSubmit)}
           disabled={isLoading}
           loading={isLoading}
           style={s.submitBtn}
@@ -206,25 +239,33 @@ export default function VerificationSubmitScreen({ route }: any) {
             Submission failed. Please try again.
           </HelperText>
         )}
-        {isSuccess && (
-          <Text style={[s.statusText, { color: "#80CFA9" }]}>
-            ✓ Document uploaded successfully
-          </Text>
-        )}
       </View>
     </StaticScreenWrapper>
   );
 }
 
 const s = StyleSheet.create({
+  // ... your existing styles ...
+  roleText: {
+    color: "#6200ee", // use your theme primary
+    fontFamily: "Poppins-SemiBold",
+  },
+  dialog: {
+    backgroundColor: "white",
+    borderRadius: 12,
+  },
+  dialogTitle: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 18,
+  },
   headerCard: {
     padding: 24,
-    borderRadius: 16, // xl radius
-    backgroundColor: "#F0F0F5", // surfaceVariant
+    borderRadius: 16,
+    backgroundColor: "#F0F0F5",
     alignItems: "center",
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#CCCCCC", // outlineVariant
+    borderColor: "#CCCCCC",
   },
   iconCircle: {
     width: 64,
@@ -254,7 +295,7 @@ const s = StyleSheet.create({
     opacity: 0.8,
   },
   datePickerSurface: {
-    borderRadius: 12, // lg radius
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "#CCCCCC",
     backgroundColor: "#FFFFFF",

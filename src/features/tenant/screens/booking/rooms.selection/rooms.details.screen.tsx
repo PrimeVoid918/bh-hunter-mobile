@@ -1,29 +1,17 @@
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import React from "react";
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import { Box, Button, VStack } from "@gluestack-ui/themed";
 import { useGetOneQuery } from "@/infrastructure/room/rooms.redux.api";
-import ImageCarousel from "@/components/ui/ImageCarousel";
-import {
-  BorderRadius,
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-} from "@/constants";
 
 import {
   NativeStackNavigationProp,
   NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import {
-  RoomsBookingScreenRouteProp,
-  TenantBookingStackParamList,
-} from "../navigation/booking.types";
+import { TenantBookingStackParamList } from "../navigation/booking.types";
 import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import RoomDetailsRender from "@/features/shared/rooms/RoomDetailsRender";
+import { GlobalStyle } from "@/constants";
 
 type RoomsDetailsScreenProps = NativeStackScreenProps<
   TenantBookingStackParamList,
@@ -76,14 +64,3 @@ export default function RoomsDetailsScreen({
     </StaticScreenWrapper>
   );
 }
-
-const s = StyleSheet.create({
-  container: {
-    padding: Spacing.md,
-  },
-  generic_text: {},
-
-  textColor: {
-    color: Colors.TextInverse[2],
-  },
-});

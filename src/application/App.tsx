@@ -1,7 +1,7 @@
 import "react-native-reanimated";
 import * as React from "react";
 import { Provider } from "react-redux";
-import RootNavigation from "./navigation/RootNavigation";
+import { RootNavigation } from "./navigation/RootNavigation";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { store } from "./store/stores";
 import { GluestackUIProvider } from "@gluestack-ui/themed";

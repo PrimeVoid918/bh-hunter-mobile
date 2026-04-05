@@ -24,7 +24,15 @@ import {
   GetBooking,
   getBookingStatusDetails,
 } from "@/infrastructure/booking/booking.schema";
-import { Divider, Icon, Surface, useTheme } from "react-native-paper";
+import {
+  Divider,
+  Icon,
+  Surface,
+  useTheme,
+  Portal,
+  Modal,
+  Button,
+} from "react-native-paper";
 import PayMongoWebView from "./PaymongoWebView";
 import PlatformGuidelines from "./PlatformGuidelines";
 import BookingInfoBar from "./BookingInfoBar";
@@ -37,18 +45,19 @@ type Role = "TENANT" | "OWNER";
 
 export default function BookingStatusScreen({ route }) {
   const { bookId }: { bookId: number } = route.params;
-
-  const navigate =
-    useNavigation<NativeStackNavigationProp<TenantBookingStackParamList>>();
-
+  const theme = useTheme();
   const { selectedUser } = useDynamicUserApi();
+
+  // Modal States
+  const [errorModalVisible, setErrorModalVisible] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
+
   if (!selectedUser) {
     return <Text>Loading user...</Text>;
   }
 
   const role = selectedUser?.role as Role;
   const userId = selectedUser?.id!;
-
   const [refreshing, setRefreshing] = React.useState(false);
 
   const {
@@ -57,6 +66,7 @@ export default function BookingStatusScreen({ route }) {
     isError,
     refetch,
   } = useGetAllQuery({ page: 1, bookId: bookId, limit: 15 });
+
   const booking = bookingData?.[0] as GetBooking;
 
   const tenantQuery = useGetOneTenantQuery(booking?.tenantId!, {
@@ -66,30 +76,47 @@ export default function BookingStatusScreen({ route }) {
   const ownerQuery = useGetOneOwnerQuery(booking?.boardingHouse?.ownerId!, {
     skip: role !== "TENANT" || !booking,
   });
+
   const userData =
     role === "OWNER"
       ? tenantQuery.data
       : role === "TENANT"
         ? ownerQuery.data
         : undefined;
-  // const { data: tenantData } = useGetOneTenantQuery(booking?.tenantId!);
 
   const [approveBooking] = usePatchApproveBookingMutation();
   const [rejectBooking] = usePatchRejectBookingMutation();
   const [cancelBooking] = useCancelBookingMutation();
-  // const [createCheckout] = useCreatePaymongoCheckoutMutation();
   const [createCheckout, { isLoading: isCheckOutLoading }] =
     useCreatePaymongoCheckoutMutation();
 
   const [checkoutUrl, setCheckoutUrl] = React.useState<string | null>(null);
   const [showWebView, setShowWebView] = React.useState(false);
+
+  const handleApprove = async (message: string) => {
+    try {
+      await approveBooking({
+        id: bookId,
+        payload: { ownerId: userId, message },
+      }).unwrap();
+      Vibration.vibrate(10);
+      refetch();
+    } catch (err: any) {
+      if (err?.status === 400 || err?.data?.statusCode === 400) {
+        setErrorMessage(
+          err?.data?.message ||
+            "Room capacity is full. Please reject this request.",
+        );
+        setErrorModalVisible(true);
+      }
+    }
+  };
+
   const handlePayNow = async () => {
     try {
       const response = await createCheckout({
         bookingId: booking!.id,
       }).unwrap();
-
-      // Instead of Linking.openURL, we trigger the WebView
       setCheckoutUrl(response.checkoutUrl);
       setShowWebView(true);
     } catch (error) {
@@ -103,12 +130,6 @@ export default function BookingStatusScreen({ route }) {
     setRefreshing(false);
   };
 
-  const handleActionFeedback = () => {
-    // Standard vibration for feedback without expo-haptics
-    Vibration.vibrate(10);
-  };
-
-  const theme = useTheme();
   if (isLoading || !booking) {
     return <FullScreenLoaderAnimated />;
   }
@@ -143,7 +164,6 @@ export default function BookingStatusScreen({ route }) {
       loading={isLoading}
     >
       <VStack style={s.mainWrapper} space="md">
-        {/* 1. STATUS HEADER (Tonal Background) */}
         <Surface
           elevation={0}
           style={[
@@ -167,9 +187,7 @@ export default function BookingStatusScreen({ route }) {
           </HStack>
         </Surface>
 
-        {/* 2. CORE BOOKING CONTAINER */}
         <Surface elevation={0} style={s.containedGroup}>
-          {/* Section: Property */}
           <Box style={s.sectionPadding}>
             <Text style={s.groupHeader}>Property Information</Text>
             <BookingBHCard data={booking} onPress={gotoBh} />
@@ -177,23 +195,16 @@ export default function BookingStatusScreen({ route }) {
               <BookingRoomCard data={booking} onPress={gotoRoom} />
             </Box>
           </Box>
-
           <Divider style={s.hairline} />
 
-          {/* Section: Reservation Details (SPREAD DATA HERE) */}
           <Box style={s.sectionPadding}>
             <Text style={s.groupHeader}>Reservation Details</Text>
-
             <VStack space="md">
-              {/* Reference ID - Modern Badge style */}
               <HStack justifyContent="space-between" alignItems="center">
                 <Text style={s.metaLabel}>Reference ID</Text>
                 <Text style={s.metaValueMono}>{booking.reference}</Text>
               </HStack>
-
               <Divider style={s.hairlineLight} />
-
-              {/* Dates Grid */}
               <HStack space="lg" justifyContent="space-between">
                 <VStack flex={1}>
                   <HStack space="xs" alignItems="center">
@@ -212,7 +223,6 @@ export default function BookingStatusScreen({ route }) {
                     })}
                   </Text>
                 </VStack>
-
                 <VStack flex={1} alignItems="flex-end">
                   <HStack space="xs" alignItems="center">
                     <Icon
@@ -225,13 +235,15 @@ export default function BookingStatusScreen({ route }) {
                   <Text style={s.metaValue}>
                     {new Date(booking.checkOutDate).toLocaleDateString(
                       "en-US",
-                      { month: "short", day: "numeric", year: "numeric" },
+                      {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      },
                     )}
                   </Text>
                 </VStack>
               </HStack>
-
-              {/* Total Duration/Date Booked Footer */}
               <Box style={s.metaFooter}>
                 <Text style={s.metaFooterText}>
                   Booked on {new Date(booking.createdAt).toLocaleDateString()}
@@ -241,25 +253,18 @@ export default function BookingStatusScreen({ route }) {
           </Box>
         </Surface>
 
-        {/* 3. PARTICIPANTS */}
         <VStack space="xs">
           <Text style={s.groupHeader}>Contacts</Text>
           <UserInformationCard user={userData} />
         </VStack>
 
-        {/* 4. ACTION ZONE */}
         <VStack space="sm">
           <Text style={s.groupHeader}>Management</Text>
           <Surface elevation={0} style={s.actionSurface}>
             <BookingDecisionBlock
               booking={booking}
               viewerRole={role}
-              onApprove={(message) =>
-                approveBooking({
-                  id: bookId,
-                  payload: { ownerId: userId, message },
-                }).then(refetch)
-              }
+              onApprove={handleApprove}
               onReject={(reason) =>
                 rejectBooking({
                   id: bookId,
@@ -280,11 +285,42 @@ export default function BookingStatusScreen({ route }) {
             />
           </Surface>
         </VStack>
-
         <PlatformGuidelines />
       </VStack>
 
-      {/* WebView Overlay */}
+      <Portal>
+        <Modal
+          visible={errorModalVisible}
+          onDismiss={() => setErrorModalVisible(false)}
+          contentContainerStyle={s.modalContainer}
+        >
+          <VStack space="md" style={s.modalContent}>
+            <Box style={s.errorIconCircle}>
+              <Icon
+                source="alert-circle-outline"
+                color={theme.colors.error}
+                size={32}
+              />
+            </Box>
+            <VStack space="xs" alignItems="center">
+              <Text style={s.modalTitle}>Action Required</Text>
+              <Text style={s.modalSubtitle}>{errorMessage}</Text>
+            </VStack>
+            <Divider style={s.hairline} />
+            <Button
+              mode="contained"
+              buttonColor={theme.colors.error}
+              textColor="#FFF"
+              onPress={() => setErrorModalVisible(false)}
+              style={s.modalButton}
+              labelStyle={s.buttonLabel}
+            >
+              I Understand
+            </Button>
+          </VStack>
+        </Modal>
+      </Portal>
+
       {checkoutUrl && (
         <PayMongoWebView
           visible={showWebView}
@@ -303,14 +339,11 @@ export default function BookingStatusScreen({ route }) {
 
 const s = StyleSheet.create({
   mainWrapper: {
-    // paddingHorizontal: Spacing.base,
-    // paddingTop: Spacing.md,
-    // paddingBottom: Spacing.lg,
+    paddingBottom: Spacing.lg,
   },
-  // Status Card (High Visibility)
   statusHeader: {
     padding: Spacing.md,
-    borderRadius: 12, // lg
+    borderRadius: 12,
     borderWidth: 1.5,
   },
   statusPill: {
@@ -328,11 +361,10 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-  // Contained Look
   containedGroup: {
-    borderRadius: 16, // xl
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#CCCCCC", // outlineVariant
+    borderColor: "#CCCCCC",
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
   },
@@ -351,7 +383,7 @@ const s = StyleSheet.create({
   metaLabel: {
     fontFamily: "Poppins-Medium",
     fontSize: 12,
-    color: "#767474", // theme.colors.outline
+    color: "#767474",
   },
   metaValue: {
     fontFamily: "Poppins-SemiBold",
@@ -360,10 +392,10 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   metaValueMono: {
-    fontFamily: "Poppins-Medium", // Use Medium for a "code-like" clean look
+    fontFamily: "Poppins-Medium",
     fontSize: 13,
-    color: "#357FC1", // primary
-    backgroundColor: "#D6ECFA", // primaryContainer
+    color: "#357FC1",
+    backgroundColor: "#D6ECFA",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
@@ -380,11 +412,6 @@ const s = StyleSheet.create({
     color: "#767474",
     fontStyle: "italic",
   },
-  hairlineLight: {
-    height: 1,
-    backgroundColor: "#F0F0F5",
-    marginVertical: 4,
-  },
   hairline: {
     height: 1,
     backgroundColor: "#CCCCCC",
@@ -392,13 +419,57 @@ const s = StyleSheet.create({
   hairlineLight: {
     height: 1,
     backgroundColor: "#F0F0F5",
-    marginTop: Spacing.md,
+    marginVertical: 4,
   },
   actionSurface: {
-    borderRadius: 16, // xl
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#CCCCCC",
     backgroundColor: "#FFFFFF",
     padding: Spacing.md,
+  },
+  // Modal Specific Styles
+  modalContainer: {
+    backgroundColor: "transparent",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    padding: Spacing.lg,
+    alignItems: "center",
+    elevation: 4,
+  },
+  errorIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#D645451A",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 18,
+    color: "#1A1A1A",
+  },
+  modalSubtitle: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 14,
+    color: "#767474",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  modalButton: {
+    width: "100%",
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  buttonLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 14,
   },
 });

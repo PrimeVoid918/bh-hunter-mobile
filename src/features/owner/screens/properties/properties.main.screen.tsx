@@ -51,9 +51,7 @@ export default function PropertiesMainScreen() {
         <VStack style={[s.Widget]}>
           <Box style={[s.Widget_item]}>
             <Ionicons name="notifications" color="white" size={25} />
-            <Text style={[s.generic_text_lg]}>
-              Total Properties {user.boardingHouses?.length ?? 0}
-            </Text>
+            <Text style={[s.generic_text_lg]}>Total Properties {0}</Text>
           </Box>
           <Box style={[s.Widget_item]}>
             <Ionicons name="build-outline" color="white" size={25} />

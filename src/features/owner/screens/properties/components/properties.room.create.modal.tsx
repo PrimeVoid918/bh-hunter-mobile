@@ -59,17 +59,17 @@ export default function PropertiesRoomCreateModal({
     });
 
   useEffect(() => {
-    if (visible)
-      reset(
-        initialData || {
-          roomNumber: "",
-          maxCapacity: 0,
-          price: 0,
-          tags: [],
-          thumbnail: [],
-          gallery: [],
-        },
-      );
+    if (visible) {
+      reset({
+        roomNumber: "",
+        maxCapacity: 0,
+        price: 0,
+        tags: [],
+        thumbnail: [],
+        gallery: [],
+        ...(initialData ?? {}),
+      });
+    }
   }, [visible, initialData, reset]);
 
   /* ------------------------- Image Logic ------------------------- */

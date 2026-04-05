@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
-import { Text, Button, Card, Avatar, useTheme, IconButton } from "react-native-paper";
+import {
+  Text,
+  Button,
+  Card,
+  Avatar,
+  useTheme,
+  IconButton,
+} from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 
 import PropertiesRoomCreateModal from "./properties.room.create.modal";
@@ -62,7 +69,7 @@ export default function PropertiesRoomCreate({
         ) : (
           rooms.map((room, index) => (
             <Card
-              key={index}
+              key={(room as any).tempId ?? index}
               style={s.roomCard}
               onPress={() => handleOpenEdit(index)}
             >
@@ -96,10 +103,20 @@ export default function PropertiesRoomCreate({
         onSubmit={(data) => {
           if (editingIndex !== null) {
             const updated = [...rooms];
-            updated[editingIndex] = data;
+            updated[editingIndex] = {
+              ...updated[editingIndex],
+              ...data,
+              tempId: updated[editingIndex].tempId, // 👈 preserve identity
+            };
             setRooms(updated);
           } else {
-            setRooms([...rooms, data]);
+            setRooms([
+              ...rooms,
+              {
+                ...data,
+                tempId: data.tempId ?? `${Date.now()}-${Math.random()}`,
+              },
+            ]);
           }
           setModalVisible(false);
         }}

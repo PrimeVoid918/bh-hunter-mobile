@@ -19,6 +19,7 @@ import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 import { logout } from "@/infrastructure/auth/auth.redux.slice";
 import { BorderRadius, Spacing } from "@/constants";
+import * as SecureStore from "expo-secure-store";
 
 const hapticOptions = {
   enableVibrateFallback: true,
@@ -41,12 +42,17 @@ export default function MenuMainScreen() {
     ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     triggerHaptic();
+
+    await SecureStore.deleteItemAsync("token"); // removing persistent login
+    await SecureStore.deleteItemAsync("role");
+    await SecureStore.deleteItemAsync("userId");
+
     dispatch(logout());
-    navigation.dispatch(
-      CommonActions.reset({ index: 0, routes: [{ name: "Auth" }] }),
-    );
+    // navigation.dispatch(
+    //   CommonActions.reset({ index: 0, routes: [{ name: "Auth" }] }),
+    // );
   };
 
   const onRefresh = () => {

@@ -9,10 +9,19 @@ import {
   RefreshControl,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import {
+  ActivityIndicator,
+  Modal,
+  Portal,
+  useTheme,
+  Surface,
+  Button,
+} from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
 import FullScreenLoaderAnimated from "../ui/FullScreenLoaderAnimated";
 import FullScreenErrorModal from "../ui/FullScreenErrorModal";
 import { BorderRadius, Spacing } from "@/constants";
-import { ActivityIndicator, Modal, Portal, useTheme } from "react-native-paper";
 
 type WrapperVariant = "form" | "list" | "layout" | "none";
 
@@ -27,8 +36,9 @@ interface StaticScreenWrapperInterface {
   error?: string | string[];
   empty?: boolean;
   variant?: WrapperVariant;
-  /** New prop to toggle the repetitive padding you've been doing manually */
   useStandardPadding?: boolean;
+  lockdown?: boolean;
+  onLockdownAction?: () => void;
 }
 
 export default function StaticScreenWrapper({
@@ -43,19 +53,20 @@ export default function StaticScreenWrapper({
   empty,
   variant = "none",
   useStandardPadding = variant !== "layout",
+  lockdown = false,
+  onLockdownAction,
 }: StaticScreenWrapperInterface) {
   const theme = useTheme();
-  const isLoading = Array.isArray(loading) ? loading.some(Boolean) : loading;
-  const hasError = Array.isArray(error) ? error.filter(Boolean) : error;
 
-  const getStandardPaddingStyle = (): ViewStyle => {
-    if (!useStandardPadding) return {};
-    return {
-      paddingLeft: Spacing.md,
-      paddingRight: Spacing.md,
-      paddingTop: Spacing.md,
-    };
-  };
+  const isLoading = Array.isArray(loading) ? loading.some(Boolean) : loading;
+  const hasError = Array.isArray(error)
+    ? error.filter(Boolean).length > 0
+    : !!error;
+  const errorMessage = Array.isArray(error)
+    ? error.filter(Boolean).join("\n")
+    : error;
+
+  // --- Helpers ---
 
   const getBottomPadding = () => {
     switch (variant) {
@@ -63,142 +74,197 @@ export default function StaticScreenWrapper({
         return Spacing.xl * 6;
       case "list":
         return Spacing.xl * 3;
-      case "layout":
-        return 0;
       default:
         return Spacing.md;
     }
   };
 
-  const renderContent = () => {
-    if (isLoading) return <FullScreenLoaderAnimated visible={isLoading} />;
-
-    if (hasError && (hasError as string[]).length > 0)
-      return (
-        <FullScreenErrorModal
-          visible={true}
-          message={Array.isArray(hasError) ? hasError.join("\n") : hasError}
-        />
-      );
-
-    if (empty) return <Text style={styles.emptyText}>No data available</Text>;
-
-    return (
-      <>
-        {/* BACKDROP REFRESH OVERLAY */}
-        <Portal>
-          <Modal
-            visible={refreshing}
-            dismissable={false}
-            contentContainerStyle={styles.modalOverlay}
-          >
-            <View
-              style={[
-                styles.loaderCard,
-                {
-                  backgroundColor: theme.colors.surface,
-                },
-              ]}
-            >
-              <ActivityIndicator
-                animating={true}
-                color={theme.colors.primary}
-                size="large"
-              />
-              <Text
-                style={[styles.loaderText, { color: theme.colors.onSurface }]}
-              >
-                Updating Content...
-              </Text>
-            </View>
-          </Modal>
-        </Portal>
-
-        {children}
-
-        {variant === "list" && (
-          <View style={styles.footerSpacer}>
-            <View style={styles.footerDot} />
-          </View>
-        )}
-      </>
-    );
+  const getStandardPaddingStyle = (): ViewStyle => {
+    if (!useStandardPadding) return {};
+    return { paddingHorizontal: Spacing.md, paddingTop: Spacing.md };
   };
 
-  const shouldScroll = variant === "layout" ? false : wrapInScrollView;
+  // --- Render Logic ---
+
+  if (lockdown) {
+    return (
+      <View
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+      >
+        <View style={styles.lockdownContainer}>
+          <Surface style={styles.lockdownCard} elevation={0}>
+            <MaterialCommunityIcons
+              name="shield-lock"
+              size={64}
+              color={theme.colors.primary}
+            />
+            <Text
+              style={[styles.lockdownTitle, { color: theme.colors.onSurface }]}
+            >
+              Identity Verification Required
+            </Text>
+            <Text style={[styles.lockdownSub, { color: theme.colors.outline }]}>
+              To ensure the safety of our Ormoc community, you need to be fully
+              verified to access this feature.
+            </Text>
+            <Button
+              mode="contained"
+              onPress={onLockdownAction}
+              style={styles.lockdownBtn}
+            >
+              Start Verification
+            </Button>
+          </Surface>
+        </View>
+      </View>
+    );
+  }
+
+  if (isLoading) return <FullScreenLoaderAnimated visible={isLoading} />;
+
+  if (hasError)
+    return (
+      <FullScreenErrorModal visible={true} message={String(errorMessage)} />
+    );
+
+  if (empty)
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.emptyText}>No data available</Text>
+      </View>
+    );
+
+  const renderMainContent = () => (
+    <>
+      <Portal>
+        <Modal
+          visible={refreshing}
+          dismissable={false}
+          contentContainerStyle={styles.modalOverlay}
+        >
+          <Surface style={styles.loaderCard} elevation={2}>
+            <ActivityIndicator
+              animating={true}
+              color={theme.colors.primary}
+              size="large"
+            />
+            <Text
+              style={[styles.loaderText, { color: theme.colors.onSurface }]}
+            >
+              Updating...
+            </Text>
+          </Surface>
+        </Modal>
+      </Portal>
+
+      {children}
+
+      {/* THE GOOGLE/YOUTUBE "END OF LIST" SPACER */}
+      {variant === "list" && (
+        <View style={styles.footerSpacer}>
+          <View
+            style={[
+              styles.footerDot,
+              { backgroundColor: theme.colors.outlineVariant },
+            ]}
+          />
+        </View>
+      )}
+    </>
+  );
+
   const containerStyle = [styles.container, getStandardPaddingStyle(), style];
   const combinedContentStyle = [
-    { paddingBottom: getBottomPadding() },
+    { flexGrow: 1, paddingBottom: getBottomPadding() },
     contentContainerStyle,
   ];
 
-  const scrollProps = {
-    style: containerStyle,
-    contentContainerStyle: combinedContentStyle,
-    extraScrollHeight: variant === "form" ? 120 : 0,
-    enableOnAndroid: true,
-    width: "100%",
-    height: "100%",
-  };
+  const shouldScroll = variant !== "layout" && wrapInScrollView;
 
-  // 1. Check for Refreshing (Usually implies a list, so keep ScrollView)
   if (onRefresh) {
     return (
       <ScrollView
-        {...scrollProps}
+        style={containerStyle}
+        contentContainerStyle={combinedContentStyle}
         refreshControl={
-          <RefreshControl refreshing={false} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {renderContent()}
+        {renderMainContent()}
       </ScrollView>
     );
   }
 
-  // 2. NEW: If scroll is disabled (like for Maps), return a simple View
   if (!shouldScroll) {
-    return <View style={containerStyle}>{renderContent()}</View>;
+    return <View style={containerStyle}>{renderMainContent()}</View>;
   }
 
-  // 3. Default to Keyboard Scroll
   return (
-    <KeyboardAwareScrollView {...scrollProps}>
-      {renderContent()}
+    <KeyboardAwareScrollView
+      style={containerStyle}
+      contentContainerStyle={combinedContentStyle}
+      enableOnAndroid
+      keyboardShouldPersistTaps="handled"
+    >
+      {renderMainContent()}
     </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  modalOverlay: {
+  centered: { justifyContent: "center", alignItems: "center" },
+  lockdownContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.3)", // Dims the background
-    width: "100%",
-    height: "100%",
+    padding: Spacing.lg,
   },
+  lockdownCard: {
+    width: "100%",
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  lockdownTitle: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 18,
+    marginTop: Spacing.md,
+    textAlign: "center",
+  },
+  lockdownSub: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: Spacing.sm,
+    lineHeight: 20,
+    marginBottom: Spacing.lg,
+  },
+  lockdownBtn: { width: "100%", borderRadius: BorderRadius.md },
+  modalOverlay: { justifyContent: "center", alignItems: "center", padding: 20 },
   loaderCard: {
     padding: 24,
     borderRadius: 16,
     alignItems: "center",
-    elevation: 4, // Android depth
     minWidth: 180,
+    backgroundColor: "white",
   },
-  loaderText: {
-    marginTop: 16,
-    fontFamily: "Poppins-Medium",
-    fontSize: 14,
-  },
+  loaderText: { marginTop: 16, fontFamily: "Poppins-Medium", fontSize: 14 },
   emptyText: { textAlign: "center", marginTop: Spacing.xl, opacity: 0.5 },
+  // Footer Spacer Styles
   footerSpacer: {
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing.xl * 2,
     alignItems: "center",
+    justifyContent: "center",
     width: "100%",
   },
   footerDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "rgba(0,0,0,0.1)",
+    opacity: 0.5,
   },
 });

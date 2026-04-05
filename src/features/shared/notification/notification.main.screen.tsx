@@ -17,21 +17,25 @@ import { handleNotificationRedirect } from "./notification.screen.routers";
 
 export default function NotificationMainScreen() {
   const theme = useTheme();
-  const { id: authUserId, role: authUserRole } = useDynamicUserApi();
   const [activeFilter, setActiveFilter] = React.useState("All");
+  const { id: authUserId, role: authUserRole } = useDynamicUserApi();
 
   const {
     data: notifications,
     isError,
     isLoading,
     refetch,
-  } = useGetAllQuery({
-    role: authUserRole as UserRole,
-    userId: authUserId!,
-    page: 1,
-    limit: 20,
-  });
-
+  } = useGetAllQuery(
+    {
+      role: authUserRole as UserRole,
+      userId: authUserId!,
+      page: 1,
+      limit: 20,
+    },
+    {
+      skip: !authUserId || !authUserRole, // <-- skip until we have valid data
+    },
+  );
   const [refreshing, setRefreshing] = React.useState(false);
 
   const handlePageRefresh = () => {

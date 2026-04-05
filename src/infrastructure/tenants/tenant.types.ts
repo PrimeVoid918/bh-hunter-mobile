@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { BaseUserSchema } from "../user/user.types";
 import { bookingSchema } from "../booking/booking.schema";
+import {
+  RegistrationStatusSchema,
+  VerificationLevelSchema,
+} from "../valid-docs/verification-document/verification-document.schema";
 
 /** ---------------- SCHEMAS ---------------- **/
 
@@ -32,3 +36,27 @@ export type Tenant = z.infer<typeof TenantSchema>;
 export type RegisterTenant = z.infer<typeof RegisterTenantSchema>;
 export type UpdateTenant = z.infer<typeof UpdateTenantSchema>;
 export type GetTenant = z.infer<typeof GetTenantSchema>;
+
+export const TenantAccessStatusSchema = z.object({
+  tenantId: z.number(),
+
+  isVerified: z.boolean(),
+  verificationLevel: VerificationLevelSchema,
+  registrationStatus: RegistrationStatusSchema,
+
+  canBookRoom: z.boolean(),
+  canMakeReview: z.boolean(),
+  canSendMessage: z.boolean(),
+});
+
+export type TenantAccessStatus = z.infer<typeof TenantAccessStatusSchema>;
+
+/*
+{
+  "tenantId": 4,
+  "isVerified": true,
+  "verificationLevel": "FULLY_VERIFIED",
+  "canBookRoom": true,
+  "canSendMessage": true
+}
+*/

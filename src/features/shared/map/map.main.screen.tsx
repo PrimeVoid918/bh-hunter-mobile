@@ -1,252 +1,91 @@
-import { View, Text, StyleSheet, Image } from "react-native";
-import React, { useState, useRef, useMemo, useEffect } from "react";
-import { HStack, Spinner, VStack } from "@gluestack-ui/themed";
-
-import {
-  Colors,
-  GlobalStyle,
-  Fontsize,
-  Spacing,
-  BorderRadius,
-} from "@/constants";
-
-//navigation
+import React, { useState, useRef, useCallback } from "react";
+import { StyleSheet, View } from "react-native";
+import { useTheme } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import { TenantTabsParamList } from "../../tenant/navigation/tenant.tabs.types";
-
-// ui component
-import HeaderSearch from "../../../components/layout/HeaderSearch";
-import Button from "@/components/ui/Button";
-
-// ui lib
 import BottomSheet from "@gorhom/bottom-sheet";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
-//types
-import { ScrollView } from "react-native-gesture-handler";
+import { TenantTabsParamList } from "../../tenant/navigation/tenant.tabs.types";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useGetAllQuery } from "@/infrastructure/map/map.redux.api";
 
-// redux
-import { useGetAllQuery as useGetAllBoardingHouses } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
-import { useDispatch } from "react-redux";
-import {
-  GetBoardingHouse,
-  BoardingHouse,
-} from "@/infrastructure/boarding-houses/boarding-house.schema";
+import { DEFAULT_COORDS } from "@/application/config/map.config";
+import { BoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.schema";
+
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import Map from "./Map";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import PressableImageFullscreen from "../../../components/ui/ImageComponentUtilities/PressableImageFullscreen";
 import ReloadFAB from "./ReloadFab";
-
+import { MapSheet } from "./MuiMapSheet";
+import { useSelector } from "react-redux";
+import { RootState } from "@/application/store/stores";
 export default function MapMainScreen() {
-  const [search, setSearch] = useState("");
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["25%", "70%"], []);
-  const [sheetData, setDataSheet] = useState<BoardingHouse | null>(null);
-  const mapRef = useRef<{ moveCamera: (lng: number, lat: number) => void }>(
-    null,
-  );
-  // const [sheetThumbnail, setSheetThumbnail] = useState<BoardingHouseImage | null>(null)
-
-  const dispatch = useDispatch();
-
-  const {
-    data: boardinghouses,
-    isLoading: isBoardingHousesLoading,
-    isError: isBoardingHousesError,
-    refetch,
-    isFetching,
-  } = useGetAllBoardingHouses({});
-
+  const theme = useTheme();
   const navigation =
     useNavigation<BottomTabNavigationProp<TenantTabsParamList>>();
+  const [sheetData, setDataSheet] = useState<BoardingHouse | null>(null);
 
-  const onChangeInputValue = (text: string) => {
-    setSearch(text);
-  };
+  const {
+    data: markers = [],
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+  } = useGetAllQuery({
+    lat: DEFAULT_COORDS.lat,
+    lng: DEFAULT_COORDS.lng,
+    radius: 5000,
+  });
 
-  const handleMarkerPress = (data: BoardingHouse) => {
-    console.log("pressed");
-    if (sheetData?.id === data.id) return;
-    setDataSheet(data);
+  const handleMarkerPress = useCallback((marker: any) => {
+    ReactNativeHapticFeedback.trigger("impactLight");
+    setDataSheet(marker as BoardingHouse);
+  }, []);
 
-    bottomSheetRef.current?.expand();
-  };
-
-  const handleGotoPress = () => {
+  const handleNavigateDetail = () => {
     if (!sheetData) return;
-    // dispatch(selectBoardinHouse(sheetData));
-    console.log("handleGotoPress id ", sheetData.id);
+    setDataSheet(null);
     navigation.navigate("Booking", {
       screen: "BoardingHouseDetails",
       params: { id: sheetData.id, fromMaps: true },
     });
   };
 
-  const refetchBoardingHouses = React.useCallback(() => {
-    refetch();
-  }, [refetch]);
+  // const access = useSelector((state: RootState) => state.tenantAccess.status);
+
+  // if (!access?.verified) {
+  //   return <VerificationRequired />;
+  // }
 
   return (
-    <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer, s.con_main]}
-      contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
-      // wrapInScrollView={false}
-      refreshing={isFetching}
-      loading={isBoardingHousesLoading}
-      error={[isBoardingHousesError ? "Failed to fetch user" : null]}
-      variant="layout"
-    >
-      <Map
-        mapStyle={{
-          width: "100%",
-          height: "100%",
-          // position: "absolute",
-          zIndex: 1,
-        }}
-        data={boardinghouses}
-        isBoardingHousesLoading={isBoardingHousesLoading}
-        handleMarkerPress={handleMarkerPress}
-      />
-      <ReloadFAB
-        loading={isBoardingHousesLoading}
-        onPress={() => refetchBoardingHouses()}
-      />
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose
-        onClose={() => setDataSheet(null)} // 👈 reset
-        enableDynamicSizing={false}
-        style={
-          {
-            // zIndex: 20,
-          }
-        }
+    <View style={{ flex: 1 }}>
+      <StaticScreenWrapper
+        style={{ flex: 1 }}
+        refreshing={isFetching}
+        loading={isLoading}
+        error={[isError ? "Map service unavailable" : null]}
+        variant="layout"
       >
-        {sheetData && (
-          <View
-            style={{
-              // padding: Global,
-              // backgroundColor: Colors.
-              flex: 1,
-              alignItems: "flex-start",
-            }}
-          >
-            <PressableImageFullscreen
-              image={sheetData?.thumbnail?.[0]}
-              imageStyleConfig={{
-                resizeMode: "cover",
-                containerStyle: { borderRadius: BorderRadius.md },
-              }}
-              containerStyle={{
-                margin: "auto",
-                width: "98%",
-                height: 200,
-                borderRadius: BorderRadius.md,
-              }}
-            ></PressableImageFullscreen>
-            <View
-              style={{
-                marginTop: Spacing.sm,
-                alignItems: "baseline",
-                padding: Spacing.md,
-                flexDirection: "column",
-              }}
-            >
-              <View
-                style={{
-                  height: 300,
-                  marginBottom: Spacing.sm,
-                }}
-              >
-                <HStack
-                  style={{
-                    alignItems: "center",
-                    justifyContent: "space-evenly",
-                    gap: 10,
-                    // backgroundColor: Colors.
-                    borderRadius: 10,
-                    padding: 10,
-                  }}
-                >
-                  <VStack style={{ width: "75%" }}>
-                    <Text style={[s.text_title]}>{sheetData.name}</Text>
-                    <Text style={[s.text_address]}>{sheetData.address}</Text>
-                  </VStack>
-                  <Button
-                    title="Goto?"
-                    onPressAction={handleGotoPress}
-                    containerStyle={{
-                      padding: 10,
-                    }}
-                  />
-                </HStack>
-                <ScrollView
-                  style={{
-                    marginTop: Spacing.md,
-                    flex: 1,
-                    // borderColor: "red",
-                    // borderWidth: 1,
-                    padding: 10,
-                    borderRadius: BorderRadius.md,
-                    // backgroundColor: Colors.
-                  }}
-                >
-                  <Text style={[s.text_white, { marginBottom: 20 }]}>
-                    {sheetData.description}
-                  </Text>
-                </ScrollView>
-              </View>
-            </View>
-          </View>
-        )}
-      </BottomSheet>
-    </StaticScreenWrapper>
+        <Map
+          mapStyle={styles.map}
+          data={markers}
+          isMarkersLoading={isLoading}
+          handleMarkerPress={handleMarkerPress}
+        />
+        <ReloadFAB loading={isFetching} onPress={refetch} />
+      </StaticScreenWrapper>
+
+      {/* REPLACED: React Native Paper M3 "Sheet" */}
+      <MapSheet
+        visible={!!sheetData}
+        data={sheetData}
+        onClose={() => setDataSheet(null)}
+        onNavigate={handleNavigateDetail}
+      />
+    </View>
   );
 }
 
-const s = StyleSheet.create({
-  con_main: {},
-
-  search_headerContainer: {
-    position: "absolute",
-    width: "90%",
-    height: 50,
-    // backgroundColor: Colors.
-    top: "5%",
-    left: "5%",
-    borderRadius: 10,
-    paddingLeft: 5,
-    paddingRight: 5,
-
-    zIndex: 10,
-  },
-  search_headerText: {
-    // backgroundColor: "red",
-    fontSize: Fontsize.lg,
-    // color: Colors.
-  },
-  callout: {
-    padding: 10,
-  },
-  text_white: {
-    color: "white",
-  },
-  text_address: {
-    fontSize: Fontsize.sm,
-    paddingTop: 5,
-    color: Colors.TextInverse[2],
-
-    // borderColor: "red",
-    // borderWidth: 3,
-  },
-  text_title: {
-    // borderColor: "red",
-    // borderWidth: 3,
-    color: Colors.TextInverse[1],
-    fontSize: Fontsize.xxl,
-    fontWeight: 900,
-  },
+const styles = StyleSheet.create({
+  mapContainer: { flex: 1, overflow: "hidden" },
+  map: { flex: 1 },
 });

@@ -75,7 +75,6 @@ export default function BoardingHouseDetailsScreen() {
   return (
     <StaticScreenWrapper
       variant="list"
-      contentContainerStyle={GlobalStyle.GlobalsContentContainer}
       refreshing={refreshing}
       onRefresh={onRefresh}
       loading={isBoardingHouseLoading}
@@ -91,70 +90,3 @@ export default function BoardingHouseDetailsScreen() {
     </StaticScreenWrapper>
   );
 }
-
-const s = StyleSheet.create({
-  main_container: {
-    flex: 1,
-    padding: Spacing.md,
-    gap: Spacing.md,
-  },
-  header: {
-    minHeight: 250,
-    width: "100%",
-    borderTopRightRadius: 10,
-    borderTopLeftRadius: 10,
-    zIndex: 5,
-    marginBottom: 10,
-    gap: 10,
-  },
-  body: {},
-
-  text_title: {
-    color: Colors.TextInverse[1],
-    fontSize: Fontsize.xxl,
-    fontWeight: 900,
-  },
-  text_description: {
-    fontSize: Fontsize.lg,
-    padding: 5,
-    color: Colors.TextInverse[2],
-  },
-  text_ameneties: {
-    borderColor: "green",
-    borderWidth: 3,
-    flexDirection: "column",
-  },
-  text_ameneties_items: {
-    fontSize: Fontsize.lg,
-    padding: 5,
-    color: Colors.TextInverse[2],
-  },
-  text_address: {
-    fontSize: Fontsize.sm,
-    paddingTop: 5,
-    color: Colors.TextInverse[2],
-  },
-  text_price: {
-    borderColor: "cyan",
-    borderWidth: 3,
-  },
-  text_properties: {
-    borderColor: "magenta",
-    borderWidth: 3,
-  },
-  text_generic_small: {
-    fontSize: Fontsize.sm,
-    padding: 0,
-    color: Colors.TextInverse[1],
-  },
-  text_generic_medium: {
-    fontSize: Fontsize.md,
-    padding: 0,
-    color: Colors.TextInverse[1],
-  },
-  text_generic_large: {
-    fontSize: Fontsize.lg,
-    padding: 0,
-    color: Colors.TextInverse[1],
-  },
-});

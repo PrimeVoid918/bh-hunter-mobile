@@ -1,8 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import api from "@/application/config/api";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { ApiResponseType } from "../common/types/api.types";
-import { AuthState, AuthUser, LoginResults } from "./auth.types";
+import { AuthState} from "./auth.types";
 import { UserRoleEnum } from "../user/user.types";
 
 const initialState: AuthState = {
@@ -16,53 +13,6 @@ const initialState: AuthState = {
   },
   token: null,
 };
-
-//* Usage
-/*
- * const onLogin = async () => {
- * const { results } = await login(credentials).unwrap();
- *   dispatch(setAuth({ token: results.access_token, user: results.user }));
- * };
- *
- * // then anywhere
- * const user = useSelector((state: RootState) => state.auth.user);
- * if (user?.isVerified) {
- *   // show badge
- * }
- */
-
-//* createApi
-//* For accessing the API with built-in abstractions
-//* such as isLoading, error, and others.
-const authApiRoute = `/api/auth`;
-export const authApi = createApi({
-  tagTypes: ["Auth"],
-  reducerPath: "authApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: api.BASE_URL,
-    // skips the fetchFn that logs, for debugging only
-    //  fetchFn: async (input, init) => {
-    //   console.log("FETCHING URL:", input);
-    //   console.log("FETCH INIT:", init);
-    //   return fetch(input, init);
-    // },
-  }),
-
-  endpoints: (builder) => ({
-    login: builder.mutation<LoginResults, Partial<AuthUser>>({
-      query: (data) => ({
-        url: `${authApiRoute}/login`,
-        method: "POST",
-        body: data,
-      }),
-      transformResponse: (response: ApiResponseType<LoginResults>) =>
-        response.results ?? [],
-    }),
-    // TODO: expand here later and should meet with backend interface
-  }),
-});
-//* Export hooks for usage in funcitonal components
-export const { useLoginMutation } = authApi;
 
 //* -- Slice --
 const authSlice = createSlice({
@@ -106,7 +56,6 @@ export default authSlice.reducer;
  *   }
  * };
  */
-
 
 // TODO SECTION
 //* 🔐 Improve auth caching and cleanup strategy

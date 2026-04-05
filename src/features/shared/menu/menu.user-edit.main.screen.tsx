@@ -56,10 +56,11 @@ export default function MenuUserEditScreen() {
     setLoading(true);
     try {
       await patchUser(authUserId!, form);
-      await fetchAndSelect(authUserId!);
+      // await fetchAndSelect(authUserId!);
       AlertRN.alert("Success", "Account updated!");
       navigation.goBack();
     } catch (error) {
+      console.error("Error updating user", error);
       AlertRN.alert("Error", "Update failed.");
     } finally {
       setLoading(false);

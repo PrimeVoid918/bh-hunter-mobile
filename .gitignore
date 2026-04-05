@@ -58,3 +58,5 @@ ios/
 logs/
 *.log
 *.tmp
+
+/nogic

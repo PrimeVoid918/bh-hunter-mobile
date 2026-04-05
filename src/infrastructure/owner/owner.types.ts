@@ -32,3 +32,29 @@ export type Owner = z.infer<typeof OwnerSchema>;
 export type RegisterOwner = z.infer<typeof RegisterOwnerSchema>;
 export type UpdateOwner = z.infer<typeof UpdateOwnerSchema>;
 export type GetOwner = z.infer<typeof GetOwnerSchema>;
+
+export const SubscriptionSchema = z.object({
+  id: z.number(),
+  type: z.enum(["TRIAL", "MONTHLY", "YEARLY"]),
+  startedAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+  provider: z.string().optional(),
+});
+
+export const OwnerAccessStatusSchema = z.object({
+  ownerId: z.number(),
+
+  isVerified: z.boolean(),
+  verificationLevel: z.string(),
+
+  hasActiveSubscription: z.boolean(),
+
+  subscription: SubscriptionSchema.nullable(),
+
+  canCreateBoardingHouse: z.boolean(),
+  canCreateRoom: z.boolean(),
+
+  shouldPurchasePlan: z.boolean(),
+});
+
+export type OwnerAccessStatus = z.infer<typeof OwnerAccessStatusSchema>;

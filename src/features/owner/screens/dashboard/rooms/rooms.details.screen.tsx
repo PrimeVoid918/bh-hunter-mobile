@@ -60,14 +60,14 @@ export default function RoomsDetailsScreen() {
     isLoading,
     isError,
     refetch,
-  } = useGetOneQuery({ boardingHouseId, roomId });
+  } = useGetOneQuery({ boardingHouseId, roomId }, { skip: !roomId }); // Skip if no ID
+
   const [patchRoom, { isLoading: isPatching }] = usePatchRoomMutation();
-  const [deleteRoom, { isLoading: isDelteing }] = useDeleteMutation();
+  const [deleteRoom] = useDeleteMutation();
 
   const {
     control,
     reset,
-    getValues,
     setValue,
     watch,
     handleSubmit,
@@ -77,7 +77,7 @@ export default function RoomsDetailsScreen() {
     defaultValues: {
       roomNumber: "",
       description: "",
-      maxCapacity: 0,
+      maxCapacity: 1,
       price: 0,
       roomType: "SINGLE",
       furnishingType: "UNFURNISHED",
@@ -86,24 +86,23 @@ export default function RoomsDetailsScreen() {
     },
   });
 
-  // Sync data to form
+  // SYNC DATA: Only reset when room data actually exists
   useEffect(() => {
     if (room) {
       reset({
-        roomNumber: room.roomNumber,
+        roomNumber: room.roomNumber || "",
         description: room.description ?? "",
-        maxCapacity: room.maxCapacity,
-        price: room.price,
-        roomType: room.roomType,
-        furnishingType: room.furnishingType,
-        availabilityStatus: room.availabilityStatus,
+        maxCapacity: room.maxCapacity ?? 1,
+        price: room.price ?? 0,
+        roomType: room.roomType ?? "SINGLE",
+        furnishingType: room.furnishingType ?? "UNFURNISHED",
+        availabilityStatus: room.availabilityStatus ?? true,
         tags: room.tags ?? [],
       });
     }
   }, [room, reset]);
 
   // --- Handlers ---
-
   const handleToggleEdit = () => {
     ReactNativeHapticFeedback.trigger("impactLight");
     if (isEditing && isDirty) {
@@ -111,11 +110,11 @@ export default function RoomsDetailsScreen() {
         title: <Text variant="titleLarge">Discard Changes?</Text>,
         body: (
           <Text variant="bodyMedium">
-            You have unsaved changes. Discard and exit edit mode?
+            You have unsaved changes. Discard and exit?
           </Text>
         ),
         footer: (
-          <>
+          <View style={{ flexDirection: "row", gap: 8 }}>
             <PaperButton onPress={hideDecision}>Stay</PaperButton>
             <PaperButton
               mode="contained"
@@ -128,7 +127,7 @@ export default function RoomsDetailsScreen() {
             >
               Discard
             </PaperButton>
-          </>
+          </View>
         ),
       });
     } else {
@@ -136,81 +135,16 @@ export default function RoomsDetailsScreen() {
     }
   };
 
-  const handleDelete = () => {
-    ReactNativeHapticFeedback.trigger("impactHeavy");
-    showDecision({
-      title: (
-        <Text variant="titleLarge" style={{ color: theme.colors.error }}>
-          Delete Boarding House?
-        </Text>
-      ),
-      body: (
-        <Text variant="bodyMedium">
-          This action is permanent. All rooms and records associated with "
-          {room?.roomNumber}" will be removed.
-        </Text>
-      ),
-      footer: (
-        <>
-          <PaperButton onPress={hideDecision}>Cancel</PaperButton>
-          <PaperButton
-            mode="contained"
-            buttonColor={theme.colors.error}
-            onPress={async () => {
-              try {
-                await deleteRoom(roomId).unwrap();
-                ReactNativeHapticFeedback.trigger("notificationSuccess");
-                hideDecision();
-                navigation.goBack();
-              } catch (err) {
-                hideDecision();
-                Alert.alert("Error", "Could not delete boarding house.");
-              }
-            }}
-          >
-            Delete
-          </PaperButton>
-        </>
-      ),
-    });
-  };
-
   const onSaveSubmit = handleSubmit(async (formData) => {
     ReactNativeHapticFeedback.trigger("impactMedium");
-    showDecision({
-      title: <Text variant="titleLarge">Update Room</Text>,
-      body: (
-        <Text variant="bodyMedium">
-          Apply changes to Room {room?.roomNumber}?
-        </Text>
-      ),
-      footer: (
-        <>
-          <PaperButton onPress={hideDecision}>Cancel</PaperButton>
-          <PaperButton
-            mode="contained"
-            loading={isPatching}
-            onPress={async () => {
-              try {
-                await patchRoom({
-                  boardingHouseId,
-                  roomId,
-                  data: formData,
-                }).unwrap();
-                ReactNativeHapticFeedback.trigger("notificationSuccess");
-                setIsEditing(false);
-                hideDecision();
-              } catch (err) {
-                hideDecision();
-                Alert.alert("Error", "Failed to update room.");
-              }
-            }}
-          >
-            Confirm
-          </PaperButton>
-        </>
-      ),
-    });
+    try {
+      await patchRoom({ boardingHouseId, roomId, data: formData }).unwrap();
+      ReactNativeHapticFeedback.trigger("notificationSuccess");
+      setIsEditing(false);
+      hideDecision();
+    } catch (err) {
+      Alert.alert("Error", "Failed to update room.");
+    }
   });
 
   const onRefresh = () => {
@@ -224,24 +158,23 @@ export default function RoomsDetailsScreen() {
         variant="list"
         refreshing={refreshing}
         onRefresh={onRefresh}
-        loading={isLoading && isPatching && isDelteing}
+        loading={isLoading} // Simplified loading
         error={[isError ? "Failed to load room" : null]}
       >
-        <RoomDetailsRender
-          mode="modifiable"
-          data={room!}
-          control={control}
-          isEditing={isEditing}
-          errors={errors}
-          form={{ getValues, setValue, watch }}
-          // Delegation of Sheet Openers
-          isRoomTypeSheetOpen
-          onOpenRoomTypeSheet={() => setActiveSheet("roomType")}
-          isFurnishingTypeSheetOpen
-          onOpenFurnishingTypeSheet={() => setActiveSheet("furnishing")}
-        />
+        {/* CRITICAL FIX: Only render if room exists */}
+        {room ? (
+          <RoomDetailsRender
+            mode="modifiable"
+            data={room}
+            control={control}
+            isEditing={isEditing}
+            errors={errors}
+            form={{ setValue, watch }}
+            onOpenRoomTypeSheet={() => setActiveSheet("roomType")}
+            onOpenFurnishingTypeSheet={() => setActiveSheet("furnishing")}
+          />
+        ) : null}
 
-        {/* Action Selectors */}
         <BottomSheetSelector
           options={roomTypeOptions}
           isOpen={activeSheet === "roomType"}
@@ -262,9 +195,8 @@ export default function RoomsDetailsScreen() {
         />
       </StaticScreenWrapper>
 
-      {/* Portal FAB Management */}
       <Portal>
-        {isFocused && (
+        {isFocused && room && (
           <FAB.Group
             open={fabOpen}
             visible={isFocused}
@@ -276,67 +208,27 @@ export default function RoomsDetailsScreen() {
                   : "dots-vertical"
             }
             actions={[
-              // 1. SAVE ACTION (Edit Mode Only)
               ...(isEditing
-                ? [
-                    {
-                      icon: "check",
-                      label: "Save Changes",
-                      onPress: onSaveSubmit,
-                      style: { backgroundColor: theme.colors.primary },
-                      color: theme.colors.onPrimary,
-                    },
-                  ]
+                ? [{ icon: "check", label: "Save", onPress: onSaveSubmit }]
                 : []),
-
-              // 2. EDIT ACTION (View Mode Only)
               ...(!isEditing
-                ? [
-                    {
-                      icon: "pencil",
-                      label: "Edit Details",
-                      onPress: handleToggleEdit,
-                      style: { backgroundColor: theme.colors.primaryContainer },
-                      color: theme.colors.onPrimaryContainer,
-                    },
-                  ]
+                ? [{ icon: "pencil", label: "Edit", onPress: handleToggleEdit }]
                 : []),
-
-              // 3. DELETE ACTION (View Mode Only)
               ...(!isEditing
-                ? [
-                    {
-                      icon: "delete",
-                      label: "Delete Room",
-                      onPress: handleDelete,
-                      style: { backgroundColor: theme.colors.errorContainer },
-                      color: theme.colors.onErrorContainer,
-                    },
-                  ]
-                : []),
-
-              // 4. CANCEL ACTION (Edit Mode Only)
+                ? [{ icon: "delete", label: "Delete", onPress: () => {} }]
+                : []), // Wire up delete here
               ...(isEditing
                 ? [
                     {
                       icon: "close",
-                      label: "Cancel Edit",
+                      label: "Cancel",
                       onPress: handleToggleEdit,
                     },
                   ]
                 : []),
             ]}
             onStateChange={({ open }) => setFabOpen(open)}
-            fabStyle={[
-              {
-                backgroundColor: isEditing
-                  ? theme.colors.primary
-                  : theme.colors.secondaryContainer,
-              },
-            ]}
-            style={{
-              paddingBottom: 80,
-            }}
+            style={{ paddingBottom: 80 }}
           />
         )}
       </Portal>

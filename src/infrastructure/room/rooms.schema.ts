@@ -142,6 +142,7 @@ export type FindOneRoom = z.infer<typeof FindOneRoomSchema>;
 ------------------------------------------ */
 
 export const CreateRoomInputSchema = z.object({
+  tempId: z.string().optional(),
   roomNumber: z.string(),
   description: z.string().optional(),
   maxCapacity: z.union([z.string(), z.number()]),

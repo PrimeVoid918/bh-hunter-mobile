@@ -120,9 +120,18 @@ export function useDynamicUserApi() {
   const ownerAll = getAllOwner();
   const adminAll = getAllAdmin();
 
-  const tenantOne = id ? getOneTenant(id, { skip: !id }) : null;
-  const ownerOne = id ? getOneOwner(id, { skip: !id }) : null;
-  const adminOne = id ? getOneAdmin(id, { skip: !id }) : null;
+  // const tenantOne = id ? getOneTenant(id, { skip: !id }) : null;
+  // const ownerOne = id ? getOneOwner(id, { skip: !id }) : null;
+  // const adminOne = id ? getOneAdmin(id, { skip: !id }) : null;
+  const tenantOne = getOneTenant(id ?? 0, {
+    skip: !id || role !== UserRoleEnum.TENANT,
+  });
+  const ownerOne = getOneOwner(id ?? 0, {
+    skip: !id || role !== UserRoleEnum.OWNER,
+  });
+  const adminOne = getOneAdmin(id ?? 0, {
+    skip: !id || role !== UserRoleEnum.ADMIN,
+  });
 
   const [tenantCreate] = createTenant();
   const [ownerCreate] = createOwner();
@@ -234,20 +243,23 @@ export function useDynamicUserApi() {
   };
 
   const refetchUser = async () => {
-    if (!id) return;
+    if (!id || !oneQuery?.refetch) return; // make sure query exists
 
-    const res = await oneQuery?.refetch?.();
+    // Only refetch if query has been initialized
+    if (!oneQuery.isUninitialized) {
+      const res = await oneQuery.refetch();
 
-    if (res?.data) {
-      if (role === UserRoleEnum.TENANT)
-        dispatch(selectTenant(res.data as Tenant));
-      else if (role === UserRoleEnum.OWNER)
-        dispatch(selectOwner(res.data as Owner));
-      else if (role === UserRoleEnum.ADMIN)
-        dispatch(selectAdmin(res.data as Admin));
+      if (res?.data) {
+        if (role === UserRoleEnum.TENANT)
+          dispatch(selectTenant(res.data as Tenant));
+        else if (role === UserRoleEnum.OWNER)
+          dispatch(selectOwner(res.data as Owner));
+        else if (role === UserRoleEnum.ADMIN)
+          dispatch(selectAdmin(res.data as Admin));
+      }
+
+      return res;
     }
-
-    return res;
   };
 
   return {

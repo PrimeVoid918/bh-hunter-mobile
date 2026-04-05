@@ -11,9 +11,10 @@ import {
 } from "@/infrastructure/owner/owner.redux.api";
 import {
   useGetOneQuery as useGetOneQueryTenant,
+  useLazyGetAccessStatusQuery,
   usePatchMutation as usePatchMutationTenant,
 } from "@/infrastructure/tenants/tenant.redux.api";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/application/store/stores";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {
@@ -50,6 +51,7 @@ import {
 } from "react-native-paper";
 import { ScrollView } from "react-native-gesture-handler";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { setAccessStatus } from "@/infrastructure/tenants/tenant.access.redux.slice";
 
 type VerificationMainNavigationProp =
   NativeStackNavigationProp<OwnerDashboardStackParamList>;
@@ -134,7 +136,10 @@ export default function VerificationMainScreen() {
     }
   };
 
+  const [consentLoading, setConsentLoading] = React.useState(false);
+
   const handleConsentChange = async (value: boolean) => {
+    setConsentLoading(true);
     try {
       if (isTenant) {
         await patchTenant({
@@ -153,24 +158,39 @@ export default function VerificationMainScreen() {
           },
         }).unwrap();
       }
-      userRefetch();
+
+      // Wait a tick before updating the store/navigation
+      await userRefetch();
     } catch (err) {
       Alert.alert("Error", "Failed to save consent");
+    } finally {
+      setConsentLoading(false);
     }
   };
 
   const [refreshing, setRefreshing] = React.useState(false);
-  const onRefresh = React.useCallback(() => {
+  const dispatch = useDispatch();
+  const [triggerAccessStatus] = useLazyGetAccessStatusQuery();
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    userRefetch();
-    verificationStatusRefetch();
-    setTimeout(() => setRefreshing(false), 1000);
-  }, [userRefetch, verificationStatusRefetch]);
+
+    const [userRes, verificationRes, accessRes] = await Promise.all([
+      userRefetch(),
+      verificationStatusRefetch(),
+      isTenant ? triggerAccessStatus(userId!).unwrap() : Promise.resolve(null),
+    ]);
+
+    if (accessRes) {
+      dispatch(setAccessStatus(accessRes));
+    }
+
+    setRefreshing(false);
+  }, [userRefetch, verificationStatusRefetch, triggerAccessStatus, userId]);
 
   return (
     <StaticScreenWrapper
       variant="list"
-      refreshing={refreshing}
+      refreshing={refreshing || consentLoading}
       onRefresh={onRefresh}
       loading={isUserLoading && isLoadingVerification}
       error={[isError && isErrorVerification ? "" : null]}

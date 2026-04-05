@@ -33,7 +33,7 @@ export default function DashboardMainScreen() {
     isLoading,
     refetch,
   } = useGetAllQueryBH(
-    { ownerId: owner?.id, isDeleted: false },
+    { ownerId: owner?.id },
     { skip: !owner?.id, refetchOnMountOrArgChange: true },
   );
 
@@ -73,7 +73,7 @@ export default function DashboardMainScreen() {
 
   return (
     <StaticScreenWrapper
-      variant="list"
+      variant="form"
       style={{ backgroundColor: theme.colors.background }}
       refreshing={refreshing}
       onRefresh={handlePageRefresh}

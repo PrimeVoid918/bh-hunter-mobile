@@ -1,15 +1,21 @@
 import api from "@/application/config/api";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { ApiResponseType } from "../common/types/api.types";
-import { Owner, RegisterOwner, UpdateOwner, GetOwner } from "./owner.types";
+import {
+  Owner,
+  RegisterOwner,
+  UpdateOwner,
+  GetOwner,
+  OwnerAccessStatus,
+} from "./owner.types";
 
 const ownerApiRoute = `/api/owners`;
 
 export const ownerApi = createApi({
   reducerPath: "ownersApi",
   tagTypes: ["Owner"],
-  refetchOnFocus: true, // ✅ automatically refetch on screen focus
-  refetchOnMountOrArgChange: true, // optional: also refetch on mount
+  refetchOnFocus: true,
+  refetchOnMountOrArgChange: true,
   baseQuery: fetchBaseQuery({
     baseUrl: api.BASE_URL,
   }),
@@ -31,6 +37,13 @@ export const ownerApi = createApi({
     getOne: builder.query<GetOwner, number>({
       query: (id) => `${ownerApiRoute}/${id}`,
       transformResponse: (response: ApiResponseType<GetOwner>) =>
+        response.results!,
+      providesTags: (result, error, id) => [{ type: "Owner", id }],
+    }),
+
+    getAccessStatus: builder.query<OwnerAccessStatus, number>({
+      query: (id) => `${ownerApiRoute}/${id}/access-status`,
+      transformResponse: (response: ApiResponseType<OwnerAccessStatus>) =>
         response.results!,
       providesTags: (result, error, id) => [{ type: "Owner", id }],
     }),
@@ -71,6 +84,7 @@ export const ownerApi = createApi({
 export const {
   useGetAllQuery,
   useGetOneQuery,
+  useGetAccessStatusQuery,
   useCreateMutation,
   usePatchMutation,
   useDeleteMutation,

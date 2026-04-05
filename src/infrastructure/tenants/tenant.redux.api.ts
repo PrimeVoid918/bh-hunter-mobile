@@ -6,18 +6,15 @@ import {
   RegisterTenant,
   UpdateTenant,
   GetTenant,
+  TenantAccessStatus,
 } from "./tenant.types";
 
-/** ---------------- ROUTE ---------------- **/
 const tenantApiRoute = `/api/tenants`;
-
-/** ---------------- API ---------------- **/
 export const tenantApi = createApi({
-  tagTypes: ["Tenant"],
   reducerPath: "tenantsApi",
+  tagTypes: ["Tenant", "AccessStatus"],
   baseQuery: fetchBaseQuery({
     baseUrl: api.BASE_URL,
-    // For debugging requests
     fetchFn: async (input, init) => {
       console.log("FETCHING URL:", input);
       console.log("FETCH INIT:", init);
@@ -31,9 +28,15 @@ export const tenantApi = createApi({
       query: () => tenantApiRoute,
       transformResponse: (response: ApiResponseType<Tenant[]>) =>
         response.results ?? [],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Tenant" as const, id })),
+              { type: "Tenant", id: "LIST" },
+            ]
+          : [{ type: "Tenant", id: "LIST" }],
     }),
 
-    /** Get one tenant by id */
     getOne: builder.query<Tenant, number>({
       query: (id) => `${tenantApiRoute}/${id}`,
       transformResponse: (response: ApiResponseType<Tenant>) =>
@@ -41,41 +44,60 @@ export const tenantApi = createApi({
       providesTags: (result, error, id) => [{ type: "Tenant", id }],
     }),
 
-    /** Register tenant (self-signup) */
+    getAccessStatus: builder.query<TenantAccessStatus, number>({
+      query: (tenantId) =>
+        `${tenantApiRoute}/${tenantId}/access-status`,
+      transformResponse: (response: ApiResponseType<TenantAccessStatus>) =>
+        response.results ?? null,
+      providesTags: (result, error, id) => [
+        { type: "Tenant", id },
+        { type: "Tenant", id: "ACCESS" },
+        { type: "AccessStatus", id },
+      ],
+    }),
+
+    // Create tenant
     create: builder.mutation<Tenant, RegisterTenant>({
       query: (data) => ({
         url: tenantApiRoute,
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["Tenant"],
+      invalidatesTags: [{ type: "Tenant", id: "LIST" }],
     }),
 
-    /** Update tenant (PATCH) */
+    // Patch tenant
     patch: builder.mutation<GetTenant, { id: number; data: UpdateTenant }>({
       query: ({ id, data }) => ({
         url: `${tenantApiRoute}/${id}`,
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["Tenant"],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Tenant", id },
+        { type: "Tenant", id: "LIST" },
+      ],
     }),
 
     /** Delete tenant */
-    delete: builder.mutation<Tenant, number>({
+    delete: builder.mutation<{ success: boolean }, number>({
       query: (id) => ({
         url: `${tenantApiRoute}/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Tenant"],
+      invalidatesTags: (result, error, id) => [
+        { type: "Tenant", id },
+        { type: "Tenant", id: "LIST" },
+      ],
     }),
   }),
 });
 
-/** ---------------- HOOKS ---------------- **/
 export const {
   useGetAllQuery,
   useGetOneQuery,
+  useGetAccessStatusQuery,
+  useLazyGetAccessStatusQuery,
   useCreateMutation,
   usePatchMutation,
   useDeleteMutation,

@@ -11,7 +11,7 @@ const DIRECTORY_PATHS: Record<DirectoryKey, string> = {
 };
 
 export async function ensurePersistentDir(
-  PERSISTENT_DIR: string
+  PERSISTENT_DIR: string,
 ): Promise<void> {
   const info = await FileSystem.getInfoAsync(PERSISTENT_DIR);
   if (!info.exists) {
@@ -61,25 +61,25 @@ export async function logExpoSystemDir(dirs: DirectoryKey | DirectoryKey[]) {
     try {
       const dirInfo = await FileSystem.getInfoAsync(path);
       console.log(
-        "-----------------------------------------------------------------"
+        "-----------------------------------------------------------------",
       );
       console.log("dirInfo:", dirInfo);
 
       if (!dirInfo.exists) {
         console.log(
-          "Directory does not exist (yet). Safe to create on first save."
+          "Directory does not exist (yet). Safe to create on first save.",
         );
         console.log(
-          "-----------------------------------------------------------------"
+          "-----------------------------------------------------------------",
         );
         continue;
       }
 
       // Only read if directory exists
       const files = await FileSystem.readDirectoryAsync(path);
-      console.log("Files in image dir:", files);
+      console.log(`Files in ${key} dir: `, files);
       console.log(
-        "-----------------------------------------------------------------"
+        "-----------------------------------------------------------------",
       );
     } catch (err: any) {
       console.error("logExpoSystemDir failed:", err.message);
@@ -88,7 +88,7 @@ export async function logExpoSystemDir(dirs: DirectoryKey | DirectoryKey[]) {
 }
 
 export async function expoStorageCleaner(
-  dirs: DirectoryKey | DirectoryKey[]
+  dirs: DirectoryKey | DirectoryKey[],
 ): Promise<void> {
   if (!FileSystem.documentDirectory) {
     throw new Error("Document directory unavailable");

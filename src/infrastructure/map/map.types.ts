@@ -6,6 +6,7 @@ export const mapMarkerSchema = z.object({
   name: z.string(),
   lat: z.number(),
   lng: z.number(),
+  availabilityStatus: z.boolean(),
   thumbnail: z.string().nullable(),
   price: z.string().nullable(),
   distance: z.number().optional(),

@@ -1,7 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
 import boardingHouseSlice from "@/infrastructure/boarding-houses/boarding-house.redux.slice";
 import { boardingHouseApi } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
-import authSlice, { authApi } from "@/infrastructure/auth/auth.redux.slice";
+import authSlice from "@/infrastructure/auth/auth.redux.slice";
+import { authApi } from "@/infrastructure/auth/auth.redux.api";
 import adminSlice, { adminApi } from "@/infrastructure/admin/admin.redux.slice";
 
 import ownerReducer from "@/infrastructure/owner/owner.redux.slice";
@@ -18,6 +19,8 @@ import { reviewsApi } from "@/infrastructure/reviews/reviews.redux.api";
 import { notificationApi } from "@/infrastructure/notifications/notifications.redux.api";
 import { metricsApi } from "@/infrastructure/metrics/metric.redux.api";
 import profileCompletenessSlice from "../../infrastructure/user/user.requirements.slice";
+import { mapsApi } from "@/infrastructure/map/map.redux.api";
+import tenantAccessSlice from "../../infrastructure/tenants/tenant.access.redux.slice";
 
 export const store = configureStore({
   reducer: {
@@ -37,8 +40,10 @@ export const store = configureStore({
     [verificationDocumentsApi.reducerPath]: verificationDocumentsApi.reducer,
     [reviewsApi.reducerPath]: reviewsApi.reducer,
     [metricsApi.reducerPath]: metricsApi.reducer,
+    [mapsApi.reducerPath]: mapsApi.reducer,
     genericSearch: genericSearchBarSlice,
     profileCompleteness: profileCompletenessSlice,
+    tenantAccessSlice: tenantAccessSlice,
   },
   middleware: (getDefaultMiddleware) =>
     // getDefaultMiddleware().concat(boardingHouseApi.middleware),
@@ -53,7 +58,8 @@ export const store = configureStore({
       .concat(bookingApi.middleware)
       .concat(verificationDocumentsApi.middleware)
       .concat(reviewsApi.middleware)
-      .concat(metricsApi.middleware),
+      .concat(metricsApi.middleware)
+      .concat(mapsApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

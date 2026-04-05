@@ -140,7 +140,7 @@ export function RoomBodyView({ data }: RoomBodyViewInteface) {
 
       {/* Description Card */}
       <Surface style={s.card} elevation={0}>
-        <Text style={s.label}>ABOUT THIS PROPERTY</Text>
+        <Text style={s.label}>ABOUT THIS ROOM</Text>
         <Text style={s.descriptionText}>
           {data?.description?.trim() ||
             "The owner hasn't provided a description yet."}
@@ -157,7 +157,7 @@ export function RoomBodyView({ data }: RoomBodyViewInteface) {
             size={18}
             color={colors.success}
           />
-          <Text style={s.sectionTitle}>Property Amenities</Text>
+          <Text style={s.sectionTitle}>Room Amenities</Text>
         </HStack>
         <TagListDumb
           items={amenities}

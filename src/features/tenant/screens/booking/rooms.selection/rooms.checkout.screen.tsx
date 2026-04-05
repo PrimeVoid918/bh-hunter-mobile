@@ -7,7 +7,8 @@ import {
   Checkbox,
   useTheme,
   Divider,
-  Button as PaperButton, // Added for footer
+  Button as PaperButton,
+  ActivityIndicator, // Added for footer
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSelector } from "react-redux";
@@ -22,6 +23,16 @@ import { RootState } from "@/application/store/stores";
 import { useDecisionModal } from "@/components/ui/Modals/DecisionModalWrapper";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { VStack } from "@gluestack-ui/themed";
+
+//! todo, new error
+/**
+ {
+    "message": "Room capacity exceeded. Available slots: 1",
+    "error": "Bad Request",
+    "statusCode": 400
+}
+ */
+//! todo, add the feature where you are going to request on how much is does the tenant want to occpy e.g. group booking, 
 
 export default function RoomsCheckoutScreen() {
   const theme = useTheme();
@@ -128,10 +139,23 @@ export default function RoomsCheckoutScreen() {
     }
   };
 
+  const access = useSelector(
+    (state: RootState) => state.tenantAccessSlice.status,
+  );
+  if (access === null) {
+    // Show a spinner until access loads
+    return <ActivityIndicator />;
+  }
+
+  console.error("access val:", access);
+  console.error("access val canBookRoom?: ", access?.canBookRoom);
+
   return (
     <StaticScreenWrapper
       loading={isLoading}
       style={{ backgroundColor: theme.colors.background }}
+      lockdown={access?.canBookRoom === false}
+      onLockdownAction={() => navigation.goBack()}
     >
       <View style={s.container}>
         <Text variant="headlineSmall" style={s.headerText}>

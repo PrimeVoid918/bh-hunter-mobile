@@ -30,7 +30,7 @@ import { AuthStackParamList } from "../navigation/auth.stack.types";
 // redux
 import { useDispatch } from "react-redux";
 import { login } from "@/infrastructure/auth/auth.redux.slice";
-import { useLoginMutation } from "@/infrastructure/auth/auth.redux.slice";
+import { useLoginMutation } from "@/infrastructure/auth/auth.redux.api";
 import { fetchUserDataThunk } from "@/infrastructure/auth/auth.redux.thunk";
 import { AppDispatch } from "../../../application/store/stores";
 import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
@@ -41,6 +41,8 @@ import {
 import { Surface, TextInput, Button, Divider } from "react-native-paper";
 import Map from "@/features/shared/map/Map";
 import HeaderLogo from "./HeaderLogo";
+
+import * as SecureStore from "expo-secure-store";
 
 export default function LoginMainScreen() {
   const rootNavigation =
@@ -78,6 +80,14 @@ export default function LoginMainScreen() {
     console.log("packageLoad: ", packageLoad);
     try {
       const { access_token, user } = await triggerLogin(packageLoad).unwrap();
+
+      await SecureStore.setItemAsync("token", access_token); //save token on storage for persistence
+      await SecureStore.setItemAsync("role", user.role);
+      await SecureStore.setItemAsync(
+        "userId",
+        user.id ? user.id.toString() : "",
+      );
+
       dispatch(
         login({
           token: access_token,
@@ -115,7 +125,6 @@ export default function LoginMainScreen() {
         style={{
           width: "100%",
           height: "100%",
-          backgroundColor: "green",
           justifyContent: "center",
           alignContent: "center",
           position: "relative",

@@ -119,7 +119,7 @@ export default function PropertiesCreateScreen() {
   };
 
   return (
-    <StaticScreenWrapper variant="form" loading={isLoading}>
+    <StaticScreenWrapper variant="list" loading={isLoading}>
       <View style={s.root}>
         {/* 1. HERO THUMBNAIL (Using your stable Picker) */}
         <PressableImagePicker
