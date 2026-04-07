@@ -18,6 +18,7 @@ export type TenantBookingStackParamList = {
     [key: string]: any; // allow extra params if needed
   };
   RoomsCheckoutScreen: {
+    bhId: number | undefined;
     ownerId: number | undefined;
     roomId: number | undefined;
   };

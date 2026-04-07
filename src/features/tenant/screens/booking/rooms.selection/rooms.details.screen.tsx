@@ -42,6 +42,7 @@ export default function RoomsDetailsScreen({
 
   const gotoBooking = () => {
     navigate.navigate("RoomsCheckoutScreen", {
+      bhId: boardingHouseId,
       roomId,
       ownerId,
     });
@@ -54,7 +55,7 @@ export default function RoomsDetailsScreen({
 
   return (
     <StaticScreenWrapper
-      variant="list"
+      variant="form"
       refreshing={refreshing}
       onRefresh={onRefresh}
       loading={isLoading}

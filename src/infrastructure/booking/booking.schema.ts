@@ -227,16 +227,29 @@ export const QueryBookingSchema = z.object({
 export type QueryBooking = z.infer<typeof QueryBookingSchema>;
 
 //* Create Booking DTO
-export const createBookingSchema = z.object({
-  tenantId: z.number(),
-  startDate: z
-    .string()
-    .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date" }),
-  endDate: z
-    .string()
-    .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date" }),
-  note: z.string().optional(),
-});
+export const createBookingSchema = z
+  .object({
+    tenantId: z.number(),
+    startDate: z
+      .string()
+      .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date" }),
+    endDate: z
+      .string()
+      .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date" }),
+    note: z.string().optional(),
+    occupantsCount: z
+      .number()
+      .int()
+      .min(1, "Minimum 1 occupant")
+      .max(10, "Maximum 10 occupants")
+      .optional()
+      .default(1),
+  })
+  .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+    message: "Check-out must be after check-in",
+    path: ["endDate"],
+  });
+
 export const CreateBookingInputSchema = createBookingSchema;
 export type CreateBookingInput = z.infer<typeof CreateBookingInputSchema>;
 

@@ -8,7 +8,9 @@ import {
   useTheme,
   Divider,
   Button as PaperButton,
-  ActivityIndicator, // Added for footer
+  ActivityIndicator,
+  IconButton,
+  Icon,
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSelector } from "react-redux";
@@ -22,33 +24,33 @@ import { useGetOneQuery as useGetOwnerQuery } from "@/infrastructure/owner/owner
 import { RootState } from "@/application/store/stores";
 import { useDecisionModal } from "@/components/ui/Modals/DecisionModalWrapper";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
-import { VStack } from "@gluestack-ui/themed";
-
-//! todo, new error
-/**
- {
-    "message": "Room capacity exceeded. Available slots: 1",
-    "error": "Bad Request",
-    "statusCode": 400
-}
- */
-//! todo, add the feature where you are going to request on how much is does the tenant want to occpy e.g. group booking, 
+import { VStack, HStack, Box } from "@gluestack-ui/themed";
+import { useGetOneQuery } from "@/infrastructure/room/rooms.redux.api";
 
 export default function RoomsCheckoutScreen() {
   const theme = useTheme();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { roomId, ownerId } = route.params;
+  const { roomId, ownerId, bhId } = route.params;
 
   const tenantId = useSelector(
     (state: RootState) => state.tenants.selectedUser?.id,
   );
+  const access = useSelector(
+    (state: RootState) => state.tenantAccessSlice.status,
+  );
 
   const { data: ownerData } = useGetOwnerQuery(ownerId, { skip: !ownerId });
-  const [createBooking, { isLoading }] = useCreateBookingMutation();
+  const { data: roomData, isLoading: isRoomLoading } = useGetOneQuery({
+    roomId,
+    boardingHouseId: bhId,
+  });
+  const [createBooking, { isLoading: isBookingLoading }] =
+    useCreateBookingMutation();
   const { showDecision, hideDecision } = useDecisionModal();
 
-  // State
+  // States
+  const [occupants, setOccupants] = useState(1);
   const [checkIn, setCheckIn] = useState(new Date());
   const [checkOut, setCheckOut] = useState(
     new Date(new Date().setMonth(new Date().getMonth() + 1)),
@@ -56,7 +58,9 @@ export default function RoomsCheckoutScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [terms, setTerms] = useState({ t1: false, t2: false });
 
-  const canSubmit = terms.t1 && terms.t2;
+  const maxAvailable =
+    (roomData?.maxCapacity ?? 1) - (roomData?.currentCapacity ?? 0);
+  const canSubmit = terms.t1 && terms.t2 && !isBookingLoading;
 
   const onDateChange = (_: any, selectedDate?: Date) => {
     setShowPicker(Platform.OS === "ios");
@@ -68,50 +72,8 @@ export default function RoomsCheckoutScreen() {
     }
   };
 
-  const handleConfirmRequest = () => {
-    ReactNativeHapticFeedback.trigger("impactMedium");
-
-    showDecision({
-      title: (
-        <Text variant="titleLarge" style={s.bold}>
-          Send Reservation Request?
-        </Text>
-      ),
-      body: (
-        <VStack space="xs">
-          <Text variant="bodyMedium">
-            You are about to send a booking intent for{" "}
-            <Text style={s.bold}>{checkIn.toLocaleDateString()}</Text>.
-          </Text>
-          <Text
-            variant="bodySmall"
-            style={{ marginTop: 8, color: theme.colors.outline }}
-          >
-            The owner will be notified to review your profile.
-          </Text>
-        </VStack>
-      ),
-      footer: (
-        <View style={s.modalFooter}>
-          <PaperButton onPress={hideDecision} mode="text">
-            Cancel
-          </PaperButton>
-          <PaperButton
-            mode="contained"
-            loading={isLoading}
-            onPress={submitBooking}
-            style={{ borderRadius: BorderRadius.sm }}
-          >
-            Confirm & Send
-          </PaperButton>
-        </View>
-      ),
-    });
-  };
-
   const submitBooking = async () => {
     if (!tenantId || !roomId) return;
-
     try {
       await createBooking({
         roomId,
@@ -119,82 +81,131 @@ export default function RoomsCheckoutScreen() {
           tenantId,
           startDate: checkIn.toISOString(),
           endDate: checkOut.toISOString(),
+          occupantsCount: occupants, // Dynamic occupant count
         },
       }).unwrap();
 
       hideDecision();
       ReactNativeHapticFeedback.trigger("notificationSuccess");
-
-      Alert.alert(
-        "Request Sent Successfully",
-        "The owner has been notified. You can track this in your bookings list.",
-        [{ text: "Done", onPress: () => navigation.popToTop() }],
-      );
+      Alert.alert("Success", "Reservation request sent.", [
+        { text: "OK", onPress: () => navigation.popToTop() },
+      ]);
     } catch (err: any) {
       hideDecision();
       Alert.alert(
-        "Request Failed",
-        err?.data?.message || "Could not process booking.",
+        "Error",
+        err?.data?.message || "Room capacity exceeded or server error.",
       );
     }
   };
 
-  const access = useSelector(
-    (state: RootState) => state.tenantAccessSlice.status,
-  );
-  if (access === null) {
-    // Show a spinner until access loads
-    return <ActivityIndicator />;
-  }
+  const handleConfirmRequest = () => {
+    ReactNativeHapticFeedback.trigger("impactMedium");
+    showDecision({
+      title: <Text style={s.modalTitle}>Confirm Reservation</Text>,
+      body: (
+        <VStack space="xs">
+          <Text variant="bodyMedium">
+            Requesting booking for {occupants} occupant(s).
+          </Text>
+          <Text variant="bodySmall" style={{ color: theme.colors.outline }}>
+            Check-in: {checkIn.toLocaleDateString()}
+          </Text>
+        </VStack>
+      ),
+      footer: (
+        <HStack space="md" justifyContent="flex-end" style={{ width: "100%" }}>
+          <PaperButton onPress={hideDecision}>Cancel</PaperButton>
+          <PaperButton
+            mode="contained"
+            loading={isBookingLoading}
+            onPress={submitBooking}
+          >
+            Confirm
+          </PaperButton>
+        </HStack>
+      ),
+    });
+  };
 
-  console.error("access val:", access);
-  console.error("access val canBookRoom?: ", access?.canBookRoom);
+  if (isRoomLoading || access === null)
+    return <ActivityIndicator style={{ flex: 1 }} />;
 
   return (
     <StaticScreenWrapper
-      loading={isLoading}
+      loading={isBookingLoading}
       style={{ backgroundColor: theme.colors.background }}
       lockdown={access?.canBookRoom === false}
       onLockdownAction={() => navigation.goBack()}
     >
-      <View style={s.container}>
-        <Text variant="headlineSmall" style={s.headerText}>
-          Reservation Request
-        </Text>
+      <VStack style={s.container} space="lg">
+        <Text style={s.headerText}>Reservation Request</Text>
 
-        <Text variant="labelLarge" style={s.sectionLabel}>
-          PROPERTY OWNER
-        </Text>
-        <UserInformatioCard user={ownerData} />
+        <Box>
+          <Text style={s.sectionLabel}>Property Owner</Text>
+          <UserInformatioCard user={ownerData} />
+        </Box>
 
-        <Surface elevation={1} style={s.dateCard}>
-          <View style={s.dateHeader}>
-            <View>
-              <Text
-                variant="labelSmall"
-                style={{ color: theme.colors.primary }}
+        {/* Occupants Card - Contained Style */}
+        <Surface elevation={0} style={s.containedCard}>
+          <VStack space="sm">
+            <Text style={s.cardLabel}>NUMBER OF OCCUPANTS</Text>
+            <HStack justifyContent="space-between" alignItems="center">
+              <VStack>
+                <Text style={s.mainValue}>Total Tenants</Text>
+                <Text style={s.subValue}>Available slots: {maxAvailable}</Text>
+              </VStack>
+              <HStack alignItems="center" space="md">
+                <IconButton
+                  icon="minus"
+                  mode="outlined"
+                  size={20}
+                  onPress={() => setOccupants(Math.max(1, occupants - 1))}
+                  disabled={occupants <= 1}
+                />
+                <Text style={s.counterText}>{occupants}</Text>
+                <IconButton
+                  icon="plus"
+                  mode="outlined"
+                  size={20}
+                  onPress={() =>
+                    setOccupants(Math.min(maxAvailable, occupants + 1))
+                  }
+                  disabled={occupants >= maxAvailable}
+                />
+              </HStack>
+            </HStack>
+          </VStack>
+        </Surface>
+
+        {/* Date Card - Contained Style */}
+        <Surface elevation={0} style={s.containedCard}>
+          <VStack space="md">
+            <HStack justifyContent="space-between" alignItems="center">
+              <VStack>
+                <Text style={s.cardLabel}>PROPOSED CHECK-IN</Text>
+                <Text style={s.mainValue}>
+                  {checkIn.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </Text>
+              </VStack>
+              <PaperButton
+                mode="outlined"
+                onPress={() => setShowPicker(true)}
+                compact
               >
-                PROPOSED CHECK-IN
-              </Text>
-              <Text variant="titleLarge" style={s.bold}>
-                {checkIn.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </Text>
-            </View>
-            <Button mode="outlined" onPress={() => setShowPicker(true)} compact>
-              Change
-            </Button>
-          </View>
-          <Divider style={s.divider} />
-          <View style={s.durationRow}>
-            <Text variant="bodyMedium">Reservation Period:</Text>
-            <Text variant="bodyLarge" style={s.bold}>
-              1 Month (Standard)
-            </Text>
-          </View>
+                Change
+              </PaperButton>
+            </HStack>
+            <Divider style={s.hairline} />
+            <HStack justifyContent="space-between">
+              <Text style={s.subValue}>Duration</Text>
+              <Text style={s.mainValue}>Standard (30 Days)</Text>
+            </HStack>
+          </VStack>
         </Surface>
 
         {showPicker && (
@@ -207,101 +218,113 @@ export default function RoomsCheckoutScreen() {
           />
         )}
 
-        <Surface
-          elevation={0}
-          style={[
-            s.notesCard,
-            { backgroundColor: theme.colors.surfaceVariant },
-          ]}
-        >
-          <Text variant="titleSmall" style={{ marginBottom: 4 }}>
-            Important Notes
-          </Text>
-          <Text variant="bodySmall">
-            • This room will be marked "Pending" for you.
-          </Text>
-          <Text variant="bodySmall">
-            • Final move-in depends on owner approval.
-          </Text>
+        <Surface elevation={0} style={s.infoBox}>
+          <HStack space="sm">
+            <Icon
+              source="information-outline"
+              size={18}
+              color={theme.colors.primary}
+            />
+            <VStack flex={1}>
+              <Text style={s.infoText}>
+                This room will be marked "Pending" for you upon sending.
+              </Text>
+              <Text style={s.infoText}>
+                Final move-in depends on owner approval.
+              </Text>
+            </VStack>
+          </HStack>
         </Surface>
 
-        <View style={s.termsContainer}>
-          <View style={s.checkboxRow}>
+        <VStack space="sm">
+          <HStack space="sm" alignItems="flex-start">
             <Checkbox.Android
               status={terms.t1 ? "checked" : "unchecked"}
               onPress={() => setTerms({ ...terms, t1: !terms.t1 })}
-              color={theme.colors.primary}
             />
-            <Text variant="bodySmall" style={s.termsText}>
+            <Text style={s.termsText}>
               I understand this is a reservation intent, not a guaranteed
               booking.
             </Text>
-          </View>
-          <View style={s.checkboxRow}>
+          </HStack>
+          <HStack space="sm" alignItems="flex-start">
             <Checkbox.Android
               status={terms.t2 ? "checked" : "unchecked"}
               onPress={() => setTerms({ ...terms, t2: !terms.t2 })}
-              color={theme.colors.primary}
             />
-            <Text variant="bodySmall" style={s.termsText}>
+            <Text style={s.termsText}>
               I agree to discuss final arrangements directly with the owner.
             </Text>
-          </View>
-        </View>
+          </HStack>
+        </VStack>
 
         <Button
           mode="contained"
-          disabled={!canSubmit || isLoading}
+          disabled={!canSubmit}
           onPress={handleConfirmRequest}
           style={s.submitBtn}
           contentStyle={{ height: 56 }}
-          labelStyle={{ fontSize: 16, fontWeight: "700" }}
         >
           Send Booking Request
         </Button>
-      </View>
+      </VStack>
     </StaticScreenWrapper>
   );
 }
 
 const s = StyleSheet.create({
-  container: { padding: Spacing.md, flex: 1 },
-  headerText: { fontWeight: "900", marginBottom: 24, textAlign: "center" },
+  container: { padding: Spacing.md },
+  headerText: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 22,
+    textAlign: "center",
+    marginVertical: Spacing.base,
+  },
   sectionLabel: {
-    marginTop: 16,
+    fontFamily: "Poppins-Medium",
+    fontSize: 11,
+    color: "#767474",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
     marginBottom: 8,
-    opacity: 0.6,
+  },
+  containedCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    backgroundColor: "#FFFFFF",
+  },
+  cardLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 10,
+    color: "#357FC1",
     letterSpacing: 1,
   },
-  dateCard: {
-    padding: 16,
-    borderRadius: 24,
-    backgroundColor: "white",
-    marginVertical: 12,
+  mainValue: { fontFamily: "Poppins-SemiBold", fontSize: 15, color: "#1A1A1A" },
+  subValue: { fontFamily: "Poppins-Regular", fontSize: 12, color: "#767474" },
+  counterText: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 18,
+    minWidth: 20,
+    textAlign: "center",
+  },
+  hairline: { height: 1, backgroundColor: "#EEEEEE" },
+  infoBox: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: "#D6ECFA",
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: "#357FC140",
   },
-  dateHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  infoText: { fontFamily: "Poppins-Regular", fontSize: 12, color: "#123969" },
+  termsText: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 11,
+    flex: 1,
+    color: "#1A1A1A",
+    paddingTop: 8,
   },
-  bold: { fontWeight: "bold" },
-  divider: { marginVertical: 12 },
-  durationRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  notesCard: { padding: 16, borderRadius: 16, marginTop: 8 },
-  termsContainer: { marginTop: 24, gap: 8 },
-  checkboxRow: { flexDirection: "row", alignItems: "center", paddingRight: 32 },
-  termsText: { flexShrink: 1, opacity: 0.8 },
-  submitBtn: { marginTop: 32, borderRadius: 16 },
-  modalFooter: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    width: "100%",
-  },
+  submitBtn: { borderRadius: BorderRadius.md, marginTop: Spacing.lg },
+  modalTitle: { fontFamily: "Poppins-SemiBold", fontSize: 18 },
 });

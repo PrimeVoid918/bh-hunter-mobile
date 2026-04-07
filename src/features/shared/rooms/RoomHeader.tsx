@@ -238,7 +238,7 @@ export function RoomHeaderView({ data, goToBook }: RoomHeaderInterface) {
               color={colors.primary}
             />
             <Text variant="bodyMedium" style={s.infoText}>
-              {data?.maxCapacity} Tenants
+              {data?.currentCapacity} / {data?.maxCapacity} Tenants
             </Text>
           </HStack>
           <View style={s.verticalDivider} />
