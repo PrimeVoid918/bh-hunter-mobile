@@ -11,6 +11,7 @@ import {
   useCreatePaymongoCheckoutMutation,
   useGetAllQuery,
   useGetOneQuery as useGetOneBookinQuery,
+  useGetRefundPreviewQuery,
   usePatchApproveBookingMutation,
   usePatchRejectBookingMutation,
 } from "@/infrastructure/booking/booking.redux.api";
@@ -77,6 +78,20 @@ export default function BookingStatusScreen({ route }) {
     skip: role !== "TENANT" || !booking,
   });
 
+  const shouldLoadRefundPreview =
+    role === "TENANT" && booking?.status === "COMPLETED_BOOKING";
+
+  const {
+    data: refundPreview,
+    isLoading: isRefundLoading,
+    refetch: refundPreviewRefetch,
+  } = useGetRefundPreviewQuery(
+    { id: bookId },
+    // { skip: !shouldLoadRefundPreview },
+  );
+  console.log("refundPreview: ", refundPreview);
+  console.log("bookId: ", bookId);
+
   const userData =
     role === "OWNER"
       ? tenantQuery.data
@@ -84,14 +99,20 @@ export default function BookingStatusScreen({ route }) {
         ? ownerQuery.data
         : undefined;
 
-  const [approveBooking] = usePatchApproveBookingMutation();
-  const [rejectBooking] = usePatchRejectBookingMutation();
-  const [cancelBooking] = useCancelBookingMutation();
+  const [approveBooking, { isLoading: isApproveLoading }] =
+    usePatchApproveBookingMutation();
+  const [rejectBooking, { isLoading: isRejectLoading }] =
+    usePatchRejectBookingMutation();
+  const [cancelBooking, { isLoading: isCancelLoading }] =
+    useCancelBookingMutation();
   const [createCheckout, { isLoading: isCheckOutLoading }] =
     useCreatePaymongoCheckoutMutation();
 
   const [checkoutUrl, setCheckoutUrl] = React.useState<string | null>(null);
   const [showWebView, setShowWebView] = React.useState(false);
+
+  const isActionLoading =
+    isApproveLoading || isRejectLoading || isCancelLoading;
 
   const handleApprove = async (message: string) => {
     try {
@@ -127,6 +148,7 @@ export default function BookingStatusScreen({ route }) {
   const handlePageRefresh = () => {
     setRefreshing(true);
     refetch();
+    refundPreviewRefetch();
     setRefreshing(false);
   };
 
@@ -155,6 +177,12 @@ export default function BookingStatusScreen({ route }) {
   };
 
   const statusMeta = getBookingStatusDetails(booking.status);
+  // const statusMeta = React.useMemo(() => {
+  //   if (!booking?.status) return getBookingStatusDetails("UNKNOWN");
+  //   return getBookingStatusDetails(booking.status);
+  // }, [booking?.status]);
+
+  const isProcessing = isActionLoading || isCheckOutLoading || isRefundLoading;
 
   return (
     <StaticScreenWrapper
@@ -176,10 +204,15 @@ export default function BookingStatusScreen({ route }) {
         >
           <HStack space="md" alignItems="center">
             <Box
-              style={[s.statusPill, { backgroundColor: statusMeta.color }]}
+              style={[
+                s.statusPill,
+                { backgroundColor: statusMeta.color || "#666" },
+              ]}
             />
             <VStack flex={1}>
-              <Text style={[s.statusLabel, { color: statusMeta.color }]}>
+              <Text
+                style={[s.statusLabel, { color: statusMeta.color || "#333" }]}
+              >
                 {statusMeta.label}
               </Text>
               <Text style={s.statusDesc}>{statusMeta.description}</Text>
@@ -264,7 +297,10 @@ export default function BookingStatusScreen({ route }) {
             <BookingDecisionBlock
               booking={booking}
               viewerRole={role}
+              refundPreview={refundPreview}
+              isRefundLoading={isRefundLoading}
               onApprove={handleApprove}
+              isLoading={isActionLoading}
               onReject={(reason) =>
                 rejectBooking({
                   id: bookId,

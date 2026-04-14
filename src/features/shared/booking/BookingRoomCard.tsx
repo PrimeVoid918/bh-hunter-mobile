@@ -43,7 +43,6 @@ export default function BookingRoomCard({
         style={s.ripple}
       >
         <View style={s.innerContainer}>
-          {/* Avatar with Status Overlay if needed */}
           <View>
             <Avatar.Image
               size={52}
@@ -63,7 +62,6 @@ export default function BookingRoomCard({
             </Text>
           </View>
 
-          {/* Action Area: M3 Style "Go To" button */}
           <View
             style={[
               s.actionAnchor,
@@ -87,9 +85,9 @@ export default function BookingRoomCard({
 
 const s = StyleSheet.create({
   container: {
-    borderRadius: 12, // lg
+    borderRadius: 12,
     borderWidth: 1,
-    overflow: "hidden", // Vital for TouchableRipple
+    overflow: "hidden",
     marginTop: -Spacing.sm,
     marginHorizontal: Spacing.sm,
   },

@@ -21,6 +21,10 @@ export default function BookingBHCard({
   const { boardingHouse } = data;
   const theme = useTheme();
 
+  const thumbnailSource = boardingHouse?.thumbnail?.[0]?.url
+    ? { uri: boardingHouse.thumbnail[0].url }
+    : null;
+
   const handlePress = () => {
     Vibration.vibrate(10);
     onPress?.();
@@ -32,16 +36,18 @@ export default function BookingBHCard({
       elevation={0}
     >
       <PressableImageFullscreen
-        image={boardingHouse?.thumbnail?.[0] ?? null}
+        image={thumbnailSource}
         containerStyle={s.imageContainer}
         imageStyleConfig={{ resizeMode: "cover" }}
       />
-
       <TouchableRipple onPress={handlePress} rippleColor="rgba(0, 0, 0, .05)">
         <View style={s.textContainer}>
           <View style={s.content}>
-            <Text style={[s.name, { color: theme.colors.onSurface }]}>
-              {boardingHouse?.name}
+            <Text
+              numberOfLines={1}
+              style={[s.name, { color: theme.colors.onSurface }]}
+            >
+              {boardingHouse?.name || "Unknown Boarding House"}
             </Text>
             <View style={s.locationWrapper}>
               <Icon
@@ -49,13 +55,14 @@ export default function BookingBHCard({
                 size={14}
                 color={theme.colors.primary}
               />
-              <Text style={[s.location, { color: theme.colors.outline }]}>
+              <Text
+                numberOfLines={1}
+                style={[s.location, { color: theme.colors.outline }]}
+              >
                 {boardingHouse?.address || "Ormoc City"}
               </Text>
             </View>
           </View>
-
-          {/* Nav Indicator */}
           <View
             style={[
               s.actionIndicator,
@@ -63,8 +70,8 @@ export default function BookingBHCard({
             ]}
           >
             <Icon
-              source="arrow-top-right"
-              size={18}
+              source="chevron-right"
+              size={20}
               color={theme.colors.onPrimaryContainer}
             />
           </View>
@@ -76,7 +83,7 @@ export default function BookingBHCard({
 
 const s = StyleSheet.create({
   container: {
-    borderRadius: 16, // xl
+    borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
     backgroundColor: "#FFFFFF",

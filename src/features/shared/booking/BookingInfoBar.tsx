@@ -7,6 +7,8 @@ interface BookingInfoBarInterface {
   data: GetBooking;
 }
 
+//** can be used as a card on ui */
+
 export default function BookingInfoBar({ data }: BookingInfoBarInterface) {
   const theme = useTheme();
 
@@ -18,7 +20,6 @@ export default function BookingInfoBar({ data }: BookingInfoBarInterface) {
 
   return (
     <Surface elevation={1} style={s.container}>
-      {/* Top Row: Icon and Reference */}
       <View style={s.row}>
         <View style={s.headerLeft}>
           <Avatar.Icon
@@ -53,7 +54,6 @@ export default function BookingInfoBar({ data }: BookingInfoBarInterface) {
 
       <Divider style={s.divider} />
 
-      {/* Bottom Row: Date and Room info */}
       <View style={s.detailsRow}>
         <View style={s.detailItem}>
           <Avatar.Icon

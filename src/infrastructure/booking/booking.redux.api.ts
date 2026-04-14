@@ -1,10 +1,12 @@
 import api from "@/application/config/api";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import {
+  BookingStatusResponse,
   CancelBookingInput,
   PatchApproveBookingInput,
   PatchRejectBookingInput,
   PatchVerifyPaymentInput,
+  RefundPreview,
 } from "./booking.schema";
 import {
   CreateBookingInput,
@@ -14,9 +16,6 @@ import {
   QueryBookingSchema,
 } from "./booking.schema";
 import { ApiResponseType } from "../common/types/api.types";
-import { CreatePaymentProofInput } from "./booking.schema";
-import { uploadPaymentProof } from "./booking.redux.api.helper";
-import { AppImageFile, BackendImage } from "../image/image.schema";
 
 const bookingApiRoute = `api/bookings`;
 export const bookingApi = createApi({
@@ -73,12 +72,24 @@ export const bookingApi = createApi({
         response.results ?? null,
       providesTags: ["Booking"],
     }),
-    // getPaymentProof: builder.query<AppImageFile | null, number>({
-    //   query: (imageId) => `${bookingApiRoute}/${imageId}/payment-proof`,
-    //   transformResponse: (response: ApiResponseType<AppImageFile>) =>
-    //     response.results ?? null,
-    //   providesTags: ["Booking"],
-    // }),
+
+    getBookingStatus: builder.query<
+      BookingStatusResponse | null,
+      number | undefined
+    >({
+      query: (id) => `${bookingApiRoute}/${id}/status`,
+      transformResponse: (response: { results: BookingStatusResponse }) =>
+        response.results ?? null,
+      providesTags: ["Booking"],
+    }),
+
+    getRefundPreview: builder.query<RefundPreview | null, { id: number }>({
+      query: ({ id }) => `${bookingApiRoute}/${id}/refund-preview`,
+      keepUnusedDataFor: 0,
+      transformResponse: (response: { results: RefundPreview }) =>
+        response.results ?? null,
+      providesTags: ["Booking"],
+    }),
 
     createBooking: builder.mutation<
       GetBooking,
@@ -234,12 +245,12 @@ export const {
   useGetAllQuery,
   useGetOneQuery,
   useGetBookingPaymentQuery,
-  // useGetPaymentProofQuery,
+  useGetBookingStatusQuery,
+  useGetRefundPreviewQuery,
   useCreateBookingMutation,
   usePatchTenantBookingMutation,
   usePatchApproveBookingMutation,
   usePatchRejectBookingMutation,
-  // useCreatePaymentProofMutation,
   usePatchVerifyPaymentMutation,
   useCancelBookingMutation,
   useCreatePaymongoCheckoutMutation,
