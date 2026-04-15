@@ -1,205 +1,135 @@
-import { StyleSheet, ImageStyle, Alert } from "react-native";
-import { View, Text, VStack } from "@gluestack-ui/themed";
-
-import React, { useState, useEffect } from "react";
-// UI Layout
-import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-
-// UI comopnent
-// import TextInput from "@/components/ui/TextInput";
-// import Button from "@/components/ui/Button";
-
-// constants
+import React, { useState } from "react";
+import { StyleSheet, View, Alert } from "react-native";
 import {
-  Colors,
-  Fontsize,
-  BorderRadius,
-  Spacing,
-  GlobalStyle,
-  ShadowLight,
-  BorderWidth,
-} from "@/constants";
+  Surface,
+  Text,
+  TextInput,
+  Button,
+  Divider,
+  useTheme,
+} from "react-native-paper";
+import { VStack } from "@gluestack-ui/themed";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import * as SecureStore from "expo-secure-store";
 
-// Routing
+import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import HeaderLogo from "./HeaderLogo";
+import Map from "@/features/shared/map/Map";
+
+import { GlobalStyle } from "@/constants";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../../application/store/stores";
+import { login } from "@/infrastructure/auth/auth.redux.slice";
+import { useLoginMutation } from "@/infrastructure/auth/auth.redux.api";
+import { fetchUserDataThunk } from "@/infrastructure/auth/auth.redux.thunk";
+
 import { useNavigation } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../types/navigation";
 import { AuthStackParamList } from "../navigation/auth.stack.types";
 
-// redux
-import { useDispatch } from "react-redux";
-import { login } from "@/infrastructure/auth/auth.redux.slice";
-import { useLoginMutation } from "@/infrastructure/auth/auth.redux.api";
-import { fetchUserDataThunk } from "@/infrastructure/auth/auth.redux.thunk";
-import { AppDispatch } from "../../../application/store/stores";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import {
-  expoStorageCleaner,
-  logExpoSystemDir,
-} from "@/infrastructure/utils/expo-utils/expo-utils.service";
-import { Surface, TextInput, Button, Divider } from "react-native-paper";
-import Map from "@/features/shared/map/Map";
-import HeaderLogo from "./HeaderLogo";
-
-import * as SecureStore from "expo-secure-store";
-
 export default function LoginMainScreen() {
+  const theme = useTheme();
   const rootNavigation =
     useNavigation<BottomTabNavigationProp<RootStackParamList>>();
-  const authNavitaion =
+  const authNavigation =
     useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
 
-  const [username, setUsername] = useState({ value: "", error: false });
-  const [password, setPassword] = useState({ value: "", error: false });
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  // redux
-  const [
-    triggerLogin,
-    { isLoading: isLoginLoading, error: isLoginError, error: errorObj },
-  ] = useLoginMutation();
+  const [triggerLogin, { isLoading }] = useLoginMutation();
   const dispatch = useDispatch<AppDispatch>();
 
-  // useEffect(() => {
-  //   setTimeout(() => {
-  //     onPressLogin();
-  //   }, 700);
-  // }, []);
-
   const onPressLogin = async () => {
-    const packageLoad = {
-      username: username.value,
-      password: password.value,
-    };
-
-    // const packageLoad = {
-    //   username: "owner1",
-    //   password: "owner1",
-    // };
-    await logExpoSystemDir(["images", "documents"]);
-    console.log("packageLoad: ", packageLoad);
+    ReactNativeHapticFeedback.trigger("impactMedium");
     try {
-      const { access_token, user } = await triggerLogin(packageLoad).unwrap();
+      const { access_token, user } = await triggerLogin({
+        username,
+        password,
+      }).unwrap();
 
-      await SecureStore.setItemAsync("token", access_token); //save token on storage for persistence
+      await SecureStore.setItemAsync("token", access_token);
       await SecureStore.setItemAsync("role", user.role);
-      await SecureStore.setItemAsync(
-        "userId",
-        user.id ? user.id.toString() : "",
-      );
+      await SecureStore.setItemAsync("userId", user.id.toString());
 
-      dispatch(
-        login({
-          token: access_token,
-          userData: user,
-        }),
-      );
-      await dispatch(
-        fetchUserDataThunk({ id: user.id as number, role: user.role }),
-      );
+      dispatch(login({ token: access_token, userData: user }));
+      await dispatch(fetchUserDataThunk({ id: user.id, role: user.role }));
 
-      if (user.role == "ADMIN") return rootNavigation.navigate("Admin");
-      if (user.role == "OWNER") return rootNavigation.navigate("Owner");
-      if (user.role == "TENANT") return rootNavigation.navigate("Tenant");
-    } catch (error: any) {
-      console.log("Login Message: ", isLoginError);
-      console.log("Login error in Catch: ", error);
-      // Alert.alert("Login Failed: " + (error?.error.message || "Unknown error"));
-      Alert.alert("Login Failed! Please Try Again.");
+      if (user.role === "ADMIN") rootNavigation.navigate("Admin");
+      else if (user.role === "OWNER") rootNavigation.navigate("Owner");
+      else rootNavigation.navigate("Tenant");
+    } catch (error) {
+      Alert.alert("Login Failed", "Please check your credentials.");
     }
   };
 
-  const onPressSignup = () => {
-    authNavitaion.navigate("SignUp");
-  };
   return (
     <StaticScreenWrapper
       style={[GlobalStyle.GlobalsContainer]}
       contentContainerStyle={[GlobalStyle.GlobalsContentContainer]}
       wrapInScrollView={false}
-      // loading={isLoginLoading}
-      // error={[isLoginError ? "Failed to fetch user" : null]}
       variant="layout"
     >
-      <VStack
-        style={{
-          width: "100%",
-          height: "100%",
-          justifyContent: "center",
-          alignContent: "center",
-          position: "relative",
-        }}
-      >
-        <VStack
-          style={{
-            alignSelf: "center",
-            width: "80%",
-            zIndex: 2,
-          }}
-        >
-          <HeaderLogo />
-          {/* <Text
-            style={{
-              fontSize: 60,
-              fontWeight: "900",
-              fontFamily: "Poppins-Black",
-              marginBottom: 20,
-            }}
-          >
-            Boarding House Hunter
-          </Text> */}
-          <Surface
-            elevation={3}
-            style={{
-              borderRadius: BorderRadius.md,
-              padding: Spacing.md,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "column",
-                borderRadius: Spacing.base,
-                gap: Spacing.base,
-              }}
-            >
-              <View>
+      <VStack style={s.mainContainer}>
+        <VStack style={s.floatingForm}>
+          <View style={s.logoContainer}>
+            <HeaderLogo />
+          </View>
+
+          <Surface elevation={4} style={s.glassCard}>
+            <View style={s.formContent}>
+              <Text variant="headlineSmall" style={s.welcomeText}>
+                Welcome Back
+              </Text>
+
+              <View style={{ gap: 12 }}>
                 <TextInput
                   label="Username"
                   mode="outlined"
-                  value={username.value}
-                  onChangeText={(text: string) =>
-                    setUsername({ value: text, error: false })
-                  }
+                  value={username}
+                  onChangeText={setUsername}
+                  outlineStyle={s.inputOutline}
+                  left={<TextInput.Icon icon="account-outline" />}
                 />
                 <TextInput
                   label="Password"
                   mode="outlined"
-                  secureTextEntry
-                  value={password.value}
-                  onChangeText={(text: string) =>
-                    setPassword({ value: text, error: false })
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                  outlineStyle={s.inputOutline}
+                  left={<TextInput.Icon icon="lock-outline" />}
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? "eye-off" : "eye"}
+                      onPress={() => setShowPassword(!showPassword)}
+                    />
                   }
                 />
               </View>
-              <View style={{ gap: Spacing.sm }}>
+
+              <View style={s.actionGroup}>
                 <Button
                   onPress={onPressLogin}
-                  mode="elevated"
-                  style={{
-                    borderRadius: BorderRadius.md,
-                  }}
+                  mode="contained"
+                  loading={isLoading}
+                  style={s.button}
+                  contentStyle={s.buttonInner}
                 >
-                  <Text>Login</Text>
+                  Login
                 </Button>
-                <Divider />
+
+                <Divider style={s.divider} />
+
                 <Button
-                  onPress={onPressSignup}
-                  mode="elevated"
-                  style={{
-                    borderRadius: BorderRadius.md,
-                  }}
+                  onPress={() => authNavigation.navigate("SignUp")}
+                  mode="text"
+                  labelStyle={s.signupLabel}
                 >
-                  <Text>Dont have an Account?</Text>
+                  Don't have an Account?
                 </Button>
               </View>
             </View>
@@ -209,19 +139,74 @@ export default function LoginMainScreen() {
         <Map
           data={[]}
           handleMarkerPress={() => {}}
-          mapStyle={{
-            width: "100%",
-            height: "100%",
-            position: "absolute",
-            zIndex: 1,
-          }}
-          backdropStyle={{
-            backgroundColor: "rgba(255,255,255,0.5)", // faded white
-          }}
-        ></Map>
+          mapStyle={s.mapStyle}
+          backdropStyle={s.mapBackdrop}
+        />
       </VStack>
     </StaticScreenWrapper>
   );
 }
 
-const s = StyleSheet.create({});
+const s = StyleSheet.create({
+  mainContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignContent: "center",
+    position: "relative",
+  },
+  floatingForm: {
+    alignSelf: "center",
+    width: "85%",
+    zIndex: 2,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  glassCard: {
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+  },
+  formContent: {
+    flexDirection: "column",
+    gap: 20,
+  },
+  welcomeText: {
+    fontFamily: "Poppins-Bold",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  inputOutline: {
+    borderRadius: 12,
+  },
+  actionGroup: {
+    gap: 12,
+    marginTop: 8,
+  },
+  button: {
+    borderRadius: 12,
+  },
+  buttonInner: {
+    height: 48,
+  },
+  divider: {
+    marginVertical: 4,
+  },
+  signupLabel: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 14,
+  },
+  mapStyle: {
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    zIndex: 1,
+  },
+  mapBackdrop: {
+    backgroundColor: "rgba(255,255,255,0.4)",
+  },
+});

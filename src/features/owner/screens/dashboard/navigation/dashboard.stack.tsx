@@ -11,7 +11,7 @@ import RoomsListMainScreen from "../rooms/rooms.list.main.screen";
 import { OwnerDashboardStackParamList } from "./dashboard.types";
 import RoomsDetailsScreen from "../rooms/rooms.details.screen";
 import RoomsAddScreen from "@/features/shared/rooms/rooms.add";
-import MenuUserEditScreen from "@/features/shared/menu/menu.user-edit.main.screen";
+import MenuUserEditScreen from "@/features/shared/menu/screens/user/menu.user-edit.main.screen";
 
 const Stack = createNativeStackNavigator<OwnerDashboardStackParamList>();
 

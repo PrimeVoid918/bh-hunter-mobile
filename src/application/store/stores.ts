@@ -21,6 +21,7 @@ import { metricsApi } from "@/infrastructure/metrics/metric.redux.api";
 import profileCompletenessSlice from "../../infrastructure/user/user.requirements.slice";
 import { mapsApi } from "@/infrastructure/map/map.redux.api";
 import tenantAccessSlice from "../../infrastructure/tenants/tenant.access.redux.slice";
+import { policiesApi } from "../../infrastructure/policies/policies.redux.api";
 
 export const store = configureStore({
   reducer: {
@@ -44,6 +45,7 @@ export const store = configureStore({
     genericSearch: genericSearchBarSlice,
     profileCompleteness: profileCompletenessSlice,
     tenantAccessSlice: tenantAccessSlice,
+    [policiesApi.reducerPath]: policiesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     // getDefaultMiddleware().concat(boardingHouseApi.middleware),
@@ -59,7 +61,8 @@ export const store = configureStore({
       .concat(verificationDocumentsApi.middleware)
       .concat(reviewsApi.middleware)
       .concat(metricsApi.middleware)
-      .concat(mapsApi.middleware),
+      .concat(mapsApi.middleware)
+      .concat(policiesApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

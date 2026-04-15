@@ -1,348 +1,218 @@
-import { StyleSheet, Alert, FlatList } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { StyleSheet, View, Alert, ScrollView } from "react-native";
+import { Text, TextInput, Button, Surface, useTheme } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
-import {
-  Button as ButtonGL,
-  Alert as AlertGL,
-  HStack,
-  View,
-  Input,
-  Box,
-  FormControl,
-  Heading,
-  ScrollView,
-  Text,
-  VStack,
-  InputField,
-  Checkbox,
-  CheckboxLabel,
-  CheckboxIndicator,
-  CheckboxIcon,
-} from "@gluestack-ui/themed";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import Markdown from "react-native-awesome-markdown";
-import TermsAndConditions from "../../../../data/TermsAndConditions";
-
-// UI layout
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
+import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
+import TermsAndServicesComponent from "@/components/ui/Policies/TermsAndServicesComponent";
 
-// UI Component
-import Button from "@/components/ui/Button";
-
-// Global Styles
-import {
-  BorderRadius,
-  Colors,
-  Fontsize,
-  GlobalStyle,
-  Spacing,
-} from "@/constants";
-
-// routing
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "../../navigation/auth.stack.types";
+import { useCreateMutation as useCreateOwner } from "@/infrastructure/owner/owner.redux.api";
 import { RegisterOwner } from "@/infrastructure/owner/owner.types";
-import { useCreateMutation as useCreateTenant } from "@/infrastructure/owner/owner.redux.api";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
 
 export default function SignUpOwnerScreen() {
-  const route = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const theme = useTheme();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
 
   const [form, setForm] = useState<RegisterOwner>({
     username: "",
     password: "",
     email: "",
   });
-  const [confirmPassword, setConfirmPassword] = useState<{
-    value: string;
-    isTrue: boolean;
-  }>({ value: "", isTrue: false });
-  const [createOwner, { isLoading: isLoading, error: isError }] =
-    useCreateTenant();
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleChange = (field: string, value: string) => {
+  const [createOwner, { isLoading }] = useCreateOwner();
+
+  const handleInputChange = (field: keyof RegisterOwner, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  async function handleSubmit() {
-    for (const [key, value] of Object.entries(form)) {
-      if (!value.trim()) {
-        Alert.alert("Missing Field", `Please fill in the ${key}`);
-        return;
-      }
+  const validate = () => {
+    if (!form.username || !form.email || !form.password) {
+      Alert.alert("Missing Fields", "Please fill in all information.");
+      return false;
     }
     if (!/^\S+@\S+\.\S+$/.test(form.email)) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
-      return;
+      return false;
     }
     if (form.password.length < 6) {
-      Alert.alert("Invalid Password", "Password must be at least 6 characters");
-      return;
+      Alert.alert("Weak Password", "Password must be at least 6 characters.");
+      return false;
     }
-    if (form.password !== confirmPassword.value) {
-      Alert.alert("Alert", "Password and Confirm Password must match");
-      return;
+    if (form.password !== confirmPassword) {
+      Alert.alert("Mismatch", "Passwords do not match.");
+      return false;
     }
-
-    if (hasAcceptedTerms !== true) {
-      return Alert.alert(
-        "You must accept the Terms and Conditions to create an account!"
+    if (!hasAcceptedTerms) {
+      Alert.alert(
+        "Terms Required",
+        "You must accept the legitimacy consent to proceed.",
       );
+      return false;
     }
+    return true;
+  };
 
+  async function handleSubmit() {
+    if (!validate()) return;
+
+    ReactNativeHapticFeedback.trigger("impactMedium");
     try {
-      const result = await createOwner(form).unwrap();
-      console.log("result", result);
-
-      Alert.alert("You are registered!");
-      setForm({
-        username: "",
-        password: "",
-        email: "",
-      });
-      setConfirmPassword({ value: "", isTrue: false });
-      route.navigate("Login");
+      await createOwner(form).unwrap();
+      ReactNativeHapticFeedback.trigger("notificationSuccess");
+      Alert.alert("Success", "Your owner account has been created!");
+      navigation.navigate("Login");
     } catch (error: any) {
-      console.log(error);
-      Alert.alert("Error", error.data.message);
+      ReactNativeHapticFeedback.trigger("notificationError");
+      Alert.alert("Error", error.data?.message || "Registration failed");
     }
   }
 
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
-  const [termsModal, setTermsModal] = useState(false);
-
   return (
-    <StaticScreenWrapper
-      style={[GlobalStyle.GlobalsContainer, s.StaticScreenWrapper]}
-      contentContainerStyle={[
-        GlobalStyle.GlobalsContentContainer,
-        { justifyContent: "center", alignContent: "stretch" },
-      ]}
-    >
-      {isLoading && <FullScreenLoaderAnimated></FullScreenLoaderAnimated>}
-      <View style={[s.container, { marginBottom: 100, marginTop: 100 }]}>
-        <View>
-          <Text
-            style={{
-              color: Colors.TextInverse[1],
-              fontSize: Fontsize.h1,
-            }}
-          >
-            Owner Application Form
+    <StaticScreenWrapper style={{ backgroundColor: theme.colors.background }}>
+      {isLoading && <FullScreenLoaderAnimated />}
+
+      <ScrollView
+        contentContainerStyle={s.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={s.header}>
+          <Text variant="headlineMedium" style={s.title}>
+            Owner Application
+          </Text>
+          <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
+            Create your manager account for Ormoc City Boarding Houses
           </Text>
         </View>
-        <View>
-          {["username", "email"].map((field) => (
-            <View key={field}>
-              <Text
-                style={{
-                  fontSize: Fontsize.base,
-                  color: Colors.TextInverse[1],
-                  padding: Spacing.sm,
-                }}
-              >
-                {field.charAt(0).toUpperCase() + field.slice(1)}:
-              </Text>
-              <Input>
-                <InputField
-                  value={form[field as keyof typeof form]}
-                  onChangeText={(text) => handleChange(field, text)}
-                  variant="secondary"
-                  textInputStyle={{
-                    fontSize: Fontsize.base,
-                    padding: Spacing.xs,
-                    margin: 0,
-                  }}
-                  style={[s.FormTextInput]}
+
+        <Surface style={s.formCard} elevation={0}>
+          <VStack style={{ gap: 16 }}>
+            <TextInput
+              label="Username"
+              mode="outlined"
+              value={form.username}
+              onChangeText={(val) => handleInputChange("username", val)}
+              left={<TextInput.Icon icon="account-outline" />}
+              outlineStyle={s.inputOutline}
+            />
+
+            <TextInput
+              label="Email Address"
+              mode="outlined"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={form.email}
+              onChangeText={(val) => handleInputChange("email", val)}
+              left={<TextInput.Icon icon="email-outline" />}
+              outlineStyle={s.inputOutline}
+            />
+
+            <TextInput
+              label="Password"
+              mode="outlined"
+              secureTextEntry={!showPassword}
+              value={form.password}
+              onChangeText={(val) => handleInputChange("password", val)}
+              left={<TextInput.Icon icon="lock-outline" />}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? "eye-off" : "eye"}
+                  onPress={() => setShowPassword(!showPassword)}
                 />
-              </Input>
-            </View>
-          ))}
-          <View style={{ width: "100%", padding: 10 }}></View>
-          <FormControl>
-            <FormControl.Label>
-              <Text style={[s.FormLabel]}>Password</Text>
-            </FormControl.Label>
-            <Input>
-              <InputField
-                value={form.password}
-                onChangeText={(text: string) =>
-                  setForm({ ...form, password: text })
-                }
-                style={[s.FormTextInput]}
-                secureTextEntry={true}
-              />
-            </Input>
-          </FormControl>
-          <FormControl>
-            <FormControl.Label>
-              <Text style={[s.FormLabel]}>Confirm Password</Text>
-            </FormControl.Label>
-            <Input>
-              <InputField
-                value={confirmPassword.value}
-                onChangeText={(text: string) =>
-                  setConfirmPassword({ ...confirmPassword, value: text })
-                }
-                style={[s.FormTextInput]}
-                secureTextEntry={true}
-              />
-            </Input>
-          </FormControl>
-        </View>
-        <VStack>
-          <Checkbox
-            style={{
-              justifyContent: "center",
-              alignItems: "center",
-              paddingTop: 20,
-              gap: 10,
-            }}
-            isChecked={hasAcceptedTerms}
-            onPress={() => setTermsModal(true)}
-            value="accepted"
-          >
-            <CheckboxIndicator style={{ aspectRatio: 1, height: 100 }}>
-              <CheckboxIcon
-                as={() => (
-                  <Ionicons
-                    name={hasAcceptedTerms ? "checkmark" : "checkmark-outline"}
-                    color={"black"}
-                  />
-                )}
-              />
-            </CheckboxIndicator>
-            <CheckboxLabel style={{ color: Colors.TextInverse[1] }}>
-              I agree to the Terms and Conditions
-            </CheckboxLabel>
-          </Checkbox>
-          <HStack style={{ marginTop: 20 }}>
-            <Button
-              title="Cancel"
-              onPressAction={() => {
-                route.navigate("Login");
-              }}
-              containerStyle={{
-                backgroundColor: Colors.Alert,
-                padding: 10,
-              }}
-              textStyle={{
-                color: Colors.PrimaryLight[9],
-              }}
+              }
+              outlineStyle={s.inputOutline}
             />
-            <Button
-              title="Create"
-              onPressAction={handleSubmit}
-              containerStyle={{
-                backgroundColor: "white",
-                padding: 10,
-                // borderColor: Colors.Primary[7],
-              }}
-              textStyle={{
-                color: Colors.Primary[9],
-              }}
+
+            <TextInput
+              label="Confirm Password"
+              mode="outlined"
+              secureTextEntry={!showPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              left={<TextInput.Icon icon="lock-check-outline" />}
+              outlineStyle={s.inputOutline}
+              error={
+                confirmPassword !== "" && confirmPassword !== form.password
+              }
             />
-          </HStack>
-        </VStack>
-      </View>
-      {termsModal && (
-        <AlertGL
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-          }}
-        >
-          <VStack
-            style={{
-              gap: Spacing.lg,
-              alignItems: "stretch",
-              width: "90%",
-              padding: Spacing.lg,
-              borderRadius: BorderRadius.md,
-            }}
-          >
-            <Heading>
-              <Text style={[s.Text, { fontSize: Fontsize.h1 }]}>
-                Terms and Services
-              </Text>
-            </Heading>
-            <ScrollView>
-              <Markdown styles={customStyles} text={TermsAndConditions} />
-            </ScrollView>
-            <VStack>
-              <Button
-                variant="primary"
-                onPressAction={() => {
-                  setTermsModal(false);
-                  setHasAcceptedTerms(false);
-                }}
-              >
-                <Text style={[s.TextButton]}>
-                  I Do Not Accept the Terms and Services
-                </Text>
-              </Button>
-              <Button
-                variant="primary"
-                onPressAction={() => {
-                  setTermsModal(false);
-                  setHasAcceptedTerms(true);
-                }}
-              >
-                <Text style={[s.TextButton]}>
-                  I Accept the Terms and Services
-                </Text>
-              </Button>
-            </VStack>
           </VStack>
-        </AlertGL>
-      )}
+        </Surface>
+
+        <TermsAndServicesComponent
+          value={hasAcceptedTerms}
+          onChange={setHasAcceptedTerms}
+        />
+
+        <View style={s.actions}>
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            style={s.mainButton}
+            contentStyle={{ height: 52 }}
+            labelStyle={s.buttonLabel}
+          >
+            Create Account
+          </Button>
+
+          <Button
+            mode="text"
+            onPress={() => navigation.navigate("Login")}
+            style={{ marginTop: 8 }}
+          >
+            Already have an account? Log In
+          </Button>
+        </View>
+      </ScrollView>
     </StaticScreenWrapper>
   );
 }
 
+const VStack = ({ children, style }: any) => (
+  <View style={style}>{children}</View>
+);
+
 const s = StyleSheet.create({
-  StaticScreenWrapper: {
+  contentContainer: {
+    padding: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
-  container: {
-    width: "90%",
-    alignSelf: "center",
+  header: {
+    marginBottom: 24,
   },
-  Text: {
-    color: "white",
+  title: {
+    fontFamily: "Poppins-Bold",
+    color: "#1A1A1A",
   },
-  TextButton: {
-    color: "black",
+  formCard: {
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    backgroundColor: "#FFFFFF",
+    marginBottom: 16,
   },
-  FormLabel: {
-    fontSize: Fontsize.base,
-    padding: Spacing.sm,
+  inputOutline: {
+    borderRadius: 10,
   },
-  FormTextInput: {
-    fontSize: Fontsize.base,
-    padding: Spacing.xs,
-    margin: 0,
+  actions: {
+    marginTop: 20,
+    gap: 10,
+  },
+  mainButton: {
+    borderRadius: 12,
+    elevation: 0,
+  },
+  buttonLabel: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 16,
   },
 });
-
-const customStyles = {
-  paragraph: { color: "white" },
-  h1: { color: "white" },
-  h2: { color: "white" },
-  h3: { color: "white" },
-  h4: { color: "white" },
-  h5: { color: "white" },
-  h6: { color: "white" },
-  link: { color: "white", textDecorationLine: "underline" },
-  blockquote: { color: "white", fontStyle: "italic" },
-  list: { color: "white" },
-  strong: { color: "white" },
-  em: { color: "white" },
-  code: { color: "white", backgroundColor: "#333" },
-};

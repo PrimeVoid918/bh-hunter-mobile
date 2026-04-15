@@ -36,7 +36,6 @@ export default function MenuAccountSecurityScreen() {
   const handleSave = async () => {
     handleActionFeedback();
 
-    // Strict Phone Validation (Mimicking PH number without 3rd party)
     if (
       form.phone_number.length !== 11 ||
       !form.phone_number.startsWith("09")
@@ -55,7 +54,6 @@ export default function MenuAccountSecurityScreen() {
 
     setLoading(true);
     try {
-      // Patching logic
       await patchUser(id!, {
         username: form.username,
         phone_number: form.phone_number,
@@ -79,7 +77,6 @@ export default function MenuAccountSecurityScreen() {
   return (
     <StaticScreenWrapper style={GlobalStyle.GlobalsContainer}>
       <VStack space="lg" style={s.container}>
-        {/* INFO CALLOUT */}
         <Surface
           elevation={0}
           style={[
@@ -112,7 +109,6 @@ export default function MenuAccountSecurityScreen() {
           </HStack>
         </Surface>
 
-        {/* CREDENTIALS GROUP */}
         <Surface elevation={0} style={s.containedGroup}>
           <VStack space="md" style={s.padding}>
             {/* USERNAME */}
@@ -127,7 +123,6 @@ export default function MenuAccountSecurityScreen() {
               autoCapitalize="none"
             />
 
-            {/* STRICT PHONE NUMBER */}
             <Box>
               <TextInput
                 mode="outlined"
@@ -155,7 +150,6 @@ export default function MenuAccountSecurityScreen() {
           </VStack>
         </Surface>
 
-        {/* PASSWORD GROUP */}
         <Surface elevation={0} style={s.containedGroup}>
           <VStack space="md" style={s.padding}>
             <Text style={s.subHeading}>Change Password</Text>
@@ -189,7 +183,6 @@ export default function MenuAccountSecurityScreen() {
           </VStack>
         </Surface>
 
-        {/* ACTION BUTTON */}
         <Button
           mode="contained"
           onPress={handleSave}

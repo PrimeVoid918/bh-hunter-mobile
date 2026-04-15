@@ -1,9 +1,8 @@
 import { View, Text, StyleSheet, Alert } from "react-native";
 import React from "react";
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import { VStack, Button } from "@gluestack-ui/themed";
-import { Colors, BorderRadius, GlobalStyle, Spacing } from "@/constants";
-import LegitmacyContsentComponent from "../../../components/ui/TermsAndConditionsModals/LegitmacyContsentComponent";
+import { BorderRadius } from "@/constants";
+import LegitmacyContsentComponent from "../../../components/ui/Policies/LegitmacyContsentComponent";
 import { useGetVerificationStatusQuery } from "@/infrastructure/valid-docs/verification-document/verification-document.redux.api";
 import {
   useGetOneQuery as useGetOneQueryOwner,
@@ -14,33 +13,16 @@ import {
   useLazyGetAccessStatusQuery,
   usePatchMutation as usePatchMutationTenant,
 } from "@/infrastructure/tenants/tenant.redux.api";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/application/store/stores";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import {
-  VerificationDocumentMetaData,
-  VerificationStatus,
-  VerificationTypeMap,
-} from "@/infrastructure/valid-docs/verification-document/verification-document.schema";
+import { useDispatch } from "react-redux";
+import { VerificationTypeMap } from "@/infrastructure/valid-docs/verification-document/verification-document.schema";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { OwnerDashboardStackParamList } from "../../owner/screens/dashboard/navigation/dashboard.types";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import FullScreenLoaderAnimated from "@/components/ui/FullScreenLoaderAnimated";
-import FullScreenErrorModal from "@/components/ui/FullScreenErrorModal";
-import { TenantDashboardStackParamList } from "@/features/tenant/screens/dashboard/navigation/dashboard.stack";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
-import { VerificationType } from "../../../infrastructure/valid-docs/verification-document/verification-document.schema";
-import { getVerificationRole, userRole } from "./verificationConfig";
-import {
-  statusStylesConfig,
-  verificationConfig,
-  VerificationListItem,
-  verificationRole,
-} from "./verificationConfig";
+import { getVerificationRole } from "./verificationConfig";
+import { verificationConfig } from "./verificationConfig";
 import { Lists } from "@/components/layout/Lists/Lists";
-import VerificationCardComponent from "./VerificationCardComponent";
 import VerificationStatusHeader from "./VerificationStatusHeaderComponent";
-import { MenuStackParamList } from "../menu/navigation/menu.stack.types";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import {
   ActivityIndicator,
@@ -55,10 +37,6 @@ import { setAccessStatus } from "@/infrastructure/tenants/tenant.access.redux.sl
 
 type VerificationMainNavigationProp =
   NativeStackNavigationProp<OwnerDashboardStackParamList>;
-// type RootStackParamList = {
-//   DashboardStack: undefined;
-//   MenuStack: undefined;
-// };
 
 const hapticOptions = {
   enableVibrateFallback: true,
@@ -75,7 +53,6 @@ export default function VerificationMainScreen() {
   const triggerHaptic = () =>
     ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
 
-  // Queries (Preserved logic)
   const {
     data: userData,
     isLoading: isUserLoading,
@@ -159,7 +136,6 @@ export default function VerificationMainScreen() {
         }).unwrap();
       }
 
-      // Wait a tick before updating the store/navigation
       await userRefetch();
     } catch (err) {
       Alert.alert("Error", "Failed to save consent");
@@ -199,7 +175,6 @@ export default function VerificationMainScreen() {
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
         <VerificationStatusHeader
           verified={verificationStatusData?.verified}
           verificationList={verificationList}
@@ -210,7 +185,6 @@ export default function VerificationMainScreen() {
           REQUIRED DOCUMENTS
         </Text>
 
-        {/* Document List Container */}
         <Surface
           elevation={0}
           style={[
@@ -294,7 +268,6 @@ export default function VerificationMainScreen() {
           />
         </Surface>
 
-        {/* Consent Section */}
         <Surface
           elevation={0}
           style={[s.consentCard, { borderColor: theme.colors.outlineVariant }]}
@@ -313,6 +286,7 @@ export default function VerificationMainScreen() {
             </Text>
           </View>
           <LegitmacyContsentComponent
+            role={isTenant ? "tenant" : "owner"}
             value={userData?.hasAcceptedLegitimacyConsent ?? false}
             onChange={(val: boolean) => {
               triggerHaptic();
@@ -340,7 +314,7 @@ const s = StyleSheet.create({
     fontFamily: "Poppins-Medium",
   },
   listContainer: {
-    borderRadius: BorderRadius.md, // xl radius
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
@@ -367,7 +341,7 @@ const s = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    backgroundColor: "#F7F9FC", // Slightly different bg to distinguish it
+    backgroundColor: "#F7F9FC",
   },
   consentHeader: {
     flexDirection: "row",

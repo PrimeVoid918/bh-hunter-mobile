@@ -202,7 +202,8 @@ export default function MenuMainScreen() {
             />
             <MenuItem
               icon="file-document-outline"
-              label="Terms of Service"
+              label="Policies and Legal"
+              onPress={() => navigation.navigate("PoliciesStack")}
               isLast
             />
           </Surface>

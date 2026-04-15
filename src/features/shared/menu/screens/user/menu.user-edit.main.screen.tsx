@@ -67,7 +67,6 @@ export default function MenuUserEditScreen() {
     }
   };
 
-  // Helper to render section badge
   const SectionBadge = ({ count }: { count: number }) =>
     count > 0 ? (
       <Badge style={[s.sectionBadge, { backgroundColor: theme.colors.error }]}>
@@ -78,7 +77,6 @@ export default function MenuUserEditScreen() {
   return (
     <StaticScreenWrapper style={GlobalStyle.GlobalsContainer}>
       <VStack space="lg" style={s.mainScroll}>
-        {/* 1. PROFILE PHOTO */}
         <Box style={s.avatarContainer}>
           <Box>
             <Avatar.Image
@@ -100,7 +98,6 @@ export default function MenuUserEditScreen() {
           <Text style={s.roleLabel}>{authUserRole?.toUpperCase()}</Text>
         </Box>
 
-        {/* 2. PERSONAL DETAILS GROUP */}
         <Surface elevation={0} style={s.containedGroup}>
           <View style={s.sectionHeader}>
             <Text style={[s.groupTitle, { color: theme.colors.primary }]}>
@@ -119,7 +116,7 @@ export default function MenuUserEditScreen() {
                 style={s.flex1}
                 value={form.firstname}
                 onChangeText={(t) => setForm({ ...form, firstname: t })}
-                error={!form.firstname} // Field level validation
+                error={!form.firstname}
               />
               <TextInput
                 mode="outlined"
@@ -133,7 +130,6 @@ export default function MenuUserEditScreen() {
           </VStack>
         </Surface>
 
-        {/* 3. ADDITIONAL INFO GROUP */}
         <Surface elevation={0} style={s.containedGroup}>
           <View style={s.sectionHeader}>
             <Text style={[s.groupTitle, { color: theme.colors.primary }]}>
