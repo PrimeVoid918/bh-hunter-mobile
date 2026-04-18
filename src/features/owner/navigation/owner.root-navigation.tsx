@@ -3,29 +3,29 @@ import { View, StyleSheet } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { ActivityIndicator, useTheme } from "react-native-paper";
 
-import TenantTabs from "./tenant.tabs";
+import OwnerTabs from "./owner.tabs";
 
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 import { refreshAccessStatusThunk } from "@/infrastructure/access/access.redux.thunk";
 import { selectAccessStatus } from "@/infrastructure/access/access.redux.slice";
 import { AppDispatch } from "@/application/store/stores";
 
-export default function TenantRootNavigation() {
+export default function OwnerRootNavigation() {
   const theme = useTheme();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { id: tenantId } = useDynamicUserApi();
+  const { id: ownerId } = useDynamicUserApi();
 
   const accessData = useSelector(selectAccessStatus);
   const [loading, setLoading] = React.useState(!accessData);
 
   useEffect(() => {
     const syncAccess = async () => {
-      if (tenantId) {
+      if (ownerId) {
         await dispatch(
           refreshAccessStatusThunk({
-            userId: tenantId,
-            role: "TENANT",
+            userId: ownerId,
+            role: "OWNER",
           }),
         );
         setLoading(false);
@@ -33,7 +33,7 @@ export default function TenantRootNavigation() {
     };
 
     syncAccess();
-  }, [tenantId, dispatch]);
+  }, [ownerId, dispatch]);
 
   if (loading && !accessData) {
     return (
@@ -43,7 +43,7 @@ export default function TenantRootNavigation() {
     );
   }
 
-  return <TenantTabs />;
+  return <OwnerTabs />;
 }
 
 const styles = StyleSheet.create({

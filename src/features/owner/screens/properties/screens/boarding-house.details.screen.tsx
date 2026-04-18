@@ -23,7 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 // UI Components
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import BoardingHouseDetailsRender from "../../../shared/boarding-house/BoardingHouseDetailsRender";
+import BoardingHouseDetailsRender from "@/features/shared/boarding-house/BoardingHouseDetailsRender";
 import ReviewSection from "@/components/ui/Reviews/ReviewSection";
 import BottomSheetSelector from "@/components/ui/BottomSheet/BottomSheetSelector";
 
@@ -38,11 +38,12 @@ import {
   useGetOneQuery as useGetOneBoardingHouses,
   usePatchMutation,
 } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
-import { OwnerDashboardStackParamList } from "../dashboard/navigation/dashboard.types";
+import { OwnerDashboardStackParamList } from "../../dashboard/navigation/dashboard.types";
 import { Spacing, Fontsize, BorderRadius } from "@/constants";
+import { PropertiesStackParamList } from "../navigation/properties.stack.types";
 
 type RouteProps = RouteProp<
-  OwnerDashboardStackParamList,
+  PropertiesStackParamList,
   "BoardingHouseDetailsScreen"
 >;
 
@@ -51,7 +52,7 @@ export default function BoardingHouseDetailsScreen() {
   const route = useRoute<RouteProps>();
   const { id: bhId } = route.params;
   const navigation =
-    useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
+    useNavigation<NativeStackNavigationProp<PropertiesStackParamList>>();
   const isFocused = useIsFocused();
   const { showDecision, hideDecision } = useDecisionModal();
   const [fabOpen, setFabOpen] = useState(false);
@@ -306,7 +307,7 @@ export default function BoardingHouseDetailsScreen() {
                 ? [
                     {
                       icon: "delete",
-                      label: "Delete Room",
+                      label: "Delete",
                       onPress: handleDelete,
                       style: { backgroundColor: theme.colors.errorContainer },
                       color: theme.colors.onErrorContainer,

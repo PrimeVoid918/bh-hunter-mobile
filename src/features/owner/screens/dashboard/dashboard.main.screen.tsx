@@ -1,22 +1,29 @@
 import React, { useState, useMemo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
-import { Text, Button, useTheme, Avatar } from "react-native-paper";
+import {
+  Text,
+  Button,
+  useTheme,
+  Avatar,
+  ActivityIndicator,
+} from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import PropertyCard from "../../../../components/ui/BoardingHouseItems/PropertyCard";
 import VerificationIndicatorComponent from "../../../../components/ui/Verification/VerificationIndicatorComponent";
 import { Spacing, BorderRadius } from "@/constants";
+
 import { useGetAllQuery as useGetAllQueryBH } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 import { OwnerDashboardStackParamList } from "./navigation/dashboard.types";
 import DashboardStateCard from "@/components/ui/Dashboard/DashboardStateCard";
 import { useGetOverviewMetricsQuery } from "@/infrastructure/metrics/metric.redux.api";
-import PaginatedSearchList from "@/components/layout/PaginatedSearchList/PaginatedSearchList";
-import { QueryBoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.schema";
+
 import { navigationRef } from "../../../../application/navigation/navigationRef";
+import { isOwnerAccess } from "@/infrastructure/access/access.schema";
+import { useGetOwnerAccessQuery } from "@/infrastructure/access/access.redux.api";
 
 export default function DashboardMainScreen() {
   const theme = useTheme();
@@ -34,6 +41,15 @@ export default function DashboardMainScreen() {
     refetch,
   } = useGetAllQueryBH(
     { ownerId: owner?.id },
+    { skip: !owner?.id, refetchOnMountOrArgChange: true },
+  );
+
+  const {
+    data: access,
+    isLoading: isAccessLoading,
+    refetch: refetchAccessData,
+  } = useGetOwnerAccessQuery(
+    { id: owner?.id! },
     { skip: !owner?.id, refetchOnMountOrArgChange: true },
   );
 
@@ -68,8 +84,13 @@ export default function DashboardMainScreen() {
   const handlePageRefresh = async () => {
     setRefreshing(true);
     await refetch();
+    await refetchAccessData();
     setRefreshing(false);
   };
+
+  if (isAccessLoading || !access)
+    return <ActivityIndicator style={{ flex: 1 }} />;
+  const lockdown = isOwnerAccess(access) ? access.isVerified : false;
 
   return (
     <StaticScreenWrapper
@@ -114,10 +135,7 @@ export default function DashboardMainScreen() {
               triggerHaptic();
               navigate.navigate("VerificationMainScreen");
             }}
-            isVerified={
-              owner?.registrationStatus === "COMPLETED" &&
-              owner?.verificationLevel === "FULLY_VERIFIED"
-            }
+            isVerified={lockdown}
           />
         </View>
 
@@ -145,59 +163,6 @@ export default function DashboardMainScreen() {
             textColor={theme.colors.onSurfaceVariant}
           />
         </View>
-
-        {/* 4. LIST HEADER ACTIONS */}
-        <View style={s.listHeader}>
-          <Text variant="titleLarge" style={s.sectionTitle}>
-            Your Properties
-          </Text>
-          <Button
-            mode="contained"
-            icon="plus"
-            onPress={() => {
-              triggerHaptic();
-              navigationRef.navigate("Properties" as any, {
-                screen: "PropertyCreate",
-              });
-            }}
-            style={s.fabReplica}
-            labelStyle={s.buttonLabel}
-          >
-            Create
-          </Button>
-        </View>
-
-        {/* 5. SEARCH & LIST */}
-        <PaginatedSearchList<QueryBoardingHouse>
-          ownerId={owner?.id}
-          useApi={useGetAllQueryBH}
-          apiParams={{ minPrice: 1500 }}
-          searchKey="name"
-          renderItem={({ item }) => (
-            <PropertyCard data={item}>
-              <Button
-                mode="contained-tonal"
-                icon="cog"
-                onPress={() => {
-                  triggerHaptic();
-                  navigate.navigate("BoardingHouseDetailsScreen", {
-                    id: item.id,
-                  });
-                }}
-                style={s.manageBtn}
-                labelStyle={s.manageLabel}
-              >
-                Manage Property
-              </Button>
-            </PropertyCard>
-          )}
-          searchPlaceholder="Search properties"
-          renderEmpty={() => (
-            <View style={s.emptyContainer}>
-              <Text style={s.emptyText}>No boarding houses found</Text>
-            </View>
-          )}
-        />
       </View>
     </StaticScreenWrapper>
   );

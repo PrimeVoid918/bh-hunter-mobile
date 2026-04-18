@@ -1,6 +1,14 @@
 import React from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { Text, Button, useTheme, Surface, Divider } from "react-native-paper";
+import { StyleSheet, Alert } from "react-native";
+import {
+  Text,
+  Button,
+  useTheme,
+  Surface,
+  Divider,
+  Icon,
+  ActivityIndicator,
+} from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Spacing, BorderRadius } from "@/constants";
 import { Review } from "@/infrastructure/reviews/reviews.schema";
@@ -9,7 +17,11 @@ import { CreateReviewComponent } from "./CraeteReviewComponent";
 import EditReviewComponent from "./EditReviewComponent";
 import ReviewItem from "./ReviewItem";
 import { useDeleteMutation } from "@/infrastructure/reviews/reviews.redux.api";
-import { VStack, HStack } from "@gluestack-ui/themed";
+import { VStack, HStack, Box } from "@gluestack-ui/themed";
+import { useGetTenantAccessQuery } from "@/infrastructure/access/access.redux.api";
+import { RootState } from "@/application/store/stores";
+import { useSelector } from "react-redux";
+import { isTenantAccess } from "@/infrastructure/access/access.schema";
 
 interface ReviewSubmissionHandlerInterface {
   boardingHouseId?: number;
@@ -30,9 +42,21 @@ export default function ReviewSubmissionHandler({
   const [mode, setMode] = React.useState<ReviewInputMode>("creating");
   const [deleteReview] = useDeleteMutation();
 
+  const tenantId = useSelector(
+    (state: RootState) => state.tenants.selectedUser?.id,
+  );
+
+  const { data: access, isLoading: isAccessLoading } = useGetTenantAccessQuery(
+    { id: tenantId! },
+    { skip: !tenantId, refetchOnMountOrArgChange: true },
+  );
+
   React.useEffect(() => {
     setMode(myReview ? "viewing" : "creating");
   }, [myReview]);
+
+  if (isAccessLoading || !access) return <></>;
+  const isLocked = isTenantAccess(access) ? !access.canMakeReview : false;
 
   const handleDelete = () => {
     if (!myReview?.id) return;
@@ -57,9 +81,31 @@ export default function ReviewSubmissionHandler({
           },
         },
       ],
-      { cancelable: true },
     );
   };
+
+  if (isLocked && mode !== "viewing") {
+    return (
+      <Surface elevation={0} style={s.lockdownCard}>
+        <HStack space="md" alignItems="center">
+          <Box style={s.lockIconBg}>
+            <Icon
+              source="comment-off-outline"
+              size={22}
+              color={colors.outline}
+            />
+          </Box>
+          <VStack style={{ flex: 1 }}>
+            <Text style={s.lockTitle}>Reviews Restricted</Text>
+            <Text style={s.lockSub}>
+              You must be Fully Verified to leave or edit reviews. Please
+              complete your identity verification in your profile.
+            </Text>
+          </VStack>
+        </HStack>
+      </Surface>
+    );
+  }
 
   return (
     <VStack style={s.root}>
@@ -80,7 +126,6 @@ export default function ReviewSubmissionHandler({
               Help the community by sharing your experience at this property.
             </Text>
           </VStack>
-
           <CreateReviewComponent
             boardingHouseId={boardingHouseId!}
             starFilledColor={starFilledColor}
@@ -166,9 +211,7 @@ export default function ReviewSubmissionHandler({
               </Button>
             </HStack>
           </HStack>
-
           <Divider style={{ marginBottom: Spacing.sm, opacity: 0.5 }} />
-
           <ReviewItem
             review={myReview}
             starFilledColor={starFilledColor}
@@ -181,24 +224,20 @@ export default function ReviewSubmissionHandler({
 }
 
 const s = StyleSheet.create({
-  root: {
-    marginVertical: Spacing.sm,
-  },
-  boldPoppins: {
-    fontFamily: "Poppins-SemiBold",
-  },
+  root: { marginVertical: Spacing.sm },
+  boldPoppins: { fontFamily: "Poppins-SemiBold" },
   createCard: {
     padding: Spacing.md,
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
-    borderColor: "#CCCCCC", // outlineVariant
+    borderColor: "#CCCCCC",
     backgroundColor: "#FFFFFF",
   },
   editCard: {
     padding: Spacing.md,
     borderRadius: BorderRadius.xl,
     borderWidth: 1.5,
-    borderColor: "#357FC1", // primary
+    borderColor: "#357FC1",
     backgroundColor: "#FFFFFF",
   },
   viewCard: {
@@ -206,13 +245,33 @@ const s = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
     borderColor: "#CCCCCC",
-    backgroundColor: "#F7F9FC", // Slight tint to distinguish user review
+    backgroundColor: "#F7F9FC",
   },
-  cardHeader: {
-    marginBottom: Spacing.xs,
+  cardHeader: { marginBottom: Spacing.xs },
+  actionLabel: { fontSize: 12, fontFamily: "Poppins-Medium" },
+  lockdownCard: {
+    padding: 16,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    backgroundColor: "#F0F0F5",
+    borderStyle: "dashed",
+    marginVertical: Spacing.sm,
   },
-  actionLabel: {
+  lockIconBg: {
+    padding: 8,
+    backgroundColor: "#E0E0E5",
+    borderRadius: 8,
+  },
+  lockTitle: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 14,
+    color: "#4A4A4A",
+  },
+  lockSub: {
+    fontFamily: "Poppins-Regular",
     fontSize: 12,
-    fontFamily: "Poppins-Medium",
+    color: "#767474",
+    lineHeight: 16,
   },
 });

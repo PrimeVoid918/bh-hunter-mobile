@@ -23,6 +23,7 @@ export default function MenuAccountSecurityScreen() {
 
   const [form, setForm] = useState({
     username: selectedUser?.username || "",
+    email: selectedUser?.email || "",
     phone_number: selectedUser?.phone_number || "",
     password: "",
     confirmPassword: "",
@@ -56,6 +57,7 @@ export default function MenuAccountSecurityScreen() {
     try {
       await patchUser(id!, {
         username: form.username,
+        email: form.email,
         phone_number: form.phone_number,
         ...(form.password ? { password: form.password } : {}),
       });
@@ -118,6 +120,18 @@ export default function MenuAccountSecurityScreen() {
               value={form.username}
               onChangeText={(t) =>
                 setForm({ ...form, username: t.toLowerCase().trim() })
+              }
+              left={<TextInput.Affix text="@" />}
+              autoCapitalize="none"
+            />
+
+            {/* EMAIL */}
+            <TextInput
+              mode="outlined"
+              label="Email"
+              value={form.email}
+              onChangeText={(t) =>
+                setForm({ ...form, email: t.toLowerCase().trim() })
               }
               left={<TextInput.Affix text="@" />}
               autoCapitalize="none"

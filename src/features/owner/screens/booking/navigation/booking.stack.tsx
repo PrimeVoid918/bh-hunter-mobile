@@ -1,8 +1,8 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import PropertiesMainScreen from "../properties.main.screen";
-import PropertiesBookingListsScreen from "../properties.booking.lists.screen";
+import BookingMainScreen from "../booking.main.screen";
+import BookingListsScreen from "../booking.lists.screen";
 // import PropertiesDetailsScreen from "../details/properties.details.screen";
 import BookingStatusScreen from "@/features/shared/booking/BookingStatusScreen";
 import { backButtonConfig } from "@/constants/navigation/screenOptions";
@@ -13,19 +13,19 @@ const Stack = createNativeStackNavigator<OwnerBookingStackParamList>();
 export default function BookingStack() {
   return (
     <Stack.Navigator
-      initialRouteName="PropertiesMainScreen"
+      initialRouteName="BookingMainScreen"
       screenOptions={{
         headerShown: false,
       }}
     >
       <Stack.Screen
-        name="PropertiesMainScreen"
-        component={PropertiesMainScreen}
+        name="BookingMainScreen"
+        component={BookingMainScreen}
         // options={backButtonConfig}
       />
       <Stack.Screen
-        name="PropertiesBookingListsScreen"
-        component={PropertiesBookingListsScreen}
+        name="BookingListsScreen"
+        component={BookingListsScreen}
         options={backButtonConfig}
       />
       <Stack.Screen

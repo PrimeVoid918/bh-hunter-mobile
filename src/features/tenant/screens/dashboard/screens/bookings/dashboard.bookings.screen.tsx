@@ -19,7 +19,7 @@ import BookingListItem from "./navigation/BookingListItem";
 
 //For approved or ongoing stays
 
-export default function DashboardBookingsScreen() {
+export default function BookingsScreen() {
   const navigate =
     useNavigation<
       NativeStackNavigationProp<TenantDashboardBookingStackParamList>
@@ -81,7 +81,7 @@ export default function DashboardBookingsScreen() {
               <BookingListItem
                 data={item}
                 goToDetails={() =>
-                  navigate.navigate("DashboardBookingStatusScreen", {
+                  navigate.navigate("BookingStatusScreen", {
                     bookId: item.id,
                   })
                 }

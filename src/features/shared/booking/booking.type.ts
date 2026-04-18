@@ -25,6 +25,14 @@ const ownerState = {
             : "",
 };
 
+export type BookingPermissions = {
+  canApprove: boolean;
+  canReject: boolean;
+  canCancel: boolean;
+  canRequestRefund: boolean;
+  canVerifyPayment: boolean;
+};
+
 /**
  Element 1 state
 

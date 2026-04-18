@@ -5,15 +5,28 @@ import { PERSISTENT_DOC_DIR } from "../../document/document.service";
 
 type DirectoryKey = "images" | "documents";
 
-const DIRECTORY_PATHS: Record<DirectoryKey, string> = {
-  images: PERSISTENT_IMAGE_DIR,
-  documents: PERSISTENT_DOC_DIR,
-};
+function getDirectoryPath(dir: DirectoryKey): string {
+  const base = FileSystem.documentDirectory;
+
+  if (!base) {
+    throw new Error("Document directory unavailable");
+  }
+
+  switch (dir) {
+    case "images":
+      return `${base}picked_images/`;
+    case "documents":
+      return `${base}picked_documents/`;
+    default:
+      throw new Error(`Unknown directory key: ${dir}`);
+  }
+}
 
 export async function ensurePersistentDir(
   PERSISTENT_DIR: string,
 ): Promise<void> {
   const info = await FileSystem.getInfoAsync(PERSISTENT_DIR);
+  console.log("getInfoSec Image service: ", info);
   if (!info.exists) {
     await FileSystem.makeDirectoryAsync(PERSISTENT_DIR, {
       intermediates: true,
@@ -32,12 +45,16 @@ export async function moveToPersistentDir({
     throw new Error("Document directory unavailable");
   }
 
-  const path = DIRECTORY_PATHS[dir];
+  // const path = DIRECTORY_PATHS[dir];
+  const path = getDirectoryPath(dir);
 
   await ensurePersistentDir(path);
 
   const newFileName = `${Date.now()}-${file.name}`;
   const newPath = `${path}${newFileName}`;
+
+  console.log("DIR:", dir);
+  console.log("PATH:", path);
 
   try {
     await FileSystem.copyAsync({
@@ -56,7 +73,8 @@ export async function logExpoSystemDir(dirs: DirectoryKey | DirectoryKey[]) {
   const targets = Array.isArray(dirs) ? dirs : [dirs];
 
   for (const key of targets) {
-    const path = DIRECTORY_PATHS[key];
+    // const path = DIRECTORY_PATHS[key];
+    const path = getDirectoryPath(key);
 
     try {
       const dirInfo = await FileSystem.getInfoAsync(path);
@@ -97,7 +115,8 @@ export async function expoStorageCleaner(
   const targets = Array.isArray(dirs) ? dirs : [dirs];
 
   for (const key of targets) {
-    const path = DIRECTORY_PATHS[key];
+    // const path = DIRECTORY_PATHS[key];
+    const path = getDirectoryPath(key);
 
     const dirInfo = await FileSystem.getInfoAsync(path);
     if (!dirInfo.exists) continue;

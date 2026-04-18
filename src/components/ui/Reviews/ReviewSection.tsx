@@ -32,7 +32,6 @@ export default function ReviewSection({
 }: ReviewSectionInterface) {
   const { colors } = useTheme();
 
-  // Data Fetching
   const {
     data: reviewsData,
     refetch,
@@ -51,13 +50,11 @@ export default function ReviewSection({
     ? reviewsData?.filter((r) => r.tenantId !== currentUserId)
     : reviewsData;
 
-  // Star Colors from Theme
-  const starFilledColor = colors.secondary; // #FDD85D
-  const starHollowedColor = colors.outlineVariant; // #CCCCCC
+  const starFilledColor = colors.secondary;
+  const starHollowedColor = colors.outlineVariant;
 
   return (
     <VStack style={s.mainContainer}>
-      {/* SECTION HEADER */}
       <HStack
         justifyContent="space-between"
         alignItems="center"
@@ -69,14 +66,8 @@ export default function ReviewSection({
             Verified feedback from Ormoc tenants
           </Text>
         </VStack>
-        {/* <MaterialCommunityIcons
-          name="chevron-right"
-          size={24}
-          color={colors.outline}
-        /> */}
       </HStack>
 
-      {/* RATING SUMMARY CARD */}
       <Surface style={s.summaryCard} elevation={0}>
         <RatingSummary
           starFilledColor={starFilledColor}
@@ -91,7 +82,6 @@ export default function ReviewSection({
         />
       </Surface>
 
-      {/* USER'S PERSONAL ACTION AREA */}
       {!isOwner && (
         <VStack style={s.submissionArea}>
           <Text variant="titleSmall" style={s.subTitle}>
@@ -109,7 +99,6 @@ export default function ReviewSection({
 
       <Divider style={s.divider} />
 
-      {/* REVIEWS LIST */}
       <VStack style={s.reviewsList}>
         {displayReviews && displayReviews.length > 0 ? (
           displayReviews.map((item, index) => (
@@ -131,12 +120,6 @@ export default function ReviewSection({
               size={48}
               color={colors.surfaceVariant}
             />
-            {/* <Text
-              variant="bodyMedium"
-              style={{ color: colors.outline, marginTop: 8 }}
-            >
-              No reviews yet. Be the first to share!
-            </Text> */}
           </View>
         )}
       </VStack>

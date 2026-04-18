@@ -14,6 +14,8 @@ export const MapSheet = ({ visible, data, onClose, onNavigate }) => {
   const theme = useTheme();
   if (!visible || !data) return null;
 
+  console.log("mui bottom tab picture: ", data);
+
   return (
     <Portal>
       <Surface

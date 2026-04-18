@@ -16,6 +16,7 @@ import {
   QueryBookingSchema,
 } from "./booking.schema";
 import { ApiResponseType } from "../common/types/api.types";
+import { ActiveBooking } from "./booking.schema";
 
 const bookingApiRoute = `api/bookings`;
 export const bookingApi = createApi({
@@ -52,6 +53,14 @@ export const bookingApi = createApi({
     getOne: builder.query<GetBooking | null, number | undefined>({
       query: (id) => `${bookingApiRoute}/${id}`,
       transformResponse: (response: { results: GetBooking }) =>
+        response.results ?? null,
+
+      providesTags: ["Booking"],
+    }),
+
+    getActive: builder.query<ActiveBooking | null, number | undefined>({
+      query: (id) => `${bookingApiRoute}/tenant/${id}/active`,
+      transformResponse: (response: { results: ActiveBooking }) =>
         response.results ?? null,
 
       providesTags: ["Booking"],
@@ -244,6 +253,7 @@ export const bookingApi = createApi({
 export const {
   useGetAllQuery,
   useGetOneQuery,
+  useGetActiveQuery,
   useGetBookingPaymentQuery,
   useGetBookingStatusQuery,
   useGetRefundPreviewQuery,

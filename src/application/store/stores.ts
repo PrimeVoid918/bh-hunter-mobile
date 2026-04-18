@@ -20,8 +20,9 @@ import { notificationApi } from "@/infrastructure/notifications/notifications.re
 import { metricsApi } from "@/infrastructure/metrics/metric.redux.api";
 import profileCompletenessSlice from "../../infrastructure/user/user.requirements.slice";
 import { mapsApi } from "@/infrastructure/map/map.redux.api";
-import tenantAccessSlice from "../../infrastructure/tenants/tenant.access.redux.slice";
 import { policiesApi } from "../../infrastructure/policies/policies.redux.api";
+import { accessApi } from "@/infrastructure/access/access.redux.api";
+import accessSlice from "@/infrastructure/access/access.redux.slice";
 
 export const store = configureStore({
   reducer: {
@@ -44,8 +45,9 @@ export const store = configureStore({
     [mapsApi.reducerPath]: mapsApi.reducer,
     genericSearch: genericSearchBarSlice,
     profileCompleteness: profileCompletenessSlice,
-    tenantAccessSlice: tenantAccessSlice,
     [policiesApi.reducerPath]: policiesApi.reducer,
+    [accessApi.reducerPath]: accessApi.reducer,
+    accessSlice: accessSlice,
   },
   middleware: (getDefaultMiddleware) =>
     // getDefaultMiddleware().concat(boardingHouseApi.middleware),
@@ -62,7 +64,8 @@ export const store = configureStore({
       .concat(reviewsApi.middleware)
       .concat(metricsApi.middleware)
       .concat(mapsApi.middleware)
-      .concat(policiesApi.middleware),
+      .concat(policiesApi.middleware)
+      .concat(accessApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

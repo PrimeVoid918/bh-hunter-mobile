@@ -15,7 +15,7 @@ import { RootState } from "@/application/store/stores";
 import { OwnerTabsParamList } from "../../navigation/owner.tabs.type";
 import { Lists } from "@/components/layout/Lists/Lists";
 
-export default function PropertiesMainScreen() {
+export default function BookingMainScreen() {
   const { colors } = useTheme();
   const navigation =
     useNavigation<BottomTabNavigationProp<OwnerTabsParamList>>();

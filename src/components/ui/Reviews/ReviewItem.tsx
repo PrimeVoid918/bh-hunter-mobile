@@ -25,12 +25,14 @@ export default function ReviewItem({
 
   return (
     <VStack style={s.itemContainer}>
-      {/* HEADER: User Info and Top-level Meta */}
       <HStack justifyContent="space-between" alignItems="center">
         <HStack alignItems="center" gap={Spacing.md}>
           <ImageUserPFP height={40} />
           <VStack>
-            <Text style={s.userName}>{review.tenant.username}</Text>
+            <HStack gap={Spacing.xs}>
+              <Text style={s.userName}>{review.tenant.firstname}</Text>
+              <Text style={s.userName}>{review.tenant.lastname}</Text>
+            </HStack>
             <HStack alignItems="center" gap={Spacing.sm}>
               <RatingsStarStatic
                 star={review.rating}
@@ -43,7 +45,6 @@ export default function ReviewItem({
           </VStack>
         </HStack>
 
-        {/* M3 Action Menu (e.g., Report or Edit) */}
         <IconButton
           icon="dots-vertical"
           size={20}
@@ -53,15 +54,11 @@ export default function ReviewItem({
         />
       </HStack>
 
-      {/* BODY: The actual comment content */}
       <View style={s.commentBody}>
         <Text style={s.commentText}>
           {review.comment || "No written review provided."}
         </Text>
       </View>
-
-      {/* OPTIONAL: Helpful/Response Row */}
-      {/* If this were Google Play, "Was this helpful?" would go here */}
     </VStack>
   );
 }
@@ -80,17 +77,17 @@ const s = StyleSheet.create({
   dateText: {
     fontFamily: "Poppins-Regular",
     fontSize: 11,
-    color: "#767474", // theme.colors.outline
+    color: "#767474",
     letterSpacing: 0.2,
   },
   commentBody: {
     marginTop: Spacing.sm,
-    paddingLeft: 40 + Spacing.md, // Aligns text perfectly with the start of the username
+    paddingLeft: 40 + Spacing.md,
   },
   commentText: {
     fontFamily: "Poppins-Regular",
     fontSize: Fontsize.md,
     lineHeight: 22,
-    color: "#3A3A3A", // High contrast but not pure black
+    color: "#3A3A3A",
   },
 });

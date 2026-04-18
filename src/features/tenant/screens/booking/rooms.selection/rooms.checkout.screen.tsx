@@ -26,6 +26,8 @@ import { useDecisionModal } from "@/components/ui/Modals/DecisionModalWrapper";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { VStack, HStack, Box } from "@gluestack-ui/themed";
 import { useGetOneQuery } from "@/infrastructure/room/rooms.redux.api";
+import { isTenantAccess } from "@/infrastructure/access/access.schema";
+import { useGetTenantAccessQuery } from "@/infrastructure/access/access.redux.api";
 
 export default function RoomsCheckoutScreen() {
   const theme = useTheme();
@@ -36,20 +38,30 @@ export default function RoomsCheckoutScreen() {
   const tenantId = useSelector(
     (state: RootState) => state.tenants.selectedUser?.id,
   );
-  const access = useSelector(
-    (state: RootState) => state.tenantAccessSlice.status,
+
+  const {
+    data: access,
+    isLoading: isAccessLoading,
+    isFetching: isAccessFetching,
+    refetch: refetchAccessData,
+  } = useGetTenantAccessQuery(
+    { id: tenantId! },
+    { skip: !tenantId, refetchOnMountOrArgChange: true },
   );
 
   const { data: ownerData } = useGetOwnerQuery(ownerId, { skip: !ownerId });
+
   const { data: roomData, isLoading: isRoomLoading } = useGetOneQuery({
     roomId,
     boardingHouseId: bhId,
   });
+
   const [createBooking, { isLoading: isBookingLoading }] =
     useCreateBookingMutation();
-  const { showDecision, hideDecision } = useDecisionModal();
 
-  // States
+  const { showDecision, hideDecision } = useDecisionModal();
+  const [refreshing, setRefreshing] = React.useState(false);
+
   const [occupants, setOccupants] = useState(1);
   const [checkIn, setCheckIn] = useState(new Date());
   const [checkOut, setCheckOut] = useState(
@@ -60,6 +72,7 @@ export default function RoomsCheckoutScreen() {
 
   const maxAvailable =
     (roomData?.maxCapacity ?? 1) - (roomData?.currentCapacity ?? 0);
+
   const canSubmit = terms.t1 && terms.t2 && !isBookingLoading;
 
   const onDateChange = (_: any, selectedDate?: Date) => {
@@ -74,6 +87,7 @@ export default function RoomsCheckoutScreen() {
 
   const submitBooking = async () => {
     if (!tenantId || !roomId) return;
+
     try {
       await createBooking({
         roomId,
@@ -81,12 +95,13 @@ export default function RoomsCheckoutScreen() {
           tenantId,
           startDate: checkIn.toISOString(),
           endDate: checkOut.toISOString(),
-          occupantsCount: occupants, // Dynamic occupant count
+          occupantsCount: occupants,
         },
       }).unwrap();
 
       hideDecision();
       ReactNativeHapticFeedback.trigger("notificationSuccess");
+
       Alert.alert("Success", "Reservation request sent.", [
         { text: "OK", onPress: () => navigation.popToTop() },
       ]);
@@ -101,6 +116,7 @@ export default function RoomsCheckoutScreen() {
 
   const handleConfirmRequest = () => {
     ReactNativeHapticFeedback.trigger("impactMedium");
+
     showDecision({
       title: <Text style={s.modalTitle}>Confirm Reservation</Text>,
       body: (
@@ -128,14 +144,25 @@ export default function RoomsCheckoutScreen() {
     });
   };
 
-  if (isRoomLoading || access === null)
+  if (isRoomLoading || isAccessLoading || !access) {
     return <ActivityIndicator style={{ flex: 1 }} />;
+  }
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    refetchAccessData();
+    setRefreshing(false);
+  }, []);
+
+  const lockdown = isTenantAccess(access) ? !access.canBookRoom : false;
 
   return (
     <StaticScreenWrapper
       loading={isBookingLoading}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
       style={{ backgroundColor: theme.colors.background }}
-      lockdown={access?.canBookRoom === false}
+      lockdown={lockdown}
       onLockdownAction={() => navigation.goBack()}
     >
       <VStack style={s.container} space="lg">
@@ -146,7 +173,6 @@ export default function RoomsCheckoutScreen() {
           <UserInformatioCard user={ownerData} />
         </Box>
 
-        {/* Occupants Card - Contained Style */}
         <Surface elevation={0} style={s.containedCard}>
           <VStack space="sm">
             <Text style={s.cardLabel}>NUMBER OF OCCUPANTS</Text>
@@ -178,7 +204,6 @@ export default function RoomsCheckoutScreen() {
           </VStack>
         </Surface>
 
-        {/* Date Card - Contained Style */}
         <Surface elevation={0} style={s.containedCard}>
           <VStack space="md">
             <HStack justifyContent="space-between" alignItems="center">

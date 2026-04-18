@@ -34,7 +34,7 @@ type RouteProps = RouteProp<
   "PropertiesBookingListsScreen"
 >;
 
-export default function PropertiesBookingListsScreen() {
+export default function BookingListsScreen() {
   const { colors } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<OwnerBookingStackParamList>>();

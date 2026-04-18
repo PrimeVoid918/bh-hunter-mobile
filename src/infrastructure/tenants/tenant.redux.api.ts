@@ -44,18 +44,6 @@ export const tenantApi = createApi({
       providesTags: (result, error, id) => [{ type: "Tenant", id }],
     }),
 
-    getAccessStatus: builder.query<TenantAccessStatus, number>({
-      query: (tenantId) =>
-        `${tenantApiRoute}/${tenantId}/access-status`,
-      transformResponse: (response: ApiResponseType<TenantAccessStatus>) =>
-        response.results ?? null,
-      providesTags: (result, error, id) => [
-        { type: "Tenant", id },
-        { type: "Tenant", id: "ACCESS" },
-        { type: "AccessStatus", id },
-      ],
-    }),
-
     // Create tenant
     create: builder.mutation<Tenant, RegisterTenant>({
       query: (data) => ({
@@ -96,8 +84,6 @@ export const tenantApi = createApi({
 export const {
   useGetAllQuery,
   useGetOneQuery,
-  useGetAccessStatusQuery,
-  useLazyGetAccessStatusQuery,
   useCreateMutation,
   usePatchMutation,
   useDeleteMutation,

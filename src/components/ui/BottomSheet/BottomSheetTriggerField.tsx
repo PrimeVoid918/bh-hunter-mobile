@@ -1,7 +1,9 @@
-import { Colors, Fontsize } from "@/constants";
-import { FormControl, Button, View, HStack } from "@gluestack-ui/themed";
+import React from "react";
+import { StyleSheet, Pressable } from "react-native";
+import { FormControl, View, HStack } from "@gluestack-ui/themed";
 import { Controller } from "react-hook-form";
-import { Chip, Text } from "react-native-paper";
+import { Chip, Text, useTheme } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 export type SelectOption<T extends string = string> = {
   value: T;
@@ -12,7 +14,7 @@ type BottomSheetTriggerFieldProps<T extends string = string> = {
   name: string;
   control: any;
   label?: string;
-  options: SelectOption<T>[]; // pass value/label mapping
+  options: SelectOption<T>[];
   isEditing: boolean;
   placeholder?: string;
   error?: string;
@@ -25,10 +27,12 @@ export function BottomSheetTriggerField<T extends string>({
   label,
   options,
   isEditing,
-  placeholder = "Select",
+  placeholder = "Select Option",
   error,
   onOpen,
 }: BottomSheetTriggerFieldProps<T>) {
+  const { colors } = useTheme();
+
   return (
     <FormControl isInvalid={!!error}>
       <Controller
@@ -41,24 +45,61 @@ export function BottomSheetTriggerField<T extends string>({
           return (
             <View>
               {isEditing ? (
-                <Button onPress={onOpen}>
-                  <Text>{selected?.label ?? placeholder}</Text>
-                </Button>
+                <Pressable
+                  onPress={onOpen}
+                  style={({ pressed }) => [
+                    s.triggerContainer,
+                    {
+                      borderColor: !!error
+                        ? colors.error
+                        : colors.outlineVariant,
+                      backgroundColor: pressed
+                        ? colors.surfaceVariant
+                        : "#FFFFFF",
+                    },
+                  ]}
+                >
+                  <HStack
+                    justifyContent="space-between"
+                    alignItems="center"
+                    w="$full"
+                  >
+                    <Text
+                      style={[
+                        s.triggerText,
+                        { color: selected ? colors.onSurface : colors.outline },
+                      ]}
+                    >
+                      {selected?.label ?? placeholder}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name="chevron-down"
+                      size={20}
+                      color={colors.outline}
+                    />
+                  </HStack>
+                </Pressable>
               ) : (
-                <HStack style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text>{label ? `${label}: ` : ""}</Text>
-                  <Chip onPress={() => console.log("Pressed")}>
-                    {selected?.label}
+                /* 2. OVERHAULED READ-ONLY STATE */
+                <HStack alignItems="center" space="sm">
+                  {label && <Text style={s.readOnlyLabel}>{label}:</Text>}
+                  <Chip
+                    textStyle={s.chipText}
+                    style={[
+                      s.chip,
+                      { backgroundColor: colors.primaryContainer },
+                    ]}
+                  >
+                    {selected?.label ?? "Not Set"}
                   </Chip>
                 </HStack>
-                // <Text
-                //   style={{
-                //     color: Colors.TextInverse[2],
-                //     fontSize: Fontsize.md,
-                //   }}
-                // >
-                //   {label}: {selected?.label ?? "-"}
-                // </Text>
+              )}
+
+              {/* Error Message Support */}
+              {error && (
+                <Text style={[s.errorText, { color: colors.error }]}>
+                  {error}
+                </Text>
               )}
             </View>
           );
@@ -67,3 +108,37 @@ export function BottomSheetTriggerField<T extends string>({
     </FormControl>
   );
 }
+
+const s = StyleSheet.create({
+  triggerContainer: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+  },
+  triggerText: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 14,
+  },
+  readOnlyLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 13,
+    color: "#767474",
+  },
+  chip: {
+    borderRadius: 6,
+    height: 28,
+  },
+  chipText: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 11,
+    color: "#357FC1",
+  },
+  errorText: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 11,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+});

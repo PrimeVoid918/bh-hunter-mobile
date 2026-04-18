@@ -147,6 +147,63 @@ export default function RoomsDetailsScreen() {
     }
   });
 
+  const handleDelete = () => {
+    ReactNativeHapticFeedback.trigger("impactHeavy");
+    showDecision({
+      title: (
+        <Text variant="titleLarge" style={{ color: theme.colors.error }}>
+          Delete Room?
+        </Text>
+      ),
+      body: (
+        <Text variant="bodyMedium">
+          This will permanently remove{" "}
+          <Text style={{ fontFamily: "Poppins-Bold" }}>
+            Room {room?.roomNumber}
+          </Text>{" "}
+          from your inventory. This action cannot be undone.
+        </Text>
+      ),
+      footer: (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 12,
+            justifyContent: "flex-end",
+            width: "100%",
+          }}
+        >
+          <PaperButton
+            mode="text"
+            onPress={hideDecision}
+            textColor={theme.colors.outline}
+          >
+            Cancel
+          </PaperButton>
+          <PaperButton
+            mode="contained"
+            buttonColor={theme.colors.error}
+            onPress={async () => {
+              try {
+                hideDecision();
+                await deleteRoom({ boardingHouseId, roomId }).unwrap();
+                ReactNativeHapticFeedback.trigger("notificationSuccess");
+                navigation.goBack();
+              } catch (err) {
+                Alert.alert(
+                  "Delete Failed",
+                  "Could not remove the room. Please try again.",
+                );
+              }
+            }}
+          >
+            Confirm Delete
+          </PaperButton>
+        </View>
+      ),
+    });
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     refetch().finally(() => setRefreshing(false));
@@ -215,8 +272,15 @@ export default function RoomsDetailsScreen() {
                 ? [{ icon: "pencil", label: "Edit", onPress: handleToggleEdit }]
                 : []),
               ...(!isEditing
-                ? [{ icon: "delete", label: "Delete", onPress: () => {} }]
-                : []), // Wire up delete here
+                ? [
+                    {
+                      icon: "delete",
+                      label: "Delete",
+                      onPress: handleDelete,
+                      color: theme.colors.error,
+                    },
+                  ]
+                : []),
               ...(isEditing
                 ? [
                     {

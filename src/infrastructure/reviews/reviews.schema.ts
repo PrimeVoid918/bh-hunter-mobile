@@ -19,6 +19,8 @@ export const ReviewSchema = z.object({
   boardingHouseId: z.number().int(),
   tenant: z.object({
     username: z.string(),
+    firstname: z.string(),
+    lastname: z.string(),
   }),
 
   rating: ReviewRatingSchema,

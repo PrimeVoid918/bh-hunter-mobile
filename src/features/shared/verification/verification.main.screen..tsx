@@ -10,7 +10,6 @@ import {
 } from "@/infrastructure/owner/owner.redux.api";
 import {
   useGetOneQuery as useGetOneQueryTenant,
-  useLazyGetAccessStatusQuery,
   usePatchMutation as usePatchMutationTenant,
 } from "@/infrastructure/tenants/tenant.redux.api";
 import { useDispatch } from "react-redux";
@@ -33,7 +32,8 @@ import {
 } from "react-native-paper";
 import { ScrollView } from "react-native-gesture-handler";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { setAccessStatus } from "@/infrastructure/tenants/tenant.access.redux.slice";
+import { AppDispatch } from "@/application/store/stores";
+import { refreshAccessStatusThunk } from "@/infrastructure/access/access.redux.thunk";
 
 type VerificationMainNavigationProp =
   NativeStackNavigationProp<OwnerDashboardStackParamList>;
@@ -46,27 +46,25 @@ const hapticOptions = {
 export default function VerificationMainScreen() {
   const theme = useTheme();
   const navigation = useNavigation<any>();
+  const dispatch = useDispatch<AppDispatch>();
+
   const { id: userId, role } = useDynamicUserApi();
   const userRole = getVerificationRole(role);
   const isTenant = role === "TENANT";
 
-  const triggerHaptic = () =>
-    ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
-
   const {
     data: userData,
     isLoading: isUserLoading,
-    isError,
     refetch: userRefetch,
     isFetching,
   } = isTenant ? useGetOneQueryTenant(userId!) : useGetOneQueryOwner(userId!);
 
   const { sourceTarget, verificationTypes } = verificationConfig[userRole];
+
   const {
     data: verificationStatusData,
     refetch: verificationStatusRefetch,
     isLoading: isLoadingVerification,
-    isError: isErrorVerification,
   } = useGetVerificationStatusQuery(
     { id: userId!, sourceTarget },
     { refetchOnFocus: true },
@@ -74,6 +72,9 @@ export default function VerificationMainScreen() {
 
   const [patchTenant] = usePatchMutationTenant();
   const [patchOwner] = usePatchMutationOwner();
+
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [consentLoading, setConsentLoading] = React.useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -89,6 +90,7 @@ export default function VerificationMainScreen() {
         doc,
       ]),
     );
+
     return verificationTypes.map((type) => {
       const submitted = submittedDocsMap[type] ?? null;
       return {
@@ -100,43 +102,35 @@ export default function VerificationMainScreen() {
     });
   }, [verificationTypes, verificationStatusData]);
 
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case "VERIFIED":
-        return { color: "#80CFA9", icon: "check-decagram" };
-      case "REJECTED":
-        return { color: theme.colors.error, icon: "alert-decagram" };
-      case "PENDING":
-        return { color: theme.colors.secondary, icon: "clock-outline" };
-      default:
-        return { color: theme.colors.outline, icon: "plus-circle-outline" };
-    }
-  };
+  const triggerHaptic = (type: any = "impactLight") =>
+    ReactNativeHapticFeedback.trigger(type, hapticOptions);
 
-  const [consentLoading, setConsentLoading] = React.useState(false);
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        userRefetch(),
+        verificationStatusRefetch(),
+        dispatch(refreshAccessStatusThunk({ userId: userId!, role })),
+      ]);
+      triggerHaptic("notificationSuccess");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [userId, role, userRefetch, verificationStatusRefetch, dispatch]);
 
   const handleConsentChange = async (value: boolean) => {
     setConsentLoading(true);
     try {
-      if (isTenant) {
-        await patchTenant({
-          id: userId,
-          data: {
-            hasAcceptedLegitimacyConsent: value,
-            consentAcceptedAt: new Date().toISOString(),
-          },
-        }).unwrap();
-      } else {
-        await patchOwner({
-          id: userId,
-          data: {
-            hasAcceptedLegitimacyConsent: value,
-            consentAcceptedAt: new Date().toISOString(),
-          },
-        }).unwrap();
-      }
+      const patchData = {
+        hasAcceptedPolicies: value,
+        policiesAcceptedAt: new Date().toISOString(),
+      };
 
-      await userRefetch();
+      if (isTenant) await patchTenant({ id: userId, data: patchData }).unwrap();
+      else await patchOwner({ id: userId, data: patchData }).unwrap();
+
+      await onRefresh();
     } catch (err) {
       Alert.alert("Error", "Failed to save consent");
     } finally {
@@ -144,24 +138,16 @@ export default function VerificationMainScreen() {
     }
   };
 
-  const [refreshing, setRefreshing] = React.useState(false);
-  const dispatch = useDispatch();
-  const [triggerAccessStatus] = useLazyGetAccessStatusQuery();
-  const onRefresh = React.useCallback(async () => {
-    setRefreshing(true);
-
-    const [userRes, verificationRes, accessRes] = await Promise.all([
-      userRefetch(),
-      verificationStatusRefetch(),
-      isTenant ? triggerAccessStatus(userId!).unwrap() : Promise.resolve(null),
-    ]);
-
-    if (accessRes) {
-      dispatch(setAccessStatus(accessRes));
-    }
-
-    setRefreshing(false);
-  }, [userRefetch, verificationStatusRefetch, triggerAccessStatus, userId]);
+  const getStatusInfo = (status: string) => {
+    const map: Record<string, { color: string; icon: string }> = {
+      APPROVED: { color: "#80CFA9", icon: "check-decagram" }, // Changed from VERIFIED
+      REJECTED: { color: theme.colors.error, icon: "alert-decagram" },
+      PENDING: { color: "#FBBC05", icon: "clock-outline" }, // Matches your statusStylesConfig
+      EXPIRED: { color: "#4285F4", icon: "history" }, // Added EXPIRED
+      MISSING: { color: theme.colors.outline, icon: "plus-circle-outline" },
+    };
+    return map[status] || map.MISSING;
+  };
 
   return (
     <StaticScreenWrapper
@@ -169,7 +155,6 @@ export default function VerificationMainScreen() {
       refreshing={refreshing || consentLoading}
       onRefresh={onRefresh}
       loading={isUserLoading && isLoadingVerification}
-      error={[isError && isErrorVerification ? "" : null]}
     >
       <ScrollView
         contentContainerStyle={s.scrollContent}
@@ -199,26 +184,32 @@ export default function VerificationMainScreen() {
               const info = getStatusInfo(item.status);
               const isLastItem = index === verificationList.length - 1;
 
+              // Logic: If it's not MISSING, we want to view it.
+              // If it's REJECTED or MISSING, we want to submit/re-submit.
+              const isActionableForSubmission =
+                item.status === "MISSING" || item.status === "REJECTED";
+
               return (
-                <React.Fragment>
+                <React.Fragment key={item.type}>
                   <TouchableRipple
                     onPress={() => {
                       triggerHaptic();
-                      if (
-                        item.status === "MISSING" ||
-                        item.status === "REJECTED"
-                      ) {
-                        navigation.navigate("VerificationSubmitScreen", {
-                          userId,
-                          meta: { ...item.meta, type: item.type, role },
-                        });
-                      } else {
-                        navigation.navigate("VerificationViewScreen", {
-                          userId,
-                          docId: item.document!.id,
-                          meta: { ...item.meta, type: item.type, role },
-                        });
-                      }
+                      const route = isActionableForSubmission
+                        ? "VerificationSubmitScreen"
+                        : "VerificationViewScreen";
+
+                      const params = isActionableForSubmission
+                        ? {
+                            userId,
+                            meta: { ...item.meta, type: item.type, role },
+                          }
+                        : {
+                            userId,
+                            docId: item.document!.id,
+                            meta: { ...item.meta, type: item.type, role },
+                          };
+
+                      navigation.navigate(route, params);
                     }}
                     style={s.listItem}
                   >
@@ -230,16 +221,16 @@ export default function VerificationMainScreen() {
                         ]}
                       >
                         <MaterialCommunityIcons
-                          name={info.icon}
+                          name={info.icon as any}
                           size={24}
                           color={info.color}
                         />
                       </View>
-
                       <View style={{ flex: 1, marginLeft: 16 }}>
                         <Text variant="titleMedium" style={s.itemTitle}>
                           {item.meta.displayName ?? item.type}
                         </Text>
+                        {/* Status Text - Fixes underscore and displays clearly */}
                         <Text
                           variant="bodySmall"
                           style={{
@@ -247,10 +238,11 @@ export default function VerificationMainScreen() {
                             fontFamily: "Poppins-Medium",
                           }}
                         >
-                          {item.status.replace("_", " ")}
+                          {item.status === "APPROVED"
+                            ? "VERIFIED"
+                            : item.status.replace("_", " ")}
                         </Text>
                       </View>
-
                       <MaterialCommunityIcons
                         name="chevron-right"
                         size={20}
@@ -258,10 +250,7 @@ export default function VerificationMainScreen() {
                       />
                     </View>
                   </TouchableRipple>
-
-                  {!isLastItem && (
-                    <Divider horizontalInset={false} style={{ height: 1 }} />
-                  )}
+                  {!isLastItem && <Divider />}
                 </React.Fragment>
               );
             }}
@@ -287,18 +276,19 @@ export default function VerificationMainScreen() {
           </View>
           <LegitmacyContsentComponent
             role={isTenant ? "tenant" : "owner"}
-            value={userData?.hasAcceptedLegitimacyConsent ?? false}
-            onChange={(val: boolean) => {
-              triggerHaptic();
-              handleConsentChange(val);
-            }}
+            value={userData?.hasAcceptedPolicies ?? false}
+            onChange={handleConsentChange}
           />
         </Surface>
       </ScrollView>
 
       {isFetching && (
         <View style={s.loaderOverlay}>
-          <ActivityIndicator animating={true} color={theme.colors.primary} />
+          <ActivityIndicator
+            animating={true}
+            color={theme.colors.primary}
+            size="small"
+          />
         </View>
       )}
     </StaticScreenWrapper>

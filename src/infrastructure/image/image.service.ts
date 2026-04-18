@@ -50,7 +50,7 @@ async function makeBlobReadable(image: AppImageFile): Promise<string> {
  *             We plan to remove this function in a future major release.
  */
 export async function pickImage(
-  limit: number = 1
+  limit: number = 1,
 ): Promise<AppImageFile[] | null> {
   const defaultOptions: ImageLibraryOptions = {
     mediaType: "photo",
@@ -95,7 +95,7 @@ export async function pickImage(
 
       if (images.length > limit) {
         return reject(
-          new Error(`Uploaded images exceed the limit of ${limit}`)
+          new Error(`Uploaded images exceed the limit of ${limit}`),
         );
       }
 
@@ -130,7 +130,7 @@ export async function requestImagePermission(): Promise<boolean> {
  */
 export async function pickImageExpo(
   limit: number = 1,
-  imgQuality: string = "medium"
+  imgQuality: string = "medium",
 ): Promise<AppImageFile[] | null> {
   const permissionResult =
     await ImagePicker.requestMediaLibraryPermissionsAsync();

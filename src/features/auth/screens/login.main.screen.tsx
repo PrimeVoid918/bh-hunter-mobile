@@ -28,6 +28,7 @@ import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../types/navigation";
 import { AuthStackParamList } from "../navigation/auth.stack.types";
+import { logExpoSystemDir } from "@/infrastructure/utils/expo-utils/expo-utils.service";
 
 export default function LoginMainScreen() {
   const theme = useTheme();
@@ -44,6 +45,7 @@ export default function LoginMainScreen() {
   const dispatch = useDispatch<AppDispatch>();
 
   const onPressLogin = async () => {
+    await logExpoSystemDir(["images", "documents"]);
     ReactNativeHapticFeedback.trigger("impactMedium");
     try {
       const { access_token, user } = await triggerLogin({

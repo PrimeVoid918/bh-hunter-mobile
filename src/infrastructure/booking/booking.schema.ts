@@ -11,11 +11,10 @@ import { GetRoomSchema } from "../room/rooms.schema";
 
 export const BookingTypeEnum = z.enum([
   "RESERVATION",
-  "SOLO",
-  "DUO",
-  "TRIO",
-  "SQUAD",
-  "FAMILY",
+  "INSTANT",
+  "HOLD",
+  "LONG_TERM",
+  "SHORT_TERM",
 ]);
 
 export const BookingStatusEnum = z.enum([
@@ -279,6 +278,29 @@ export const GetBookingSchema = BaseBookingSchema.extend({
 });
 
 export type GetBooking = z.infer<typeof GetBookingSchema>;
+
+/*
+|--------------------------------------------------------------------------
+| ACTIVE
+|--------------------------------------------------------------------------
+*/
+
+export const ActiveBookingSchema = GetBookingSchema.pick({
+  id: true,
+  reference: true,
+  tenantId: true,
+  roomId: true,
+  boardingHouseId: true,
+  status: true,
+  checkInDate: true,
+  checkOutDate: true,
+  createdAt: true,
+  updatedAt: true,
+  room: true,
+  boardingHouse: true,
+});
+
+export type ActiveBooking = z.infer<typeof ActiveBookingSchema>;
 
 /*
 |--------------------------------------------------------------------------

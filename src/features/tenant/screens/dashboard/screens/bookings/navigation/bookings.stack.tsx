@@ -2,17 +2,17 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import type { RouteProp } from "@react-navigation/native";
-import DashboardBookingsScreen from "../dashboard.bookings.screen";
-import DashboardBookingDetailsScreen from "../dashboard.booking.details.screen";
+import BookingsScreen from "../dashboard.bookings.screen";
+import BookingDetailsScreen from "../dashboard.booking.details.screen";
 import { backButtonConfig } from "@/constants/navigation/screenOptions";
 import BookingStatusScreen from "@/features/shared/booking/BookingStatusScreen";
 
 export type TenantDashboardBookingStackParamList = {
-  DashboardBookingsScreen: undefined;
-  DashboardBookingDetailsScreen: {
+  BookingsScreen: undefined;
+  BookingDetailsScreen: {
     bookId: number;
   };
-  DashboardBookingStatusScreen: {
+  BookingStatusScreen: {
     bookId: number;
   };
 };
@@ -22,23 +22,23 @@ export type TenantDashboardBookingStackParamList = {
 const Stack =
   createNativeStackNavigator<TenantDashboardBookingStackParamList>();
 
-export default function DashboardBookingStack() {
+export default function BookingStack() {
   return (
     <Stack.Navigator
-      initialRouteName="DashboardBookingsScreen"
+      initialRouteName="BookingsScreen"
       screenOptions={{
         headerShown: false,
       }}
     >
       <Stack.Screen
-        name="DashboardBookingStatusScreen"
+        name="BookingStatusScreen"
         component={BookingStatusScreen}
         options={backButtonConfig}
       />
 
       <Stack.Screen
-        name="DashboardBookingsScreen"
-        component={DashboardBookingsScreen}
+        name="BookingsScreen"
+        component={BookingsScreen}
         options={backButtonConfig}
       />
       {/* <Stack.Screen

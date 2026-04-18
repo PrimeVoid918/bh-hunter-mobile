@@ -10,6 +10,7 @@ import {
   Portal,
   Modal,
   Icon,
+  ActivityIndicator,
 } from "react-native-paper";
 import {
   GetBooking,
@@ -17,6 +18,14 @@ import {
 } from "@/infrastructure/booking/booking.schema";
 import { Spacing } from "@/constants";
 import { VStack, HStack, Box } from "@gluestack-ui/themed";
+import {
+  useGetOwnerAccessQuery,
+  useGetTenantAccessQuery,
+} from "@/infrastructure/access/access.redux.api";
+import {
+  isOwnerAccess,
+  isTenantAccess,
+} from "@/infrastructure/access/access.schema";
 
 interface BookingDecisionBlockInterface {
   booking: GetBooking;
@@ -38,31 +47,93 @@ export default function BookingDecisionBlock({
   onCancel,
   onVerifyPayment,
   refundPreview,
-  isLoading,
+  isLoading: isActionLoading,
 }: BookingDecisionBlockInterface) {
   const theme = useTheme();
-  const { status } = booking;
-  const isOwner = viewerRole === "OWNER";
-  const isTenant = viewerRole === "TENANT";
-
   const [message, setMessage] = React.useState("");
   const [showConfirm, setShowConfirm] = React.useState(false);
+
+  const tenantId = booking.room.boardingHouse.ownerId;
+  const ownerId = booking.tenantId;
+
+  // 1. DYNAMIC DATA FETCHING
+  // Select hook based on role. Owner needs ownerId, Tenant needs tenantId.
+  const ownerQuery = useGetOwnerAccessQuery(
+    { id: ownerId },
+    { skip: viewerRole !== "OWNER" || !ownerId },
+  );
+  const tenantQuery = useGetTenantAccessQuery(
+    { id: tenantId },
+    { skip: viewerRole !== "TENANT" || !tenantId },
+  );
+
+  const accessData =
+    viewerRole === "OWNER" ? ownerQuery.data : tenantQuery.data;
+  const isAccessLoading =
+    viewerRole === "OWNER" ? ownerQuery.isLoading : tenantQuery.isLoading;
+
+  console.log("access data booking status page: ", accessData);
+
+  // 2. LOCKDOWN LOGIC
+  const lockdown = React.useMemo(() => {
+    if (!accessData) return false;
+    if (viewerRole === "OWNER" && isOwnerAccess(accessData)) {
+      // Owners are locked if they can't approve bookings
+      return !accessData.canApproveBookings;
+    }
+    if (viewerRole === "TENANT" && isTenantAccess(accessData)) {
+      // Tenants are locked if they can't book (usually means verification pending)
+      return !accessData.canBookRoom;
+    }
+    return false;
+  }, [accessData, viewerRole]);
 
   const handlePress = (pattern: "light" | "heavy", action: () => void) => {
     Vibration.vibrate(pattern === "heavy" ? 40 : 10);
     action();
   };
 
-  // const isRefundable = status === "COMPLETED_BOOKING" && refundPreview;
+  // 3. UI STATES
+  if (isAccessLoading) {
+    return (
+      <ActivityIndicator animating={true} style={{ marginVertical: 20 }} />
+    );
+  }
+
+  if (lockdown) {
+    return (
+      <Surface elevation={0} style={s.lockdownCard}>
+        <HStack space="md" alignItems="center">
+          <Box style={s.lockIconBg}>
+            <Icon
+              source="shield-alert-outline"
+              size={22}
+              color={theme.colors.error}
+            />
+          </Box>
+          <VStack style={{ flex: 1 }}>
+            <Text style={s.lockTitle}>Action Restricted</Text>
+            <Text style={s.lockSub}>
+              {viewerRole === "OWNER"
+                ? "Complete verification to manage this booking."
+                : "Verify your account to perform booking actions."}
+            </Text>
+          </VStack>
+        </HStack>
+      </Surface>
+    );
+  }
+
+  // --- EXISTING LOGIC STARTS HERE ---
+  const { status } = booking;
+  const isOwner = viewerRole === "OWNER";
+  const isTenant = viewerRole === "TENANT";
   const showRefundUI = status === "COMPLETED_BOOKING" && refundPreview;
+  const isLoading = isActionLoading || isAccessLoading;
 
   if (isOwner && status === "PENDING_REQUEST") {
     return (
-      <VStack
-        space="md"
-        style={{ opacity: isLoading ? 0.7 : 1 }}
-        pointerEvents={isLoading ? "none" : "auto"}
-      >
+      <VStack space="md" style={{ opacity: isLoading ? 0.7 : 1 }}>
         <TextInput
           mode="outlined"
           label="Note to Tenant (Optional)"
@@ -268,11 +339,36 @@ const RefundSummary = ({
 };
 
 const s = StyleSheet.create({
+  lockdownCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D6454550",
+    backgroundColor: "#FFF5F5", // Very light tint of error
+    elevation: 0,
+  },
+  lockIconBg: {
+    padding: 8,
+    backgroundColor: "#FEE2E2",
+    borderRadius: 8,
+  },
+  lockTitle: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 13,
+    color: "#D64545",
+  },
+  lockSub: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 11,
+    color: "#666",
+  },
   input: {
     backgroundColor: "white",
     fontSize: 14,
     fontFamily: "Poppins-Regular",
   },
+  flexButton: { flex: 1, borderRadius: 8, elevation: 0 },
+
   iconCircle: {
     width: 60,
     height: 60,
@@ -286,21 +382,11 @@ const s = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
   },
-  flexButton: { flex: 1, borderRadius: 8 },
   buttonHeight: { height: 48 },
   buttonLabel: { fontFamily: "Poppins-SemiBold", fontSize: 14 },
-  refundCard: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    backgroundColor: "#F7F9FC",
-    marginBottom: 8,
-  },
-  refundLabel: { fontFamily: "Poppins-Medium", fontSize: 12 },
   refundPercent: { fontFamily: "Poppins-Bold", fontSize: 12 },
   refundSub: { fontFamily: "Poppins-Regular", fontSize: 11, color: "#767474" },
   refundAmount: { fontFamily: "Poppins-SemiBold", fontSize: 14 },
-  // Modal Styles
   modalContainer: { padding: 20 },
   modalContent: {
     padding: 24,

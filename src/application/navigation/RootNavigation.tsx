@@ -8,8 +8,8 @@ import { useDispatch, useSelector } from "react-redux";
 // Navigators
 import AuthStack from "@/features/auth/navigation/auth.stack";
 import AdminTabs from "@/features/admin/navigation/admin.tabs";
-import OwnerTabs from "@/features/owner/navigation/owner.tabs";
-import TenantRoot from "@/features/tenant/navigation/tenant.root-navigation";
+import TenantRootNavigation from "@/features/tenant/navigation/tenant.root-navigation";
+import OwnerRootNavigation from "@/features/owner/navigation/owner.root-navigation";
 
 // Logic & UI
 import { RootStackParamList } from "../../features/types/navigation";
@@ -101,10 +101,13 @@ export const RootNavigation = () => {
               <RootStack.Screen name="Admin" component={AdminTabs} />
             )}
             {normalizedRole === "Owner" && (
-              <RootStack.Screen name="Owner" component={OwnerTabs} />
+              <RootStack.Screen name="Owner" component={OwnerRootNavigation} />
             )}
             {normalizedRole === "Tenant" && (
-              <RootStack.Screen name="Tenant" component={TenantRoot} />
+              <RootStack.Screen
+                name="Tenant"
+                component={TenantRootNavigation}
+              />
             )}
           </>
         )}

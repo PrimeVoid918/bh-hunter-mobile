@@ -1,10 +1,10 @@
 export type OwnerBookingStackParamList = {
-  PropertiesMainScreen: undefined;
-  PropertiesBookingListsScreen: {
+  BookingMainScreen: undefined;
+  BookingListsScreen: {
     bhId: number | null;
     [key: string]: any; // allow extra params if needed
   };
-  PropertiesDetailsScreen: {
+  BookingDetailsScreen: {
     bookId: number | null;
     [key: string]: any; // allow extra params if needed
   };

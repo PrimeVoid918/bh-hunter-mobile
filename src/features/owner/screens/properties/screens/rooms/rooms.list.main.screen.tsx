@@ -16,10 +16,11 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import { Spacing, BorderRadius } from "@/constants";
-import { OwnerDashboardStackParamList } from "../navigation/dashboard.types";
+import { OwnerDashboardStackParamList } from "../../../dashboard/navigation/dashboard.types";
 import { useGetAllQuery as useGetAllRoomsQuery } from "@/infrastructure/room/rooms.redux.api";
 import { Lists } from "@/components/layout/Lists/Lists";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import theme from "@/application/config/react-native-paper.config";
 
 export default function RoomsListMainScreen({ route }) {
   const { colors } = useTheme();
@@ -182,13 +183,9 @@ export default function RoomsListMainScreen({ route }) {
       <FAB
         icon="plus"
         label="New Room"
-        style={[
-          s.fab,
-          {
-            backgroundColor: colors.primary,
-            borderRadius: BorderRadius.md,
-          },
-        ]}
+        mode="flat"
+        style={s.fab}
+        labelStyle={s.fabLabel}
         onPress={() => navigate.navigate("RoomsAddScreen", { bhId: paramsId })}
       />
     </View>
@@ -233,6 +230,17 @@ const s = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
-    borderRadius: BorderRadius.xl,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  fabLabel: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 14,
+    color: "#FFFFFF",
   },
 });

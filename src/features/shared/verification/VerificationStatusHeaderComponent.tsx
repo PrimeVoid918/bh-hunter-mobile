@@ -34,52 +34,69 @@ export default function VerificationStatusHeader({
   const theme = useTheme();
 
   const globalStatus: GlobalVerificationStatus = React.useMemo(() => {
-    if (!verificationList) return "LOADING";
-    const statuses = verificationList.map((d) => d.status);
-    const hasMissing = statuses.includes("MISSING");
-    const hasRejected = statuses.includes("REJECTED");
-    const hasPending = statuses.includes("PENDING");
+    if (!verificationList || verificationList.length === 0) return "INCOMPLETE";
 
-    if (hasRejected) return "ACTION_REQUIRED";
+    const statuses = verificationList.map((d) => d.status);
+
+    const hasRejected = statuses.includes("REJECTED");
+    const hasExpired = statuses.includes("EXPIRED");
+    const hasPending = statuses.includes("PENDING");
+    // "MISSING" comes from your .map logic in the MainScreen
+    const hasMissing = statuses.includes("MISSING" as any);
+
+    // 1. If anything is rejected or expired, it's urgent
+    if (hasRejected || hasExpired) return "ACTION_REQUIRED";
+
+    // 2. If nothing is rejected but something is missing
     if (hasMissing) return "INCOMPLETE";
+
+    // 3. If everything is uploaded but one is still being checked
     if (hasPending) return "UNDER_REVIEW";
+
+    // 4. Finally, check the verified flag from the API
     if (verified) return "VERIFIED";
+
     return "INCOMPLETE";
   }, [verified, verificationList]);
 
   const statusConfig = {
     VERIFIED: {
-      icon: "check-decagram",
-      color: "#80CFA9", // Your Success color
+      icon: "shield-check",
+      color: "#80CFA9",
       bg: "#F0F9F4",
       title: "Account Verified",
-      subtitle: "You have full access to BH-Hunter features.",
+      subtitle: "You have full access to BH-Hunter features in Ormoc City.",
     },
     UNDER_REVIEW: {
       icon: "clock-fast",
-      color: theme.colors.secondary,
+      color: "#FBBC05", // Yellow
       bg: "#FFFBE6",
       title: "Review in Progress",
-      subtitle: "We're checking your documents. Hang tight!",
+      subtitle: "The admin is checking your documents. Hang tight!",
     },
     ACTION_REQUIRED: {
       icon: "alert-octagon",
       color: theme.colors.error,
       bg: theme.colors.errorContainer,
       title: "Action Required",
-      subtitle: "Some documents were rejected. Please re-upload.",
+      subtitle: "Update rejected or expired documents to keep your status.",
     },
     INCOMPLETE: {
       icon: "file-plus-outline",
       color: theme.colors.outline,
       bg: theme.colors.surfaceVariant,
       title: "Verification Required",
-      subtitle: "Upload your ID to start matchmaking in Ormoc.",
+      subtitle: "Upload the required documents to start matchmaking.",
     },
-    LOADING: { icon: "", color: "", bg: "", title: "", subtitle: "" },
+    LOADING: {
+      icon: "refresh",
+      color: "#ccc",
+      bg: "#eee",
+      title: "Loading...",
+      subtitle: "Fetching status...",
+    },
   };
 
-  if (globalStatus === "LOADING") return null;
   const config = statusConfig[globalStatus];
 
   return (
@@ -87,7 +104,7 @@ export default function VerificationStatusHeader({
       elevation={0}
       style={[
         s.container,
-        { backgroundColor: config.bg, borderColor: config.color + "40",  },
+        { backgroundColor: config.bg, borderColor: config.color + "40" },
       ]}
     >
       <View style={[s.iconCircle, { backgroundColor: config.color + "20" }]}>
@@ -112,6 +129,7 @@ export default function VerificationStatusHeader({
         {config.subtitle}
       </Text>
 
+      {/* Show complete profile only if they are just starting out */}
       {globalStatus === "INCOMPLETE" && onCompleteProfile && (
         <Button
           mode="contained-tonal"

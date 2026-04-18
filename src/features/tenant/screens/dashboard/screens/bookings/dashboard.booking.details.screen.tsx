@@ -23,10 +23,10 @@ import AutoExpandingInput from "@/components/ui/AutoExpandingInputComponent";
 
 type RouteProps = RouteProp<
   TenantDashboardBookingStackParamList,
-  "DashboardBookingDetailsScreen"
+  "BookingDetailsScreen"
 >;
 
-export default function DashboardBookingDetailsScreen() {
+export default function BookingDetailsScreen() {
   React.useEffect(() => {
     return () => {
       expoStorageCleaner(["documents", "images"]);

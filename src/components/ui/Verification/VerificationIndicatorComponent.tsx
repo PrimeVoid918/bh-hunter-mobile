@@ -37,7 +37,7 @@ export default function VerificationIndicator({ isVerified, onPress }: Props) {
         bg: theme.colors.primaryContainer,
         text: theme.colors.onPrimaryContainer,
         icon: "shield-check",
-        label: `Verified ${role == "OWNER" ? "Tenant" : "Owner"}`,
+        label: `Verified ${role == "OWNER" ? "Owner" : "Tenant"}`,
         desc: "Identity confirmed",
       }
     : {

@@ -20,13 +20,12 @@ const Tab = createBottomTabNavigator();
 export default function OwnerTabs() {
   const theme = useTheme();
 
-  // Unified Style: Prevents layout "jumping" and enforces BH-HUNTER design tokens
   const SHARED_TAB_BAR_STYLE = {
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.outlineVariant,
     height: Platform.OS === "ios" ? 88 : 70,
-    elevation: 0, // Contained look: no shadow
+    elevation: 0,
     paddingTop: 8,
     paddingBottom: Platform.OS === "ios" ? 28 : 12,
   };

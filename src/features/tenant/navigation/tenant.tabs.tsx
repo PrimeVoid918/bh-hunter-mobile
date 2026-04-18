@@ -18,12 +18,11 @@ const Tab = createBottomTabNavigator();
 export default function TenantTabs() {
   const theme = useTheme();
 
-  // Shared Style to prevent "Jumping" height
   const SHARED_TAB_BAR_STYLE = {
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.outlineVariant,
-    height: Platform.OS === "ios" ? 88 : 70, // Fixed height for both states
+    height: Platform.OS === "ios" ? 88 : 70,
     elevation: 0,
     paddingTop: 8,
     paddingBottom: Platform.OS === "ios" ? 28 : 12,
@@ -40,13 +39,12 @@ export default function TenantTabs() {
           fontFamily: "Poppins-Medium",
           fontSize: 10,
         },
-        tabBarStyle: SHARED_TAB_BAR_STYLE, // Use the shared constant here
+        tabBarStyle: SHARED_TAB_BAR_STYLE,
         tabBarIcon: ({ focused, color }) => {
           let iconName: keyof typeof MaterialCommunityIcons.glyphMap;
 
           switch (route.name) {
             case "Dashboard":
-              // Suggestions for Dashboard:
               iconName = focused ? "view-dashboard" : "view-dashboard-outline";
               break;
             case "Booking":
@@ -85,8 +83,8 @@ export default function TenantTabs() {
 
           return {
             tabBarStyle: {
-              ...SHARED_TAB_BAR_STYLE, // Spread the shared style first
-              display: isHidden ? "none" : "flex", // Only change display
+              ...SHARED_TAB_BAR_STYLE,
+              display: isHidden ? "none" : "flex",
             },
           };
         }}
