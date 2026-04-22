@@ -14,4 +14,6 @@ export type OwnerDashboardStackParamList = {
     meta: VerificationSubmitScreenMeta;
   };
   ProfileEditScreen: undefined;
+
+  SubscriptionWebviewMainScreen: undefined;
 };

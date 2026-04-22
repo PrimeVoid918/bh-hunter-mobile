@@ -89,6 +89,7 @@ export default function BoardingHouseDetailsScreen() {
       amenities: [],
       availabilityStatus: true,
       occupancyType: "MIXED",
+      houseRulesContent: "",
     },
   });
 
@@ -102,6 +103,7 @@ export default function BoardingHouseDetailsScreen() {
         amenities: boardinghouse.amenities ?? [],
         availabilityStatus: boardinghouse.availabilityStatus,
         occupancyType: boardinghouse.occupancyType,
+        houseRulesContent: boardinghouse.houseRulesContent,
       });
     }
   }, [boardinghouse, reset]);

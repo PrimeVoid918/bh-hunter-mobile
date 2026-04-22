@@ -29,6 +29,8 @@ import { useGetTenantAccessQuery } from "@/infrastructure/access/access.redux.ap
 import { isTenantAccess } from "@/infrastructure/access/access.schema";
 import { TenantDashboardStackParamList } from "../navigation/dashboard.stack";
 import { DEFAULT_COORDS } from "@/application/config/map.config";
+import StayStatusSection from "../components/StayStatusSection";
+import { TenantTabsParamList } from "../../../navigation/tenant.tabs.types";
 
 export default function MainScreen() {
   const { colors } = useTheme();
@@ -36,13 +38,18 @@ export default function MainScreen() {
   const { selectedUser: user } = useDynamicUserApi();
   const navigation =
     useNavigation<NativeStackNavigationProp<TenantDashboardStackParamList>>();
+  const toMapNavigation =
+    useNavigation<NativeStackNavigationProp<TenantTabsParamList>>();
 
   // API - Fetch Active Stay
   const {
-    data: activeStay,
+    data: stayStatus,
     isLoading: isActiveLoading,
     refetch: refetchActiveStay,
   } = useGetActiveQuery(user?.id, { skip: !user?.id });
+
+  const activeStay = stayStatus?.active ?? null;
+  const upcomingStay = stayStatus?.upcoming ?? null;
 
   // API - Fetch Pending Requests (to count them)
   const {
@@ -110,111 +117,23 @@ export default function MainScreen() {
           isVerified={lockdown}
         />
 
-        {/* 3. CONDITIONAL BOOKING SECTION */}
-        <VStack space="md">
-          {isActiveLoading ? (
-            <ActivityIndicator />
-          ) : activeStay ? (
-            /* CASE: HAS ACTIVE BOOKING */
-            <Surface elevation={0} style={s.activeStayCard}>
-              <HStack space="md" alignItems="center" mb={12}>
-                <Box style={s.iconCircle}>
-                  <MaterialCommunityIcons
-                    name="home-heart"
-                    size={24}
-                    color={colors.primary}
-                  />
-                </Box>
-                <VStack>
-                  <Text style={s.cardLabel}>YOUR CURRENT STAY</Text>
-                  <Text style={s.bhName}>{activeStay.boardingHouse?.name}</Text>
-                </VStack>
-              </HStack>
-
-              <Divider style={s.cardDivider} />
-
-              <HStack justifyContent="space-between" mt={12}>
-                <VStack>
-                  <Text style={s.statLabel}>Room</Text>
-                  <Text style={s.statValue}>{activeStay.room?.roomNumber}</Text>
-                </VStack>
-                <VStack alignItems="flex-end">
-                  <Text style={s.statLabel}>Check-out</Text>
-                  <Text style={s.statValue}>
-                    {new Date(activeStay.checkOutDate).toLocaleDateString()}
-                  </Text>
-                </VStack>
-              </HStack>
-
-              <TouchableRipple
-                onPress={() =>
-                  navigation.navigate("BookingStatusScreen", {
-                    bookId: activeStay.id,
-                  })
-                }
-                // onPress={() =>
-                //   navigation.navigate("DashboardBookingStack", {
-                //     screen: "BookingDetails",
-                //     params: { id: activeStay.id },
-                //   })
-                // }
-                style={s.cardAction}
-              >
-                <HStack space="xs" alignItems="center">
-                  <Text style={s.actionText}>View Booking Details</Text>
-                  <MaterialCommunityIcons
-                    name="arrow-right"
-                    size={16}
-                    color={colors.primary}
-                  />
-                </HStack>
-              </TouchableRipple>
-            </Surface>
-          ) : pendingCount > 0 ? (
-            /* CASE: HAS PENDING REQUESTS */
-            <Surface
-              elevation={0}
-              style={[s.activeStayCard, { borderColor: "#EAB308" }]}
-            >
-              <HStack space="md" alignItems="center">
-                <MaterialCommunityIcons
-                  name="clock-outline"
-                  size={24}
-                  color="#EAB308"
-                />
-                <VStack>
-                  <Text style={[s.cardLabel, { color: "#EAB308" }]}>
-                    PENDING REQUESTS ({pendingCount})
-                  </Text>
-                  <Text style={s.statValue}>Waiting for Owner Approval</Text>
-                </VStack>
-              </HStack>
-              <TouchableRipple
-                onPress={() => navigation.navigate("BookingStack")}
-                style={s.cardAction}
-              >
-                <Text style={[s.actionText, { color: "#EAB308" }]}>
-                  Check Status
-                </Text>
-              </TouchableRipple>
-            </Surface>
-          ) : (
-            /* CASE: EMPTY STATE */
-            <Surface elevation={0} style={s.emptyCard}>
-              <MaterialCommunityIcons
-                name="map-search-outline"
-                size={40}
-                color={colors.outline}
-              />
-              <Text style={s.emptyText}>
-                You don't have any active bookings yet.
-              </Text>
-              <Pressable onPress={() => navigation.navigate("Explore")}>
-                <Text style={s.exploreLink}>Explore Boarding Houses →</Text>
-              </Pressable>
-            </Surface>
-          )}
-        </VStack>
+        <StayStatusSection
+          isLoading={isActiveLoading}
+          stayStatus={stayStatus!}
+          pendingCount={pendingCount}
+          onPressActiveStay={() =>
+            navigation.navigate("BookingStatusScreen", {
+              bookId: stayStatus?.active?.id!,
+            })
+          }
+          onPressUpcomingStay={() =>
+            navigation.navigate("BookingStatusScreen", {
+              bookId: stayStatus?.upcoming?.id!,
+            })
+          }
+          onPressPending={() => navigation.navigate("BookingStack")}
+          onPressExplore={() => toMapNavigation.navigate("Map")}
+        />
 
         {/* 4. QUICK ACTIONS (GRID) */}
         <VStack space="md">
@@ -405,38 +324,3 @@ const s = StyleSheet.create({
     color: "#3A3A3A",
   },
 });
-
-/**
-if has booking {
-  🏠 Your Current Stay
-
-  Boarding House: Sunflower Residences
-  Room: 203
-  📅 Until: April 25
-  💰 Status: PAID
-
-  [View Booking]
-}else if no active and no pending {
-  ⏳ Your Booking Requests (2)
-
-  • Room 101 → Awaiting Approval
-  • Room 202 → Awaiting Payment
-
-  [View All Requests]
-} else nothing in record {
-  You don’t have any bookings yet
-
-  [Explore Boarding Houses]
-}
-
-Other Activity
-- 2 pending requests
-- View history
-
-[Quick Actions]
-- My Bookings
-- Saved Places
-- Notifications
-
-[Discover / Nearby]
- */

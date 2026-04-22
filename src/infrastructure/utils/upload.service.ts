@@ -22,6 +22,7 @@ export const uploadBoardingHouse = async (
       { name: "address", data: data.address },
       { name: "description", data: data.description || "" },
       { name: "occupancyType", data: data.occupancyType || "" },
+      { name: "houseRulesContent", data: data.houseRulesContent || "" },
       {
         name: "availabilityStatus",
         data: data.availabilityStatus ? "true" : "false",

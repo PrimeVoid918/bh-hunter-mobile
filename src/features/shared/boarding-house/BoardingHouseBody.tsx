@@ -20,6 +20,7 @@ import {
 import TagListDumb from "@/components/ui/AmenitiesAndTagsLists/TagListDumb";
 import { Surface, useTheme } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import ControlledMultilineField from "@/components/ui/FormFields/ControlledMultilineField";
 
 interface BoardingHouseBodyInterface {
   data: FindOneBoardingHouse;
@@ -71,6 +72,38 @@ export function BoardingHouseBodyEdit({
           control={control}
           isEditing={isEditing}
           placeholder="Describe your boarding house..."
+        />
+      </Surface>
+
+      <Surface style={s.cardImportant} elevation={0}>
+        <HStack style={s.cardHeader}>
+          <MaterialCommunityIcons
+            name="alert-circle-outline"
+            size={20}
+            color="#8A6700"
+          />
+          <Text style={s.sectionTitle}>House Rules & Terms</Text>
+        </HStack>
+
+        <Text style={s.rulesNotice}>
+          These rules are shown to tenants before booking and may appear in the
+          booking agreement.
+        </Text>
+
+        <ControlledMultilineField
+          name="houseRulesContent"
+          control={control}
+          label="Rules shown to tenants"
+          important
+          maxLength={2000}
+          helperText="Be clear and specific. Tenants will rely on this before confirming a booking."
+          placeholder={
+            "Example:\n" +
+            "• Curfew is 10:00 PM unless approved by the owner.\n" +
+            "• Visitors are not allowed inside private rooms.\n" +
+            "• Keep shared spaces clean.\n" +
+            "• Advance payment is non-refundable once confirmed."
+          }
         />
       </Surface>
 
@@ -129,6 +162,29 @@ const s = StyleSheet.create({
     lineHeight: 22,
     color: "#3A3A3A",
   },
+
+  cardImportant: {
+    padding: Spacing.base,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: "#E7C85A",
+    backgroundColor: "#FFFDF7",
+  },
+
+  rulesNotice: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Poppins-Regular",
+    color: "#7A6A2A",
+    marginBottom: Spacing.sm,
+  },
+
+  rulesText: {
+    fontSize: Fontsize.md,
+    fontFamily: "Poppins-Regular",
+    lineHeight: 22,
+    color: "#3A3A3A",
+  },
 });
 
 interface BoardingHouseBodyViewInteface {
@@ -151,6 +207,26 @@ export function BoardingHouseBodyView({ data }: BoardingHouseBodyViewInteface) {
         <Text style={s.descriptionText}>
           {data.description?.trim() ||
             "The owner hasn't provided a description yet."}
+        </Text>
+      </Surface>
+
+      <Surface style={s.cardImportant} elevation={0}>
+        <HStack style={s.cardHeader}>
+          <MaterialCommunityIcons
+            name="shield-alert-outline"
+            size={20}
+            color="#8A6700"
+          />
+          <Text style={s.sectionTitle}>House Rules & Terms</Text>
+        </HStack>
+
+        <Text style={s.rulesNotice}>
+          Please review these rules before proceeding with a booking.
+        </Text>
+
+        <Text style={s.rulesText}>
+          {data.houseRulesContent?.trim() ||
+            "The owner has not provided house rules yet."}
         </Text>
       </Surface>
 
@@ -189,5 +265,28 @@ const sView = StyleSheet.create({
   amenitiesContainer: {
     padding: 16,
     borderRadius: BorderRadius.md,
+  },
+
+  cardImportant: {
+    padding: Spacing.base,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: "#E7C85A",
+    backgroundColor: "#FFFDF7",
+  },
+
+  rulesNotice: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Poppins-Regular",
+    color: "#7A6A2A",
+    marginBottom: Spacing.sm,
+  },
+
+  rulesText: {
+    fontSize: Fontsize.md,
+    fontFamily: "Poppins-Regular",
+    lineHeight: 22,
+    color: "#3A3A3A",
   },
 });

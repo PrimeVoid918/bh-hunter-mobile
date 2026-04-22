@@ -99,7 +99,7 @@ export default function UserInformationCard({ user, title }: Props) {
               variant="bodySmall"
               style={{ color: theme.colors.outline, marginTop: -2 }}
             >
-              {userInfo.username}
+              {/* {userInfo.username} */}
             </Text>
           </View>
 
@@ -160,8 +160,7 @@ export default function UserInformationCard({ user, title }: Props) {
 }
 
 const s = StyleSheet.create({
-  outerContainer: {
-  },
+  outerContainer: {},
   sectionTitle: {
     marginBottom: 8,
     marginLeft: 4,

@@ -302,6 +302,13 @@ export const ActiveBookingSchema = GetBookingSchema.pick({
 
 export type ActiveBooking = z.infer<typeof ActiveBookingSchema>;
 
+export const StayStatusSchema = z.object({
+  active: ActiveBookingSchema.nullable(),
+  upcoming: ActiveBookingSchema.nullable(),
+});
+
+export type StayStatus = z.infer<typeof StayStatusSchema>;
+
 /*
 |--------------------------------------------------------------------------
 | QUERY FILTERS

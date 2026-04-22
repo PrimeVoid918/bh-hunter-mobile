@@ -54,8 +54,8 @@ export const boardingHouseApi = createApi({
           Object.fromEntries(
             Object.entries(parsed.data)
               .filter(([_, v]) => v != null)
-              .map(([key, value]) => [key, String(value)]) // <-- cast to string
-          )
+              .map(([key, value]) => [key, String(value)]), // <-- cast to string
+          ),
         );
 
         return `${boardingHouseApiRoute}?${queryParams.toString()}`;
@@ -67,7 +67,7 @@ export const boardingHouseApi = createApi({
       providesTags: (
         result: GetBoardingHouse[] | undefined,
         error,
-        arg
+        arg,
       ): TagDescription<"BoardingHouse">[] => {
         const tags: TagDescription<"BoardingHouse">[] = [
           { type: "BoardingHouse", id: "LIST" },

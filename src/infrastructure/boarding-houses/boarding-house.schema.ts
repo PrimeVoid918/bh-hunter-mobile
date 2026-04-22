@@ -66,6 +66,7 @@ export const BaseBoardingHouseSchema = z.object({
   occupancyType: OccupancyTypeEnumSchema,
   availabilityStatus: z.boolean(),
   locationId: z.number(),
+  houseRulesContent: z.string().optional(),
 
   location: GetLocationSchema,
 
@@ -91,6 +92,7 @@ export const GetBoardingHouseSchema = z.object({
   amenities: z.array(z.enum(AMENITIES)),
   occupancyType: OccupancyTypeEnumSchema,
   availabilityStatus: z.boolean(),
+  houseRulesContent: z.string().optional(),
   locationId: z.number().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -155,6 +157,7 @@ export const FindOneBoardingHouseSchema = z.object({
   amenities: z.array(z.enum(AMENITIES)),
   occupancyType: OccupancyTypeEnumSchema,
   availabilityStatus: z.boolean(),
+  houseRulesContent: z.string().optional(),
   locationId: z.number().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -182,6 +185,7 @@ export const CreateBoardingHouseInputSchema = z.object({
   amenities: z.array(z.enum(AMENITIES)),
   occupancyType: OccupancyTypeEnumSchema,
   availabilityStatus: z.boolean(),
+  houseRulesContent: z.string().optional(),
   thumbnail: z.array(ImageUploadSchema).optional(),
   gallery: z.array(ImageUploadSchema).optional(),
   location: BaseLocationSchema,
@@ -210,6 +214,7 @@ export const PatchBoardingHouseSchema = z
     name: z.string().min(1, "Name cannot be empty").optional(),
     address: z.string().min(1, "Address cannot be empty").optional(),
     description: z.string().optional(),
+    houseRulesContent: z.string().optional(),
 
     // Strict enum array
     amenities: z.array(z.enum(AMENITIES)).optional(),

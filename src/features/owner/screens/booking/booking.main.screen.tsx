@@ -1,32 +1,33 @@
-import React, { useState } from "react";
-import { StyleSheet, Pressable, View } from "react-native";
-import { Text, useTheme, Surface, IconButton } from "react-native-paper";
+import React, { useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { Surface, Text, TouchableRipple, useTheme } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useSelector } from "react-redux";
-import { VStack, HStack, Badge, BadgeText } from "@gluestack-ui/themed";
+import { VStack, HStack, Badge, BadgeText, Box } from "@gluestack-ui/themed";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
-import { Spacing, BorderRadius } from "@/constants";
+import { BorderRadius, Spacing } from "@/constants";
 import { useGetAllQuery as useGetAllBoardingHouses } from "@/infrastructure/boarding-houses/boarding-house.redux.api";
 import { RootState } from "@/application/store/stores";
-import { OwnerTabsParamList } from "../../navigation/owner.tabs.type";
 import { Lists } from "@/components/layout/Lists/Lists";
+import { OwnerBookingStackParamList } from "./navigation/booking.types";
 
 export default function BookingMainScreen() {
   const { colors } = useTheme();
   const navigation =
-    useNavigation<BottomTabNavigationProp<OwnerTabsParamList>>();
+    useNavigation<BottomTabNavigationProp<OwnerBookingStackParamList>>();
 
   const ownerId = useSelector(
     (state: RootState) => state.owners.selectedUser?.id,
   );
+
   const [refreshing, setRefreshing] = useState(false);
 
   const {
-    data: boardinghouses,
+    data: boardinghouses = [],
     isLoading,
     refetch,
   } = useGetAllBoardingHouses({ ownerId });
@@ -39,11 +40,18 @@ export default function BookingMainScreen() {
 
   const handleNavigate = (id: number) => {
     ReactNativeHapticFeedback.trigger("impactLight");
-    navigation.navigate("Booking", {
-      screen: "PropertiesBookingListsScreen",
-      params: { bhId: id },
-    });
+    navigation.navigate("BookingListsScreen", { bhId: id });
   };
+
+  const totalProperties = boardinghouses.length;
+  const totalRooms = useMemo(() => {
+    return boardinghouses.reduce(
+      (sum: number, item: any) => sum + (item?.rooms?.length ?? 0),
+      0,
+    );
+  }, [boardinghouses]);
+
+  const hasProperties = totalProperties > 0;
 
   return (
     <StaticScreenWrapper
@@ -54,89 +62,327 @@ export default function BookingMainScreen() {
       onRefresh={handlePageRefresh}
     >
       <View style={s.mainContainer}>
-        {/* --- TITLE SECTION --- */}
-        <VStack style={s.headerSection}>
-          <Text variant="displaySmall" style={s.title}>
-            Select Property
+        <VStack style={s.headerSection} space="xs">
+          <Text
+            variant="displaySmall"
+            style={[s.title, { color: colors.onSurface }]}
+          >
+            Bookings
           </Text>
-          <Text variant="bodyMedium" style={s.subtitle}>
-            Choose a boarding house to manage its bookings.
+          <Text
+            variant="bodyMedium"
+            style={[s.subtitle, { color: colors.outline }]}
+          >
+            Select a property to manage booking requests, payments, and stay
+            confirmations.
           </Text>
         </VStack>
 
-        {/* --- LIST SECTION --- */}
-        {boardinghouses && (
+        <HStack style={s.metricsRow}>
+          <Surface
+            elevation={0}
+            style={[
+              s.metricCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.outlineVariant,
+              },
+            ]}
+          >
+            <HStack alignItems="center" gap={Spacing.sm}>
+              <Box
+                style={[
+                  s.metricIconWrap,
+                  { backgroundColor: colors.primaryContainer },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="office-building"
+                  size={20}
+                  color={colors.primary}
+                />
+              </Box>
+
+              <VStack>
+                <Text
+                  variant="headlineSmall"
+                  style={[s.metricValue, { color: colors.onSurface }]}
+                >
+                  {totalProperties}
+                </Text>
+                <Text
+                  variant="bodySmall"
+                  style={[s.metricLabel, { color: colors.outline }]}
+                >
+                  Properties
+                </Text>
+              </VStack>
+            </HStack>
+          </Surface>
+
+          <Surface
+            elevation={0}
+            style={[
+              s.metricCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.outlineVariant,
+              },
+            ]}
+          >
+            <HStack alignItems="center" gap={Spacing.sm}>
+              <Box
+                style={[
+                  s.metricIconWrap,
+                  { backgroundColor: colors.primaryContainer },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="door-open"
+                  size={20}
+                  color={colors.primary}
+                />
+              </Box>
+
+              <VStack>
+                <Text
+                  variant="headlineSmall"
+                  style={[s.metricValue, { color: colors.onSurface }]}
+                >
+                  {totalRooms}
+                </Text>
+                <Text
+                  variant="bodySmall"
+                  style={[s.metricLabel, { color: colors.outline }]}
+                >
+                  Rooms
+                </Text>
+              </VStack>
+            </HStack>
+          </Surface>
+        </HStack>
+
+        <Surface
+          elevation={0}
+          style={[
+            s.infoCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.outlineVariant,
+            },
+          ]}
+        >
+          <HStack alignItems="flex-start" gap={Spacing.sm}>
+            <Box
+              style={[
+                s.infoIconWrap,
+                { backgroundColor: colors.primaryContainer },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="clipboard-list-outline"
+                size={20}
+                color={colors.primary}
+              />
+            </Box>
+
+            <VStack flex={1}>
+              <Text
+                variant="titleMedium"
+                style={[s.infoTitle, { color: colors.onSurface }]}
+              >
+                Booking Workspace
+              </Text>
+              <Text
+                variant="bodySmall"
+                style={[s.infoText, { color: colors.outline }]}
+              >
+                Review each property’s booking list, then open details for
+                approval, rejection, or payment verification.
+              </Text>
+            </VStack>
+          </HStack>
+        </Surface>
+
+        <VStack style={s.sectionHeader}>
+          <Text
+            variant="titleLarge"
+            style={[s.sectionTitle, { color: colors.onSurface }]}
+          >
+            Your Properties
+          </Text>
+          <Text
+            variant="bodySmall"
+            style={[s.sectionSubtitle, { color: colors.outline }]}
+          >
+            Tap a property below to view and manage its bookings.
+          </Text>
+        </VStack>
+
+        {hasProperties ? (
           <Lists
             list={boardinghouses}
-            contentContainerStyle={s.listPadding}
-            renderItem={({ item }) => (
-              <Surface
-                elevation={0}
-                style={[s.navCard, { borderColor: colors.outlineVariant }]}
-              >
-                <Pressable
-                  android_ripple={{ color: "rgba(0,0,0,0.05)" }}
-                  onPress={() => handleNavigate(item.id)}
-                  style={s.pressableArea}
+            contentContainerStyle={s.listContent}
+            renderItem={({ item }: { item: any }) => {
+              const roomCount = item?.rooms?.length ?? 0;
+
+              return (
+                <Surface
+                  elevation={0}
+                  style={[
+                    s.propertyCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.outlineVariant,
+                    },
+                  ]}
                 >
-                  <HStack justifyContent="space-between" alignItems="center">
-                    <HStack flex={1} gap={Spacing.md} alignItems="center">
-                      {/* Visual Anchor */}
-                      <Surface
-                        style={[
-                          s.iconContainer,
-                          { backgroundColor: colors.primaryContainer },
-                        ]}
-                        elevation={0}
-                      >
-                        <MaterialCommunityIcons
-                          name="office-building-marker"
-                          size={24}
-                          color={colors.primary}
-                        />
-                      </Surface>
-
-                      <VStack flex={1}>
-                        <Text
-                          variant="titleMedium"
-                          style={s.bhName}
-                          numberOfLines={1}
+                  <TouchableRipple
+                    borderless={false}
+                    rippleColor="rgba(53,127,193,0.08)"
+                    onPress={() => handleNavigate(item.id)}
+                    style={s.rippleArea}
+                  >
+                    <HStack justifyContent="space-between" alignItems="center">
+                      <HStack flex={1} gap={Spacing.md} alignItems="center">
+                        <Box
+                          style={[
+                            s.propertyIconWrap,
+                            { backgroundColor: colors.primaryContainer },
+                          ]}
                         >
-                          {item.name}
-                        </Text>
-                        <HStack gap={Spacing.xs} alignItems="center">
                           <MaterialCommunityIcons
-                            name="door-open"
-                            size={14}
-                            color={colors.outline}
+                            name="office-building-marker-outline"
+                            size={24}
+                            color={colors.primary}
                           />
-                          <Text variant="bodySmall" style={s.metaText}>
-                            {item.rooms?.length || 0} Rooms
-                          </Text>
-                        </HStack>
-                      </VStack>
-                    </HStack>
+                        </Box>
 
-                    <HStack alignItems="center" gap={Spacing.sm}>
-                      <Badge
-                        size="md"
-                        variant="solid"
-                        borderRadius="$full"
-                        style={s.badge}
-                      >
-                        <BadgeText style={s.badgeText}>Action</BadgeText>
-                      </Badge>
-                      <MaterialCommunityIcons
-                        name="chevron-right"
-                        size={22}
-                        color={colors.outlineVariant}
-                      />
+                        <VStack flex={1} space="xs">
+                          <Text
+                            variant="titleMedium"
+                            style={[
+                              s.propertyName,
+                              { color: colors.onSurface },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {item.name}
+                          </Text>
+
+                          {!!item.address && (
+                            <HStack alignItems="center" gap={4}>
+                              <MaterialCommunityIcons
+                                name="map-marker-outline"
+                                size={14}
+                                color={colors.outline}
+                              />
+                              <Text
+                                variant="bodySmall"
+                                style={[
+                                  s.propertyMeta,
+                                  { color: colors.outline },
+                                ]}
+                                numberOfLines={1}
+                              >
+                                {item.address}
+                              </Text>
+                            </HStack>
+                          )}
+
+                          <HStack alignItems="center" gap={4}>
+                            <MaterialCommunityIcons
+                              name="door-open"
+                              size={14}
+                              color={colors.outline}
+                            />
+                            <Text
+                              variant="bodySmall"
+                              style={[
+                                s.propertyMeta,
+                                { color: colors.outline },
+                              ]}
+                            >
+                              {roomCount} {roomCount === 1 ? "Room" : "Rooms"}
+                            </Text>
+                          </HStack>
+                        </VStack>
+                      </HStack>
+
+                      <HStack alignItems="center" gap={Spacing.sm}>
+                        <Badge
+                          size="md"
+                          variant="solid"
+                          borderRadius="$full"
+                          style={[
+                            s.manageBadge,
+                            { backgroundColor: colors.secondary },
+                          ]}
+                        >
+                          <BadgeText
+                            style={[
+                              s.manageBadgeText,
+                              { color: colors.onSecondary },
+                            ]}
+                          >
+                            Manage
+                          </BadgeText>
+                        </Badge>
+
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          size={22}
+                          color={colors.outlineVariant}
+                        />
+                      </HStack>
                     </HStack>
-                  </HStack>
-                </Pressable>
-              </Surface>
-            )}
+                  </TouchableRipple>
+                </Surface>
+              );
+            }}
           />
+        ) : (
+          <Surface
+            elevation={0}
+            style={[
+              s.emptyStateCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.outlineVariant,
+              },
+            ]}
+          >
+            <VStack alignItems="center" space="md">
+              <Box
+                style={[
+                  s.emptyIconWrap,
+                  { backgroundColor: colors.primaryContainer },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="calendar-blank-outline"
+                  size={30}
+                  color={colors.primary}
+                />
+              </Box>
+
+              <VStack alignItems="center" space="xs">
+                <Text
+                  variant="titleMedium"
+                  style={[s.emptyTitle, { color: colors.onSurface }]}
+                >
+                  No properties yet
+                </Text>
+                <Text
+                  variant="bodySmall"
+                  style={[s.emptyText, { color: colors.outline }]}
+                >
+                  Add a boarding house first so you can start receiving and
+                  managing bookings.
+                </Text>
+              </VStack>
+            </VStack>
+          </Surface>
         )}
       </View>
     </StaticScreenWrapper>
@@ -144,57 +390,144 @@ export default function BookingMainScreen() {
 }
 
 const s = StyleSheet.create({
-  mainContainer: {},
+  mainContainer: {
+    // paddingHorizontal: Spacing.base,
+    // paddingTop: Spacing.sm,
+    // paddingBottom: 40,
+  },
+
   headerSection: {
-    marginBottom: 24,
-    marginTop: 8,
+    marginBottom: Spacing.base,
   },
   title: {
     fontFamily: "Poppins-Bold",
-    color: "#1A1A1A",
   },
   subtitle: {
     fontFamily: "Poppins-Regular",
-    color: "#767474",
     marginTop: -4,
+    lineHeight: 20,
   },
-  listPadding: {
-    paddingBottom: 40,
+
+  metricsRow: {
     gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
-  navCard: {
-    borderRadius: BorderRadius.xl, // MD3 Contained Card
+  metricCard: {
+    flex: 1,
     borderWidth: 1,
-    backgroundColor: "#FFFFFF",
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.base,
     overflow: "hidden",
   },
-  pressableArea: {
-    padding: Spacing.base,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  metricIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
     justifyContent: "center",
     alignItems: "center",
   },
-  bhName: {
-    fontFamily: "Poppins-SemiBold",
-    color: "#1A1A1A",
+  metricValue: {
+    fontFamily: "Poppins-Bold",
+    lineHeight: 28,
   },
-  metaText: {
+  metricLabel: {
     fontFamily: "Poppins-Regular",
-    color: "#767474",
+    marginTop: -2,
   },
-  badge: {
-    paddingHorizontal: 8,
-    backgroundColor: "#FDD85D", // Secondary yellow
+
+  infoCard: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.base,
+    marginBottom: Spacing.lg,
+    overflow: "hidden",
+  },
+  infoIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  infoTitle: {
+    fontFamily: "Poppins-SemiBold",
+  },
+  infoText: {
+    fontFamily: "Poppins-Regular",
+    marginTop: 2,
+    lineHeight: 19,
+  },
+
+  sectionHeader: {
+    marginBottom: Spacing.md,
+  },
+  sectionTitle: {
+    fontFamily: "Poppins-Bold",
+  },
+  sectionSubtitle: {
+    fontFamily: "Poppins-Regular",
+    marginTop: 2,
+  },
+
+  listContent: {
+    gap: Spacing.md,
+    paddingBottom: 20,
+  },
+
+  propertyCard: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.xl,
+    overflow: "hidden",
+  },
+  rippleArea: {
+    padding: Spacing.base,
+  },
+  propertyIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: BorderRadius.lg,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  propertyName: {
+    fontFamily: "Poppins-SemiBold",
+  },
+  propertyMeta: {
+    fontFamily: "Poppins-Regular",
+    flexShrink: 1,
+  },
+
+  manageBadge: {
+    paddingHorizontal: 10,
     borderWidth: 0,
   },
-  badgeText: {
-    fontSize: 10,
+  manageBadgeText: {
     fontFamily: "Poppins-Bold",
-    color: "#3A3A3A",
+    fontSize: 10,
     textTransform: "uppercase",
+  },
+
+  emptyStateCard: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: 32,
+    paddingHorizontal: Spacing.lg,
+    overflow: "hidden",
+  },
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: BorderRadius.xl,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyTitle: {
+    fontFamily: "Poppins-SemiBold",
+    textAlign: "center",
+  },
+  emptyText: {
+    fontFamily: "Poppins-Regular",
+    textAlign: "center",
+    lineHeight: 20,
   },
 });

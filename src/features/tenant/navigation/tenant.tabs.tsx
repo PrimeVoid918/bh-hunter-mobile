@@ -32,6 +32,7 @@ export default function TenantTabs() {
     <Tab.Navigator
       initialRouteName="Map"
       screenOptions={({ route }) => ({
+        lazy: false,
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.outline,

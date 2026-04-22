@@ -8,6 +8,7 @@ import VerificationSubmitScreen from "../../../../shared/verification/verificati
 import VerificationViewScreen from "../../../../shared/verification/verification-view.screen";
 import { OwnerDashboardStackParamList } from "./dashboard.types";
 import MenuUserEditScreen from "@/features/shared/menu/screens/user/menu.user-edit.main.screen";
+import SubscriptionWebviewMainScreen from "../subscription-webview/subscription-webview.main.screen";
 
 const Stack = createNativeStackNavigator<OwnerDashboardStackParamList>();
 
@@ -39,6 +40,12 @@ export default function DashboardStack() {
         name="ProfileEditScreen"
         options={backButtonConfig}
         component={MenuUserEditScreen}
+      />
+
+      <Stack.Screen
+        name="SubscriptionWebviewMainScreen"
+        // options={backButtonConfig}
+        component={SubscriptionWebviewMainScreen}
       />
     </Stack.Navigator>
   );

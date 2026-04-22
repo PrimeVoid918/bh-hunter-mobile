@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import BookingMainScreen from "../booking.main.screen";
 import BookingListsScreen from "../booking.lists.screen";
-// import PropertiesDetailsScreen from "../details/properties.details.screen";
 import BookingStatusScreen from "@/features/shared/booking/BookingStatusScreen";
 import { backButtonConfig } from "@/constants/navigation/screenOptions";
 import { OwnerBookingStackParamList } from "./booking.types";

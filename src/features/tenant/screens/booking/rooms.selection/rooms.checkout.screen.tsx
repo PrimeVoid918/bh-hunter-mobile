@@ -72,6 +72,14 @@ export default function RoomsCheckoutScreen() {
 
   const maxAvailable =
     (roomData?.maxCapacity ?? 1) - (roomData?.currentCapacity ?? 0);
+  const unitPrice = Number(roomData?.price ?? 0);
+  const totalAmount = unitPrice * occupants;
+
+  const formatCurrency = (value: number) =>
+    `₱ ${value.toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
   const canSubmit = terms.t1 && terms.t2 && !isBookingLoading;
 

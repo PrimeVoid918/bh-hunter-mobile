@@ -7,6 +7,7 @@ import {
   PatchRejectBookingInput,
   PatchVerifyPaymentInput,
   RefundPreview,
+  StayStatus,
 } from "./booking.schema";
 import {
   CreateBookingInput,
@@ -58,9 +59,9 @@ export const bookingApi = createApi({
       providesTags: ["Booking"],
     }),
 
-    getActive: builder.query<ActiveBooking | null, number | undefined>({
+    getActive: builder.query<StayStatus | null, number | undefined>({
       query: (id) => `${bookingApiRoute}/tenant/${id}/active`,
-      transformResponse: (response: { results: ActiveBooking }) =>
+      transformResponse: (response: { results: StayStatus }) =>
         response.results ?? null,
 
       providesTags: ["Booking"],

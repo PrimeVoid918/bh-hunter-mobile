@@ -36,11 +36,11 @@ import {
 } from "react-native-paper";
 import PayMongoWebView from "./PaymongoWebView";
 import PlatformGuidelines from "./PlatformGuidelines";
-import BookingInfoBar from "./BookingInfoBar";
+import { navigationRef } from "@/application/navigation/navigationRef";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { TenantBookingStackParamList } from "../../tenant/screens/booking/navigation/booking.types";
-import { navigationRef } from "@/application/navigation/navigationRef";
+import { PropertiesStackParamList } from "../../owner/screens/properties/navigation/properties.stack.types";
+import { navigate } from "../../../application/navigation/navigationRef";
 
 type Role = "TENANT" | "OWNER";
 
@@ -48,6 +48,9 @@ export default function BookingStatusScreen({ route }) {
   const { bookId }: { bookId: number } = route.params;
   const theme = useTheme();
   const { selectedUser } = useDynamicUserApi();
+
+  const ownerNavigation =
+    useNavigation<NativeStackNavigationProp<PropertiesStackParamList>>();
 
   // Modal States
   const [errorModalVisible, setErrorModalVisible] = React.useState(false);
@@ -89,8 +92,6 @@ export default function BookingStatusScreen({ route }) {
     { id: bookId },
     // { skip: !shouldLoadRefundPreview },
   );
-  console.log("refundPreview: ", refundPreview);
-  console.log("bookId: ", bookId);
 
   const userData =
     role === "OWNER"
@@ -158,14 +159,29 @@ export default function BookingStatusScreen({ route }) {
 
   const gotoBh = () => {
     if (!navigationRef.isReady()) return;
-    navigationRef.navigate("Booking" as any, {
-      screen: "BoardingHouseDetails",
-      params: { id: booking.room.boardingHouse.id },
-    });
+    if (role == "TENANT") {
+      navigationRef.navigate("Booking", {
+        screen: "BoardingHouseDetails",
+        params: { id: booking.room.boardingHouse.id },
+      });
+      return;
+    }
+    // navigationRef.navigate("" , {
+    //   screen: "BoardingHouseDetails",
+    //   params: { id: booking.room.boardingHouse.id },
+    // });
+    // navigationRef.navigate("Properties", {
+    //   screen: "BoardingHouseDetails",
+    //   params: { id: booking.room.boardingHouse.id },
+    // });
+    // ownerNavigation.navigate("BoardingHouseDetailsScreen", {
+    //   id: booking.room.boardingHouse.id,
+    // });
   };
 
   const gotoRoom = () => {
     if (!navigationRef.isReady()) return;
+    console.log("goto room pressed: ");
     navigationRef.navigate("Booking", {
       screen: "RoomsDetailsScreen",
       params: {

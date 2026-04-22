@@ -20,11 +20,15 @@ import {
   GetBooking,
 } from "@/infrastructure/booking/booking.schema";
 import { Colors, Spacing, BorderRadius, Fontsize } from "@/constants";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { OwnerDashboardStackParamList } from "@/features/owner/screens/dashboard/navigation/dashboard.types";
+import { OwnerBookingStackParamList } from "../../../../../owner/screens/booking/navigation/booking.types";
 
 export default function BookingHistoryScreen() {
   const { colors } = useTheme();
   const { selectedUser: user } = useDynamicUserApi();
-  const navigation = useNavigation<any>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<OwnerBookingStackParamList>>();
 
   // Fetching history (everything that isn't PENDING or AWAITING_PAYMENT)
   const {
@@ -56,7 +60,10 @@ export default function BookingHistoryScreen() {
     return (
       <Surface elevation={0} style={s.card}>
         <TouchableRipple
-          onPress={() => navigation.navigate("BookingDetails", { id: item.id })}
+          onPress={() => {
+            console.log("Pressed in past activity");
+            navigation.navigate("BookingStatusScreen", { bookId: item.id });
+          }}
           style={s.ripple}
         >
           <VStack space="md">

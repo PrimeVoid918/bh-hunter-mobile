@@ -99,6 +99,8 @@ export default function BoardingHouseDetailsRender(
         onSelectOccupancy={onSelectOccupancy}
       />
 
+      <Text>taasd a adasd</Text>
+
       <BoardingHouseBodyEdit
         data={data}
         control={control}

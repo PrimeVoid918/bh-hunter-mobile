@@ -41,6 +41,7 @@ import { useGetOwnerAccessQuery } from "@/infrastructure/access/access.redux.api
 import { useSelector } from "react-redux";
 import { RootState } from "@/application/store/stores";
 import { BottomSheetTriggerField } from "@/components/ui/BottomSheet/BottomSheetTriggerField";
+import ControlledMultilineField from "@/components/ui/FormFields/ControlledMultilineField";
 
 export default function PropertiesCreateScreen() {
   const { colors } = useTheme();
@@ -84,11 +85,13 @@ export default function PropertiesCreateScreen() {
       gallery: [],
       location: { type: "Point", coordinates: [1, 1] },
       rooms: [],
+      houseRulesContent: "",
     },
   });
 
   const selectedAmenities = watch("amenities") || [];
   const thumbnailImage = watch("thumbnail")?.[0];
+  const houseRulesContent = watch("houseRulesContent") || "";
 
   /* ------------------------- Handlers ------------------------- */
   const handlePickThumbnail = useCallback(
@@ -290,6 +293,56 @@ export default function PropertiesCreateScreen() {
                 </Button>
               </VStack>
             </HStack>
+            <VStack space="md">
+              <Text style={s.sectionHeader}>House Rules & Terms</Text>
+
+              <Surface elevation={0} style={s.priorityNotice}>
+                <HStack space="sm" alignItems="flex-start">
+                  <MaterialCommunityIcons
+                    name="alert-circle-outline"
+                    size={20}
+                    color="#8A6700"
+                    style={{ marginTop: 1 }}
+                  />
+                  <VStack flex={1} space="xs">
+                    <Text style={s.priorityTitle}>
+                      High Priority Listing Requirement
+                    </Text>
+                    <Text style={s.priorityText}>
+                      These rules will be shown to tenants before they proceed
+                      with booking and may be included in the generated booking
+                      agreement after payment.
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Surface>
+
+              <Surface elevation={0} style={s.containedSurfaceImportant}>
+                <VStack space="md">
+                  <VStack flex={1} space="xs">
+                    <HStack
+                      justifyContent="space-between"
+                      alignItems="center"
+                    ></HStack>
+                    <ControlledMultilineField
+                      name="houseRulesContent"
+                      control={control}
+                      label="Booking Rules Shown to Tenants"
+                      important
+                      maxLength={2000}
+                      helperText="Be clear and specific. Tenants will rely on this before confirming a booking."
+                      placeholder={
+                        "Example:\n" +
+                        "• Curfew is 10:00 PM unless approved by the owner.\n" +
+                        "• Visitors are not allowed inside private rooms.\n" +
+                        "• Keep shared spaces clean.\n" +
+                        "• Advance payment is non-refundable once confirmed."
+                      }
+                    />
+                  </VStack>
+                </VStack>
+              </Surface>
+            </VStack>
           </VStack>
 
           {/* Gallery Scroll */}
@@ -518,4 +571,76 @@ const s = StyleSheet.create({
     color: "#1A1A1A",
   },
   modalSub: { fontFamily: "Poppins-Regular", fontSize: 14, color: "#666" },
+  priorityNotice: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E7C85A",
+    backgroundColor: "#FFF8DB",
+  },
+
+  priorityTitle: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 13,
+    color: "#6B5200",
+  },
+
+  priorityText: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#7A6A2A",
+  },
+
+  containedSurfaceImportant: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#E7C85A",
+    backgroundColor: "#FFFFFF",
+  },
+
+  priorityBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "#FFF3C4",
+    borderWidth: 1,
+    borderColor: "#E7C85A",
+  },
+
+  priorityBadgeText: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 11,
+    color: "#7A5A00",
+  },
+
+  rulesTextAreaImportant: {
+    borderWidth: 1.5,
+    borderColor: "#E7C85A",
+    borderRadius: 8,
+    minHeight: 140,
+    backgroundColor: "#FFFDF7",
+  },
+
+  rulesHintStrong: {
+    flex: 1,
+    fontFamily: "Poppins-Regular",
+    fontSize: 11,
+    lineHeight: 18,
+    color: "#7A6A2A",
+  },
+
+  rulesMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+
+  rulesCount: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 11,
+    color: "#9A9A9A",
+  },
 });

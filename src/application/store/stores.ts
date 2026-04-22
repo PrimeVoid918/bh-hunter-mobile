@@ -23,6 +23,7 @@ import { mapsApi } from "@/infrastructure/map/map.redux.api";
 import { policiesApi } from "../../infrastructure/policies/policies.redux.api";
 import { accessApi } from "@/infrastructure/access/access.redux.api";
 import accessSlice from "@/infrastructure/access/access.redux.slice";
+import { subscriptionApi } from "../../infrastructure/subscriptions/subscriptions.redux.api";
 
 export const store = configureStore({
   reducer: {
@@ -48,6 +49,7 @@ export const store = configureStore({
     [policiesApi.reducerPath]: policiesApi.reducer,
     [accessApi.reducerPath]: accessApi.reducer,
     accessSlice: accessSlice,
+    [subscriptionApi.reducerPath]: subscriptionApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     // getDefaultMiddleware().concat(boardingHouseApi.middleware),
@@ -65,7 +67,8 @@ export const store = configureStore({
       .concat(metricsApi.middleware)
       .concat(mapsApi.middleware)
       .concat(policiesApi.middleware)
-      .concat(accessApi.middleware),
+      .concat(accessApi.middleware)
+      .concat(subscriptionApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

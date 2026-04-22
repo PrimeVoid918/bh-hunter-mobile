@@ -8,6 +8,7 @@ import { backButtonConfig } from "@/constants/navigation/screenOptions";
 import RoomsDetailsScreen from "../screens/rooms/rooms.details.screen";
 import RoomsListMainScreen from "../screens/rooms/rooms.list.main.screen";
 import BoardingHouseDetailsScreen from "../screens/boarding-house.details.screen";
+import RoomsAddScreen from "@/features/shared/rooms/rooms.add";
 
 const Stack = createNativeStackNavigator();
 
@@ -34,6 +35,11 @@ export default function PropertiesStack() {
         name="RoomsListMainScreen"
         options={backButtonConfig}
         component={RoomsListMainScreen}
+      />
+      <Stack.Screen
+        name="RoomsAddScreen"
+        options={backButtonConfig}
+        component={RoomsAddScreen}
       />
       <Stack.Screen
         name="PropertyCreate"

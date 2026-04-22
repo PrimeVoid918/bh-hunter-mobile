@@ -9,6 +9,9 @@ import {
   Divider,
   IconButton,
   Badge,
+  Portal,
+  Dialog,
+  Button,
 } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
@@ -33,26 +36,34 @@ export default function MenuMainScreen() {
   const navigation = useNavigation<any>();
 
   const [refreshing, setRefreshing] = React.useState(false);
-
-  // Badge Logic
+  const [logoutVisible, setLogoutVisible] = React.useState(false);
   const needsProfileUpdate = !userData?.firstname || !userData?.lastname;
   const needsSecurityUpdate = !userData?.phone_number;
 
-  const triggerHaptic = () => {
-    ReactNativeHapticFeedback.trigger("impactLight", hapticOptions);
+  const triggerHaptic = (type: any = "impactLight") => {
+    ReactNativeHapticFeedback.trigger(type, hapticOptions);
+  };
+
+  const showLogoutDialog = () => {
+    triggerHaptic("impactMedium"); // Feel the weight of the decision
+    setLogoutVisible(true);
+  };
+
+  const hideLogoutDialog = () => {
+    triggerHaptic("selection");
+    setLogoutVisible(false);
   };
 
   const handleLogout = async () => {
-    triggerHaptic();
+    triggerHaptic("notificationSuccess"); // Success buzz
+    setLogoutVisible(false);
 
-    await SecureStore.deleteItemAsync("token"); // removing persistent login
+    // Standard Cleanup
+    await SecureStore.deleteItemAsync("token");
     await SecureStore.deleteItemAsync("role");
     await SecureStore.deleteItemAsync("userId");
 
     dispatch(logout());
-    // navigation.dispatch(
-    //   CommonActions.reset({ index: 0, routes: [{ name: "Auth" }] }),
-    // );
   };
 
   const onRefresh = () => {
@@ -103,130 +114,183 @@ export default function MenuMainScreen() {
   );
 
   return (
-    <StaticScreenWrapper
-      style={{ backgroundColor: theme.colors.background }}
-      variant="list"
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-    >
-      <View style={s.mainContainer}>
-        {/* --- PAGE TITLE SECTION --- */}
-        <View style={s.headerSection}>
-          <Text variant="displaySmall" style={s.pageTitle}>
-            Account
-          </Text>
-          <Text variant="bodyMedium" style={s.pageSubtitle}>
-            Manage your profile and security
-          </Text>
-        </View>
+    <>
+      <StaticScreenWrapper
+        style={{ backgroundColor: theme.colors.background }}
+        variant="list"
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      >
+        <View style={s.mainContainer}>
+          {/* --- PAGE TITLE SECTION --- */}
+          <View style={s.headerSection}>
+            <Text variant="displaySmall" style={s.pageTitle}>
+              Account
+            </Text>
+            <Text variant="bodyMedium" style={s.pageSubtitle}>
+              Manage your profile and security
+            </Text>
+          </View>
 
-        {/* --- PROFILE CARD --- */}
-        <Surface
-          elevation={0}
-          style={[s.profileCard, { borderColor: theme.colors.outlineVariant }]}
-        >
-          <View style={s.profileTop}>
-            <View>
-              <Avatar.Text
-                size={60}
-                label={`${userData?.firstname?.[0] || "U"}${userData?.lastname?.[0] || ""}`}
-                style={{ backgroundColor: theme.colors.primaryContainer }}
-                labelStyle={{
-                  color: theme.colors.onPrimaryContainer,
-                  fontFamily: "Poppins-Medium",
-                }}
-              />
-              {needsProfileUpdate && (
-                <Badge style={s.avatarBadge} size={14}>
-                  !
-                </Badge>
-              )}
-            </View>
+          {/* --- PROFILE CARD --- */}
+          <Surface
+            elevation={0}
+            style={[
+              s.profileCard,
+              { borderColor: theme.colors.outlineVariant },
+            ]}
+          >
+            <View style={s.profileTop}>
+              <View>
+                <Avatar.Text
+                  size={60}
+                  label={`${userData?.firstname?.[0] || "U"}${userData?.lastname?.[0] || ""}`}
+                  style={{ backgroundColor: theme.colors.primaryContainer }}
+                  labelStyle={{
+                    color: theme.colors.onPrimaryContainer,
+                    fontFamily: "Poppins-Medium",
+                  }}
+                />
+                {needsProfileUpdate && (
+                  <Badge style={s.avatarBadge} size={14}>
+                    !
+                  </Badge>
+                )}
+              </View>
 
-            <View style={s.nameWrapper}>
-              <View style={s.roleBadge}>
-                <Text style={[s.roleText, { color: theme.colors.primary }]}>
-                  {userData?.role || "TENANT"}
+              <View style={s.nameWrapper}>
+                <View style={s.roleBadge}>
+                  <Text style={[s.roleText, { color: theme.colors.primary }]}>
+                    {userData?.role || "TENANT"}
+                  </Text>
+                </View>
+                <Text style={s.userName}>
+                  {userData?.firstname} {userData?.lastname}
+                </Text>
+                <Text style={s.userHandle}>
+                  @{userData?.username || "user"}
                 </Text>
               </View>
-              <Text style={s.userName}>
-                {userData?.firstname} {userData?.lastname}
-              </Text>
-              <Text style={s.userHandle}>@{userData?.username || "user"}</Text>
+
+              <IconButton
+                icon="pencil-outline"
+                mode="contained-tonal"
+                size={20}
+                onPress={() => {
+                  triggerHaptic();
+                  navigation.navigate("UserEdit");
+                }}
+              />
             </View>
+          </Surface>
 
-            <IconButton
-              icon="pencil-outline"
-              mode="contained-tonal"
-              size={20}
-              onPress={() => {
-                triggerHaptic();
-                navigation.navigate("UserEdit");
-              }}
-            />
+          {/* --- SECURITY SECTION --- */}
+          <View style={s.sectionContainer}>
+            <Text variant="labelLarge" style={s.sectionHeader}>
+              SECURITY & ACCESS
+            </Text>
+            <Surface
+              elevation={0}
+              style={[
+                s.menuGroup,
+                { borderColor: theme.colors.outlineVariant },
+              ]}
+            >
+              <MenuItem
+                icon="shield-check-outline"
+                label="Account Security"
+                showBadge={needsSecurityUpdate}
+                onPress={() => navigation.navigate("AccountSecurity")}
+              />
+              <MenuItem icon="bell-ring-outline" label="Notifications" />
+            </Surface>
           </View>
-        </Surface>
 
-        {/* --- SECURITY SECTION --- */}
-        <View style={s.sectionContainer}>
-          <Text variant="labelLarge" style={s.sectionHeader}>
-            SECURITY & ACCESS
-          </Text>
-          <Surface
-            elevation={0}
-            style={[s.menuGroup, { borderColor: theme.colors.outlineVariant }]}
-          >
-            <MenuItem
-              icon="shield-check-outline"
-              label="Account Security"
-              showBadge={needsSecurityUpdate}
-              onPress={() => navigation.navigate("AccountSecurity")}
-            />
-            <MenuItem icon="bell-ring-outline" label="Notifications" />
-          </Surface>
+          {/* --- SUPPORT SECTION --- */}
+          <View style={s.sectionContainer}>
+            <Text variant="labelLarge" style={s.sectionHeader}>
+              SUPPORT
+            </Text>
+            <Surface
+              elevation={0}
+              style={[
+                s.menuGroup,
+                { borderColor: theme.colors.outlineVariant },
+              ]}
+            >
+              <MenuItem
+                icon="lifebuoy"
+                label="Help Center"
+                onPress={() => navigation.navigate("CustomerHelp")}
+              />
+              <MenuItem
+                icon="file-document-outline"
+                label="Policies and Legal"
+                onPress={() => navigation.navigate("PoliciesStack")}
+                isLast
+              />
+            </Surface>
+          </View>
+
+          {/* --- LOGOUT --- */}
+          <View style={s.logoutContainer}>
+            <Surface
+              elevation={0}
+              style={[
+                s.menuGroup,
+                { borderColor: theme.colors.outlineVariant },
+              ]}
+            >
+              <MenuItem
+                icon="logout-variant"
+                label="Sign Out"
+                onPress={showLogoutDialog}
+                color={theme.colors.error}
+                isLast
+              />
+            </Surface>
+            <Text style={s.versionText}>Version 1.0.2 (Capstone Build)</Text>
+          </View>
         </View>
-
-        {/* --- SUPPORT SECTION --- */}
-        <View style={s.sectionContainer}>
-          <Text variant="labelLarge" style={s.sectionHeader}>
-            SUPPORT
-          </Text>
-          <Surface
-            elevation={0}
-            style={[s.menuGroup, { borderColor: theme.colors.outlineVariant }]}
-          >
-            <MenuItem
-              icon="lifebuoy"
-              label="Help Center"
-              onPress={() => navigation.navigate("CustomerHelp")}
-            />
-            <MenuItem
-              icon="file-document-outline"
-              label="Policies and Legal"
-              onPress={() => navigation.navigate("PoliciesStack")}
-              isLast
-            />
-          </Surface>
-        </View>
-
-        {/* --- LOGOUT --- */}
-        <View style={s.logoutContainer}>
-          <Surface
-            elevation={0}
-            style={[s.menuGroup, { borderColor: theme.colors.outlineVariant }]}
-          >
-            <MenuItem
-              icon="logout-variant"
-              label="Sign Out"
+      </StaticScreenWrapper>
+      <Portal>
+        <Dialog
+          visible={logoutVisible}
+          onDismiss={hideLogoutDialog}
+          style={[s.dialog, { backgroundColor: theme.colors.surface }]}
+        >
+          <Dialog.Icon
+            icon="logout-variant"
+            color={theme.colors.error}
+            size={30}
+          />
+          <Dialog.Title style={s.dialogTitle}>Sign Out?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium" style={s.dialogContent}>
+              Are you sure you want to sign out? You will need to log in again
+              to access your property portfolio.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={hideLogoutDialog}
+              textColor={theme.colors.outline}
+              labelStyle={s.buttonLabel}
+            >
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
               onPress={handleLogout}
-              color={theme.colors.error}
-              isLast
-            />
-          </Surface>
-          <Text style={s.versionText}>Version 1.0.2 (Capstone Build)</Text>
-        </View>
-      </View>
-    </StaticScreenWrapper>
+              buttonColor={theme.colors.error}
+              labelStyle={s.buttonLabel}
+            >
+              Sign Out
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </>
   );
 }
 
@@ -313,5 +377,23 @@ const s = StyleSheet.create({
     fontFamily: "Poppins-Regular",
     fontSize: 11,
     color: "#CCCCCC",
+  },
+  dialog: {
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+  },
+  dialogTitle: {
+    textAlign: "center",
+    fontFamily: "Poppins-Bold",
+    fontSize: 20,
+  },
+  dialogContent: {
+    textAlign: "center",
+    fontFamily: "Poppins-Regular",
+    color: "#767474",
+  },
+  buttonLabel: {
+    fontFamily: "Poppins-SemiBold",
   },
 });

@@ -21,11 +21,12 @@ import { useGetAllQuery as useGetAllRoomsQuery } from "@/infrastructure/room/roo
 import { Lists } from "@/components/layout/Lists/Lists";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import theme from "@/application/config/react-native-paper.config";
+import { PropertiesStackParamList } from "../../navigation/properties.stack.types";
 
 export default function RoomsListMainScreen({ route }) {
   const { colors } = useTheme();
   const navigate =
-    useNavigation<NativeStackNavigationProp<OwnerDashboardStackParamList>>();
+    useNavigation<NativeStackNavigationProp<PropertiesStackParamList>>();
   const paramsId = route.params.paramsId;
 
   const {
