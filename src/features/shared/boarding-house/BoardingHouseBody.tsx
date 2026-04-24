@@ -93,6 +93,7 @@ export function BoardingHouseBodyEdit({
         <ControlledMultilineField
           name="houseRulesContent"
           control={control}
+          isEditing={isEditing}
           label="Rules shown to tenants"
           important
           maxLength={2000}
@@ -180,7 +181,7 @@ const s = StyleSheet.create({
   },
 
   rulesText: {
-    fontSize: Fontsize.md,
+    fontSize: 12,
     fontFamily: "Poppins-Regular",
     lineHeight: 22,
     color: "#3A3A3A",

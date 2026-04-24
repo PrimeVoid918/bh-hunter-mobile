@@ -7,13 +7,19 @@ import BookingDecisionBlock from "./BookingDecisionBlock";
 import BookingPaymentBlock from "./BookingPaymentBlock";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 import {
+  useApproveExtensionMutation,
   useCancelBookingMutation,
-  useCreatePaymongoCheckoutMutation,
+  useCreateBookingChargeCheckoutMutation,
+  // useCancelBookingMutation,
+  // useCreatePaymongoCheckoutMutation,
   useGetAllQuery,
+  useGetBookingStatusQuery,
   useGetOneQuery as useGetOneBookinQuery,
   useGetRefundPreviewQuery,
   usePatchApproveBookingMutation,
   usePatchRejectBookingMutation,
+  useRejectExtensionMutation,
+  useRequestExtensionMutation,
 } from "@/infrastructure/booking/booking.redux.api";
 import UserInformationCard from "@/components/ui/Information/UserInformatioCard";
 import { useGetOneQuery as useGetOneTenantQuery } from "@/infrastructure/tenants/tenant.redux.api";
@@ -81,6 +87,12 @@ export default function BookingStatusScreen({ route }) {
     skip: role !== "TENANT" || !booking,
   });
 
+  const {
+    data: bookingStatus,
+    isLoading: isStatusLoading,
+    refetch: refetchStatus,
+  } = useGetBookingStatusQuery(bookId);
+
   const shouldLoadRefundPreview =
     role === "TENANT" && booking?.status === "COMPLETED_BOOKING";
 
@@ -100,45 +112,111 @@ export default function BookingStatusScreen({ route }) {
         ? ownerQuery.data
         : undefined;
 
+  // const [approveBooking, { isLoading: isApproveLoading }] =
+  //   usePatchApproveBookingMutation();
+  // const [rejectBooking, { isLoading: isRejectLoading }] =
+  //   usePatchRejectBookingMutation();
+  // const [createBookingChargeCheckout, { isLoading: isCheckoutLoading }] =
+  //   useCreateBookingChargeCheckoutMutation ();
+
+  //* new implementaiion
   const [approveBooking, { isLoading: isApproveLoading }] =
     usePatchApproveBookingMutation();
   const [rejectBooking, { isLoading: isRejectLoading }] =
     usePatchRejectBookingMutation();
   const [cancelBooking, { isLoading: isCancelLoading }] =
     useCancelBookingMutation();
-  const [createCheckout, { isLoading: isCheckOutLoading }] =
-    useCreatePaymongoCheckoutMutation();
+  const [createBookingChargeCheckout, { isLoading: isCheckoutLoading }] =
+    useCreateBookingChargeCheckoutMutation();
+  const [requestExtension, { isLoading: isRequestExtensionLoading }] =
+    useRequestExtensionMutation();
+  const [approveExtension, { isLoading: isApproveExtensionLoading }] =
+    useApproveExtensionMutation();
+  const [rejectExtension, { isLoading: isRejectExtensionLoading }] =
+    useRejectExtensionMutation();
 
   const [checkoutUrl, setCheckoutUrl] = React.useState<string | null>(null);
   const [showWebView, setShowWebView] = React.useState(false);
 
   const isActionLoading =
-    isApproveLoading || isRejectLoading || isCancelLoading;
+    isApproveLoading ||
+    isRejectLoading ||
+    isCancelLoading ||
+    isRequestExtensionLoading ||
+    isApproveExtensionLoading ||
+    isRejectExtensionLoading;
+  // isApproveLoading || isRejectLoading || isCancelLoading;
 
-  const handleApprove = async (message: string) => {
+  // const handleApprove = async (message: string) => {
+  //   try {
+  //     await approveBooking({
+  //       id: bookId,
+  //       payload: { ownerId: userId, message },
+  //     }).unwrap();
+  //     Vibration.vibrate(10);
+  //     refetch();
+  //   } catch (err: any) {
+  //     if (err?.status === 400 || err?.data?.statusCode === 400) {
+  //       setErrorMessage(
+  //         err?.data?.message ||
+  //           "Room capacity is full. Please reject this request.",
+  //       );
+  //       setErrorModalVisible(true);
+  //     }
+  //   }
+  // };
+
+  //! new bookg implementation
+  const handleApprove = async (input: {
+    message?: string;
+    reservationFee: number;
+    advancePayment: number;
+    securityDeposit: number;
+  }) => {
     try {
       await approveBooking({
         id: bookId,
-        payload: { ownerId: userId, message },
+        payload: {
+          ownerId: userId,
+          message: input.message,
+          reservationFee: input.reservationFee,
+          advancePayment: input.advancePayment,
+          securityDeposit: input.securityDeposit,
+        },
       }).unwrap();
+
       Vibration.vibrate(10);
       refetch();
+      refetchStatus();
     } catch (err: any) {
       if (err?.status === 400 || err?.data?.statusCode === 400) {
         setErrorMessage(
-          err?.data?.message ||
-            "Room capacity is full. Please reject this request.",
+          Array.isArray(err?.data?.message)
+            ? err.data.message.join("\n")
+            : err?.data?.message ||
+                "Unable to approve booking. Please check the input values.",
         );
         setErrorModalVisible(true);
       }
     }
   };
+  //! new book implementation
 
   const handlePayNow = async () => {
     try {
-      const response = await createCheckout({
+      //! disabled and deprecated because it is an old implementation of the booking,
+      // const response = await createCheckout({
+      //   bookingId: booking!.id,
+      // }).unwrap();
+      // setCheckoutUrl(response.checkoutUrl);
+      //! disabled and deprecated because it is an old implementation of the booking,
+      // console.log("handlePayNow is feature is disabled for now");
+      // setShowWebView(true);
+
+      const response = await createBookingChargeCheckout({
         bookingId: booking!.id,
       }).unwrap();
+
       setCheckoutUrl(response.checkoutUrl);
       setShowWebView(true);
     } catch (error) {
@@ -146,9 +224,38 @@ export default function BookingStatusScreen({ route }) {
     }
   };
 
+  const handleRequestExtension = async (input: {
+    requestedCheckOutDate: string;
+    reason?: string;
+  }) => {
+    try {
+      await requestExtension({
+        id: bookId,
+        payload: {
+          tenantId: userId,
+          requestedCheckOutDate: input.requestedCheckOutDate,
+          reason: input.reason,
+        },
+      }).unwrap();
+
+      Vibration.vibrate(10);
+      refetch();
+      refetchStatus();
+      refundPreviewRefetch();
+    } catch (err: any) {
+      setErrorMessage(
+        Array.isArray(err?.data?.message)
+          ? err.data.message.join("\n")
+          : err?.data?.message || "Unable to request extension.",
+      );
+      setErrorModalVisible(true);
+    }
+  };
+
   const handlePageRefresh = () => {
     setRefreshing(true);
     refetch();
+    refetchStatus();
     refundPreviewRefetch();
     setRefreshing(false);
   };
@@ -179,6 +286,64 @@ export default function BookingStatusScreen({ route }) {
     // });
   };
 
+  const handleApproveExtension = async (input: {
+    extensionId: number;
+    extensionAmount: number;
+    message?: string;
+  }) => {
+    try {
+      await approveExtension({
+        id: bookId,
+        extensionId: input.extensionId,
+        payload: {
+          ownerId: userId,
+          extensionAmount: input.extensionAmount,
+          message: input.message,
+        },
+      }).unwrap();
+
+      Vibration.vibrate(10);
+      refetch();
+      refetchStatus();
+      refundPreviewRefetch();
+    } catch (err: any) {
+      setErrorMessage(
+        Array.isArray(err?.data?.message)
+          ? err.data.message.join("\n")
+          : err?.data?.message || "Unable to approve extension.",
+      );
+      setErrorModalVisible(true);
+    }
+  };
+
+  const handleRejectExtension = async (input: {
+    extensionId: number;
+    reason?: string;
+  }) => {
+    try {
+      await rejectExtension({
+        id: bookId,
+        extensionId: input.extensionId,
+        payload: {
+          ownerId: userId,
+          reason: input.reason,
+        },
+      }).unwrap();
+
+      Vibration.vibrate(10);
+      refetch();
+      refetchStatus();
+      refundPreviewRefetch();
+    } catch (err: any) {
+      setErrorMessage(
+        Array.isArray(err?.data?.message)
+          ? err.data.message.join("\n")
+          : err?.data?.message || "Unable to reject extension.",
+      );
+      setErrorModalVisible(true);
+    }
+  };
+
   const gotoRoom = () => {
     if (!navigationRef.isReady()) return;
     console.log("goto room pressed: ");
@@ -198,7 +363,8 @@ export default function BookingStatusScreen({ route }) {
   //   return getBookingStatusDetails(booking.status);
   // }, [booking?.status]);
 
-  const isProcessing = isActionLoading || isCheckOutLoading || isRefundLoading;
+  // const isProcessing = isActionLoading || isCheckOutLoading || isRefundLoading;
+  const isProcessing = isActionLoading || isRefundLoading;
 
   return (
     <StaticScreenWrapper
@@ -315,23 +481,36 @@ export default function BookingStatusScreen({ route }) {
               viewerRole={role}
               refundPreview={refundPreview}
               isRefundLoading={isRefundLoading}
+              onApproveExtension={handleApproveExtension}
+              onRejectExtension={handleRejectExtension}
+              extensionRequest={bookingStatus?.extensionRequest ?? null}
               onApprove={handleApprove}
+              onRequestExtension={handleRequestExtension}
               isLoading={isActionLoading}
-              onReject={(reason) =>
-                rejectBooking({
+              onReject={async (reason) => {
+                await rejectBooking({
                   id: bookId,
                   payload: { ownerId: userId, reason },
-                }).then(refetch)
-              }
-              onCancel={(reason) =>
-                cancelBooking({
+                }).unwrap();
+
+                refetch();
+                refetchStatus();
+                refundPreviewRefetch();
+              }}
+              onCancel={async (reason) => {
+                await cancelBooking({
                   id: bookId,
                   payload: { userId, role, reason },
-                }).then(refetch)
-              }
+                }).unwrap();
+
+                refetch();
+                refetchStatus();
+                refundPreviewRefetch();
+              }}
             />
             <BookingPaymentBlock
               booking={booking}
+              bookingStatus={bookingStatus}
               viewerRole={role}
               onPayNow={handlePayNow}
             />
@@ -378,9 +557,15 @@ export default function BookingStatusScreen({ route }) {
           visible={showWebView}
           checkoutUrl={checkoutUrl}
           onClose={() => setShowWebView(false)}
+          // onSuccess={() => {
+          //   setShowWebView(false);
+          //   refetch();
+          // }}
           onSuccess={() => {
             setShowWebView(false);
             refetch();
+            refetchStatus();
+            refundPreviewRefetch();
           }}
           onCancel={() => setShowWebView(false)}
         />

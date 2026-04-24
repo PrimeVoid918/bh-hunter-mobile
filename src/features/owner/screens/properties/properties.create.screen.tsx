@@ -325,6 +325,7 @@ export default function PropertiesCreateScreen() {
                       alignItems="center"
                     ></HStack>
                     <ControlledMultilineField
+                      isEditing={true}
                       name="houseRulesContent"
                       control={control}
                       label="Booking Rules Shown to Tenants"

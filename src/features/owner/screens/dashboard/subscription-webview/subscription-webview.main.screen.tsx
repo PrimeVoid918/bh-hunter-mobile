@@ -22,7 +22,7 @@ export default function SubscriptionWebviewMainScreen() {
       ApiConfig.BASE_URL.split(":")[0] + ":" + ApiConfig.BASE_URL.split(":")[1];
     const isDev =
       ApiConfig.BASE_URL.includes("localhost") ||
-      ApiConfig.BASE_URL.includes("192.168");
+      ApiConfig.BASE_URL.includes("10.130.46.230");
 
     return isDev ? `${base}:5173/pricing` : `https://bhhph.online/pricing`;
   }, []);

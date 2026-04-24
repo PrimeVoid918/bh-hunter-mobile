@@ -85,14 +85,14 @@ export const BookingRefundInfoSchema = z.object({
   hoursBeforeCheckIn: z.number(),
 });
 
-export const BookingStatusSchema = z.object({
-  bookingId: z.number(),
-  bookingStatus: BookingStatusEnum,
-  paymentStatus: PaymentStatusEnum.nullable(),
-  refund: BookingRefundInfoSchema.nullable(),
-});
+// export const BookingStatusSchema = z.object({
+//   bookingId: z.number(),
+//   bookingStatus: BookingStatusEnum,
+//   paymentStatus: PaymentStatusEnum.nullable(),
+//   refund: BookingRefundInfoSchema.nullable(),
+// });
 
-export type BookingStatusResponse = z.infer<typeof BookingStatusSchema>;
+// export type BookingStatusResponse = z.infer<typeof BookingStatusSchema>;
 
 /*
 |--------------------------------------------------------------------------
@@ -385,15 +385,15 @@ export type PatchTenantBookingInput = z.infer<
 |--------------------------------------------------------------------------
 */
 
-export const patchApproveBookingSchema = z.object({
-  ownerId: z.number(),
-  message: z.string().optional(),
-});
+// export const patchApproveBookingSchema = z.object({
+//   ownerId: z.number(),
+//   message: z.string().optional(),
+// });
 
-export const PatchApproveBookingInputSchema = patchApproveBookingSchema;
-export type PatchApproveBookingInput = z.infer<
-  typeof PatchApproveBookingInputSchema
->;
+// export const PatchApproveBookingInputSchema = patchApproveBookingSchema;
+// export type PatchApproveBookingInput = z.infer<
+//   typeof PatchApproveBookingInputSchema
+// >;
 
 /*
 |--------------------------------------------------------------------------
@@ -459,3 +459,214 @@ export const cancelBookingSchema = z.object({
 
 export const CancelBookingInputSchema = cancelBookingSchema;
 export type CancelBookingInput = z.infer<typeof CancelBookingInputSchema>;
+
+export const BookingChargeTypeEnum = z.enum([
+  "RESERVATION_FEE",
+  "ADVANCE_PAYMENT",
+  "DEPOSIT",
+  "EXTENSION_PAYMENT",
+]);
+
+export const patchApproveBookingSchema = z.object({
+  ownerId: z.coerce.number(),
+  message: z.string().optional(),
+  reservationFee: z.coerce.number().min(0),
+  advancePayment: z.coerce.number().min(0),
+  securityDeposit: z.coerce.number().min(0).optional().default(0),
+});
+
+export const PatchApproveBookingInputSchema = patchApproveBookingSchema;
+export type PatchApproveBookingInput = z.infer<
+  typeof PatchApproveBookingInputSchema
+>;
+
+const MoneySchema = z.union([z.string(), z.number()]);
+
+export const BookingChargeStatusEnum = z.enum([
+  "PENDING",
+  "PAID",
+  "CANCELLED",
+  "REFUNDED",
+  "EXPIRED",
+]);
+
+export const BookingChargeSummarySchema = z.object({
+  id: z.number(),
+  type: BookingChargeTypeEnum,
+  status: BookingChargeStatusEnum,
+  amount: MoneySchema,
+  dueDate: z.string().nullable().optional(),
+  paidAt: z.string().nullable().optional(),
+  paymentStatus: PaymentStatusEnum.nullable().optional(),
+});
+
+export const NextPendingChargeSchema = z.object({
+  id: z.number(),
+  type: BookingChargeTypeEnum,
+  amount: MoneySchema,
+  dueDate: z.string().nullable().optional(),
+  paymentStatus: PaymentStatusEnum.nullable().optional(),
+});
+
+export const BookingStatusSchema = z.object({
+  bookingId: z.number(),
+  bookingStatus: BookingStatusEnum,
+  confirmedAt: z.string().nullable().optional(),
+  nextPendingCharge: NextPendingChargeSchema.nullable(),
+  charges: z.array(BookingChargeSummarySchema),
+  totals: z.object({
+    totalCharges: z.number(),
+    paidCharges: z.number(),
+    remainingCharges: z.number(),
+  }),
+});
+
+export type BookingStatusResponse = z.infer<typeof BookingStatusSchema>;
+
+export const ApproveBookingResponseSchema = GetBookingSchema.extend({
+  firstCharge: z.object({
+    id: z.number(),
+    type: BookingChargeTypeEnum,
+    amount: MoneySchema,
+    dueDate: z.string().nullable().optional(),
+    sequence: z.number(),
+  }),
+  paymentClientSecret: z.string(),
+});
+
+export type ApproveBookingResponse = z.infer<
+  typeof ApproveBookingResponseSchema
+>;
+
+/*
+|--------------------------------------------------------------------------
+| EXTENSION
+|--------------------------------------------------------------------------
+*/
+
+export const BookingExtensionStatusEnum = z.enum([
+  "PENDING",
+  "APPROVED_AWAITING_PAYMENT",
+  "REJECTED",
+  "PAID",
+  "CANCELLED",
+]);
+
+export type BookingExtensionStatus = z.infer<typeof BookingExtensionStatusEnum>;
+
+export const BookingChargeDetailSchema = z.object({
+  id: z.number(),
+  bookingId: z.number(),
+  type: BookingChargeTypeEnum,
+  status: BookingChargeStatusEnum,
+  amount: MoneySchema,
+  currency: z.string(),
+  sequence: z.number(),
+  isRequired: z.boolean(),
+  dueDate: z.string().nullable().optional(),
+  paidAt: z.string().nullable().optional(),
+  expiresAt: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  metadata: z.record(z.any()).nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const BookingExtensionRequestSchema = z.object({
+  id: z.number(),
+  bookingId: z.number(),
+  tenantId: z.number(),
+  ownerId: z.number(),
+  currentCheckOutDate: z.string(),
+  requestedCheckOutDate: z.string(),
+  status: BookingExtensionStatusEnum,
+  reason: z.string().nullable().optional(),
+  ownerMessage: z.string().nullable().optional(),
+  extensionChargeId: z.number().nullable().optional(),
+  approvedAt: z.string().nullable().optional(),
+  paidAt: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type BookingExtensionRequest = z.infer<
+  typeof BookingExtensionRequestSchema
+>;
+
+export const RequestExtensionInputSchema = z.object({
+  tenantId: z.number(),
+  requestedCheckOutDate: z.string(),
+  reason: z.string().optional(),
+});
+
+export type RequestExtensionInput = z.infer<typeof RequestExtensionInputSchema>;
+
+export const ApproveExtensionInputSchema = z.object({
+  ownerId: z.coerce.number(),
+  extensionAmount: z.coerce.number().positive(),
+  message: z.string().optional(),
+});
+
+export type ApproveExtensionInput = z.infer<typeof ApproveExtensionInputSchema>;
+
+export const RejectExtensionInputSchema = z.object({
+  ownerId: z.coerce.number(),
+  reason: z.string().optional(),
+});
+
+export type RejectExtensionInput = z.infer<typeof RejectExtensionInputSchema>;
+
+export const ApproveExtensionResponseSchema = z.object({
+  // extensionRequest: BookingExtensionRequestSchema,
+  extensionRequest: BookingExtensionRequestSchema.nullable().optional(),
+  extensionCharge: BookingChargeDetailSchema,
+});
+
+export type ApproveExtensionResponse = z.infer<
+  typeof ApproveExtensionResponseSchema
+>;
+
+/*
+|--------------------------------------------------------------------------
+| BOOKING PAYMENT
+|--------------------------------------------------------------------------
+*/
+
+export const BookingPaymentPendingSchema = z.object({
+  paymentId: z.number(),
+  bookingChargeId: z.number(),
+  chargeType: BookingChargeTypeEnum,
+  amount: MoneySchema,
+  status: PaymentStatusEnum.optional(),
+  providerPaymentIntentId: z.string().optional(),
+  clientSecret: z.string().optional(),
+  canRetry: z.boolean(),
+});
+
+export const BookingPaymentCompletedSchema = z.object({
+  bookingId: z.number(),
+  completed: z.literal(true),
+bookingStatus: BookingStatusEnum,
+  message: z.string(),
+});
+
+export const BookingPaymentResponseSchema = z.union([
+  BookingPaymentPendingSchema,
+  BookingPaymentCompletedSchema,
+]);
+
+export type BookingPaymentResponse = z.infer<
+  typeof BookingPaymentResponseSchema
+>;
+
+export const BookingChargeCheckoutResponseSchema = z.object({
+  paymentId: z.number(),
+  bookingChargeId: z.number(),
+  chargeType: BookingChargeTypeEnum,
+  amount: MoneySchema,
+  checkoutUrl: z.string(),
+});
+
+export type BookingChargeCheckoutResponse = z.infer<
+  typeof BookingChargeCheckoutResponseSchema
+>;
