@@ -8,6 +8,7 @@ import RoomsBookingListsScreen from "../rooms.selection/rooms.booking-list.scree
 import RoomsDetailsScreen from "../rooms.selection/rooms.details.screen";
 import RoomsCheckoutScreen from "../rooms.selection/rooms.checkout.screen";
 import { TenantBookingStackParamList } from "./booking.types";
+import BookingAgreementWebviewMainScreen from "../rooms.selection/BookingAgreementWebviewMainScreen";
 
 const Stack = createNativeStackNavigator<TenantBookingStackParamList>();
 
@@ -49,6 +50,11 @@ export default function BookingStack() {
         name="RoomsCheckoutScreen"
         component={RoomsCheckoutScreen}
         options={backButtonConfig}
+      />
+
+      <Stack.Screen
+        name="BookingAgreementWebviewMainScreen"
+        component={BookingAgreementWebviewMainScreen}
       />
     </Stack.Navigator>
   );

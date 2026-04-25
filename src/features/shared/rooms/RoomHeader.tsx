@@ -261,8 +261,9 @@ export function RoomHeaderView({ data, goToBook }: RoomHeaderInterface) {
           contentStyle={{ height: 48 }}
           style={[s.actionButton, { backgroundColor: colors.primary }]}
           labelStyle={{ fontFamily: "Poppins-SemiBold", fontSize: 14 }}
+          disabled={!data?.availabilityStatus}
         >
-          Apply for Booking
+          Apply for Booking {data?.availabilityStatus}
         </Button>
       </VStack>
     </Surface>

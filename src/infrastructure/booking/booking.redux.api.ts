@@ -4,6 +4,7 @@ import {
   ApproveBookingResponse,
   ApproveExtensionInput,
   ApproveExtensionResponse,
+  BookingBillingStatementsResponse,
   BookingChargeCheckoutResponse,
   BookingExtensionRequest,
   BookingPaymentResponse,
@@ -89,6 +90,17 @@ export const bookingApi = createApi({
       query: (id) => `${bookingApiRoute}/${id}/status`,
       transformResponse: (response: ApiResponseType<BookingStatusResponse>) =>
         response.results ?? null,
+      providesTags: ["Booking"],
+    }),
+
+    getBillingStatements: builder.query<
+      BookingBillingStatementsResponse | null,
+      number | undefined
+    >({
+      query: (id) => `${bookingApiRoute}/${id}/billing-statements`,
+      transformResponse: (
+        response: ApiResponseType<BookingBillingStatementsResponse>,
+      ) => response.results ?? null,
       providesTags: ["Booking"],
     }),
 
@@ -345,6 +357,7 @@ export const {
   useGetActiveQuery,
   useGetBookingPaymentQuery,
   useGetBookingStatusQuery,
+  useGetBillingStatementsQuery,
   useGetRefundPreviewQuery,
   useCreateBookingMutation,
   usePatchTenantBookingMutation,

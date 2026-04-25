@@ -20,6 +20,8 @@ export const BaseUserSchema = z.object({
   hasAcceptedPolicies: z.boolean().optional(),
   policiesAcceptedAt: z.string().datetime({ offset: true }).optional(),
   isActive: z.boolean().optional(),
+  isSuspended: z.boolean().optional(),
+  suspendedAt: z.string().datetime({ offset: true }).optional(),
   registrationStatus: VerificationLevelSchema.optional(),
   verificationLevel: RegistrationStatusSchema.optional(),
   createdAt: z.string().datetime({ offset: true }).optional(),

@@ -94,26 +94,26 @@ export default function StaticScreenWrapper({
         <View style={styles.lockdownContainer}>
           <Surface style={styles.lockdownCard} elevation={0}>
             <MaterialCommunityIcons
-              name="shield-lock"
+              name="account-heart"
               size={64}
               color={theme.colors.primary}
             />
+
             <Text
               style={[styles.lockdownTitle, { color: theme.colors.onSurface }]}
             >
-              Identity Verification Required
+              Finish Your Account Setup
             </Text>
+
             <Text style={[styles.lockdownSub, { color: theme.colors.outline }]}>
-              To ensure the safety of our Ormoc community, you need to be fully
-              verified to access this feature.
+              This feature becomes available once your profile information and
+              verification requirements are completed.
             </Text>
-            <Button
-              mode="contained"
-              onPress={onLockdownAction}
-              style={styles.lockdownBtn}
-            >
-              Start Verification
-            </Button>
+
+            <Text style={[styles.lockdownSub, { color: theme.colors.outline }]}>
+              No rush — you can continue your setup anytime from the Dashboard
+              or Menu tab.
+            </Text>
           </Surface>
         </View>
       </View>

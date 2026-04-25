@@ -2,6 +2,7 @@ import { z } from "zod";
 import { GetTenantSchema } from "../tenants/tenant.types";
 import { ImageUploadSchema } from "../image/image.schema";
 import { GetRoomSchema } from "../room/rooms.schema";
+import { BookingAgreementSummarySchema } from "../agreements/agreements.schema";
 
 /*
 |--------------------------------------------------------------------------
@@ -221,9 +222,10 @@ export const BaseBookingSchema = bookingSchema;
 | GET BOOKING RESPONSE
 |--------------------------------------------------------------------------
 */
-
 export const GetBookingSchema = BaseBookingSchema.extend({
   tenant: GetTenantSchema.optional(),
+
+  agreement: BookingAgreementSummarySchema.optional(),
 
   boardingHouse: z
     .object({
@@ -290,7 +292,6 @@ export const ActiveBookingSchema = GetBookingSchema.pick({
   reference: true,
   tenantId: true,
   roomId: true,
-  boardingHouseId: true,
   status: true,
   checkInDate: true,
   checkOutDate: true,
@@ -350,6 +351,10 @@ export const createBookingSchema = z
     note: z.string().optional(),
 
     occupantsCount: z.number().int().min(1).max(10).optional().default(1),
+
+    tenantAcceptedTerms: z.boolean(),
+
+    termsVersion: z.string().optional(),
   })
   .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
     message: "Check-out must be after check-in",
@@ -508,12 +513,28 @@ export const NextPendingChargeSchema = z.object({
   paymentStatus: PaymentStatusEnum.nullable().optional(),
 });
 
+// export const BookingStatusSchema = z.object({
+//   bookingId: z.number(),
+//   bookingStatus: BookingStatusEnum,
+//   confirmedAt: z.string().nullable().optional(),
+//   nextPendingCharge: NextPendingChargeSchema.nullable(),
+//   charges: z.array(BookingChargeSummarySchema),
+//   totals: z.object({
+//     totalCharges: z.number(),
+//     paidCharges: z.number(),
+//     remainingCharges: z.number(),
+//   }),
+// });
 export const BookingStatusSchema = z.object({
   bookingId: z.number(),
   bookingStatus: BookingStatusEnum,
   confirmedAt: z.string().nullable().optional(),
   nextPendingCharge: NextPendingChargeSchema.nullable(),
   charges: z.array(BookingChargeSummarySchema),
+
+  // add this
+  extensionRequest: z.any().nullable().optional(),
+
   totals: z.object({
     totalCharges: z.number(),
     paidCharges: z.number(),
@@ -601,10 +622,16 @@ export const RequestExtensionInputSchema = z.object({
 
 export type RequestExtensionInput = z.infer<typeof RequestExtensionInputSchema>;
 
+export const ExtensionAdjustmentInputSchema = z.object({
+  label: z.string().min(1),
+  amount: z.coerce.number().positive(),
+});
+
 export const ApproveExtensionInputSchema = z.object({
   ownerId: z.coerce.number(),
   extensionAmount: z.coerce.number().positive(),
   message: z.string().optional(),
+  adjustments: z.array(ExtensionAdjustmentInputSchema).optional().default([]),
 });
 
 export type ApproveExtensionInput = z.infer<typeof ApproveExtensionInputSchema>;
@@ -646,7 +673,7 @@ export const BookingPaymentPendingSchema = z.object({
 export const BookingPaymentCompletedSchema = z.object({
   bookingId: z.number(),
   completed: z.literal(true),
-bookingStatus: BookingStatusEnum,
+  bookingStatus: BookingStatusEnum,
   message: z.string(),
 });
 
@@ -669,4 +696,115 @@ export const BookingChargeCheckoutResponseSchema = z.object({
 
 export type BookingChargeCheckoutResponse = z.infer<
   typeof BookingChargeCheckoutResponseSchema
+>;
+
+/*
+|--------------------------------------------------------------------------
+| BILLING STATEMENTS
+|--------------------------------------------------------------------------
+*/
+
+export const BillingStatementTypeEnum = z.enum([
+  "INITIAL_BOOKING",
+  "EXTENSION",
+]);
+
+export const BillingStatementStatusEnum = z.enum([
+  "PENDING",
+  "PARTIALLY_PAID",
+  "PAID",
+  "REFUNDED",
+  "CANCELLED",
+  "EXPIRED",
+]);
+
+export const BillingStatementItemSchema = z.object({
+  chargeId: z.number(),
+  type: z.string(),
+  label: z.string(),
+  description: z.string(),
+
+  amount: z.number(),
+  amountText: z.string(),
+
+  status: z.string(),
+  paymentStatus: z.string().nullable().optional(),
+
+  dueDate: z.string().nullable().optional(),
+  paidAt: z.string().nullable().optional(),
+});
+
+export const BillingStatementTotalsSchema = z.object({
+  totalAmount: z.number(),
+  totalAmountText: z.string(),
+
+  amountPaid: z.number(),
+  amountPaidText: z.string(),
+
+  refundedAmount: z.number(),
+  refundedAmountText: z.string(),
+
+  remainingBalance: z.number(),
+  remainingBalanceText: z.string(),
+});
+
+export const BillingStatementSchema = z.object({
+  statementNumber: z.string(),
+  type: BillingStatementTypeEnum,
+  title: z.string(),
+  subtitle: z.string(),
+
+  status: BillingStatementStatusEnum,
+
+  /**
+   * Example:
+   * /api/bookings/1/billing-statements/html?type=INITIAL_BOOKING
+   * /api/bookings/1/billing-statements/html?type=EXTENSION&chargeId=4
+   */
+  htmlPath: z.string(),
+
+  extensionChargeId: z.number().nullable().optional(),
+  extensionRequestId: z.number().nullable().optional(),
+
+  currentCheckOutDate: z.string().nullable().optional(),
+  requestedCheckOutDate: z.string().nullable().optional(),
+
+  items: z.array(BillingStatementItemSchema),
+  totals: BillingStatementTotalsSchema,
+});
+
+export const BookingBillingStatementsResponseSchema = z.object({
+  bookingId: z.number(),
+  bookingStatus: BookingStatusEnum,
+  generatedAt: z.string(),
+
+  initialBillingStatement: BillingStatementSchema.nullable(),
+  extensionBillingStatements: z.array(BillingStatementSchema),
+
+  summary: z.object({
+    totalStatements: z.number(),
+
+    totalAmount: z.number(),
+    totalAmountText: z.string(),
+
+    totalPaid: z.number(),
+    totalPaidText: z.string(),
+
+    totalRefunded: z.number(),
+    totalRefundedText: z.string(),
+
+    totalRemaining: z.number(),
+    totalRemainingText: z.string(),
+  }),
+});
+
+export type BillingStatementType = z.infer<typeof BillingStatementTypeEnum>;
+export type BillingStatementStatus = z.infer<typeof BillingStatementStatusEnum>;
+export type BillingStatementItem = z.infer<typeof BillingStatementItemSchema>;
+export type BillingStatementTotals = z.infer<
+  typeof BillingStatementTotalsSchema
+>;
+export type BillingStatement = z.infer<typeof BillingStatementSchema>;
+export type BookingBillingStatementsResponse = z.infer<
+  typeof BookingBillingStatementsResponseSchema
 >;

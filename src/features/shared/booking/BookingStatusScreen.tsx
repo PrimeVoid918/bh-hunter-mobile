@@ -10,9 +10,8 @@ import {
   useApproveExtensionMutation,
   useCancelBookingMutation,
   useCreateBookingChargeCheckoutMutation,
-  // useCancelBookingMutation,
-  // useCreatePaymongoCheckoutMutation,
   useGetAllQuery,
+  useGetBillingStatementsQuery,
   useGetBookingStatusQuery,
   useGetOneQuery as useGetOneBookinQuery,
   useGetRefundPreviewQuery,
@@ -46,7 +45,9 @@ import { navigationRef } from "@/application/navigation/navigationRef";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { PropertiesStackParamList } from "../../owner/screens/properties/navigation/properties.stack.types";
-import { navigate } from "../../../application/navigation/navigationRef";
+import BookingAgreementBlock from "./BookingAgreementBlock";
+import WebView from "react-native-webview";
+import api from "@/application/config/api";
 
 type Role = "TENANT" | "OWNER";
 
@@ -93,6 +94,18 @@ export default function BookingStatusScreen({ route }) {
     refetch: refetchStatus,
   } = useGetBookingStatusQuery(bookId);
 
+  const {
+    data: billingStatements,
+    isLoading: isBillingStatementsLoading,
+    refetch: refetchBillingStatements,
+  } = useGetBillingStatementsQuery(bookId);
+
+  const [billingStatementUrl, setBillingStatementUrl] = React.useState<
+    string | null
+  >(null);
+  const [showBillingStatementWebView, setShowBillingStatementWebView] =
+    React.useState(false);
+
   const shouldLoadRefundPreview =
     role === "TENANT" && booking?.status === "COMPLETED_BOOKING";
 
@@ -111,13 +124,6 @@ export default function BookingStatusScreen({ route }) {
       : role === "TENANT"
         ? ownerQuery.data
         : undefined;
-
-  // const [approveBooking, { isLoading: isApproveLoading }] =
-  //   usePatchApproveBookingMutation();
-  // const [rejectBooking, { isLoading: isRejectLoading }] =
-  //   usePatchRejectBookingMutation();
-  // const [createBookingChargeCheckout, { isLoading: isCheckoutLoading }] =
-  //   useCreateBookingChargeCheckoutMutation ();
 
   //* new implementaiion
   const [approveBooking, { isLoading: isApproveLoading }] =
@@ -145,26 +151,6 @@ export default function BookingStatusScreen({ route }) {
     isRequestExtensionLoading ||
     isApproveExtensionLoading ||
     isRejectExtensionLoading;
-  // isApproveLoading || isRejectLoading || isCancelLoading;
-
-  // const handleApprove = async (message: string) => {
-  //   try {
-  //     await approveBooking({
-  //       id: bookId,
-  //       payload: { ownerId: userId, message },
-  //     }).unwrap();
-  //     Vibration.vibrate(10);
-  //     refetch();
-  //   } catch (err: any) {
-  //     if (err?.status === 400 || err?.data?.statusCode === 400) {
-  //       setErrorMessage(
-  //         err?.data?.message ||
-  //           "Room capacity is full. Please reject this request.",
-  //       );
-  //       setErrorModalVisible(true);
-  //     }
-  //   }
-  // };
 
   //! new bookg implementation
   const handleApprove = async (input: {
@@ -202,17 +188,23 @@ export default function BookingStatusScreen({ route }) {
   };
   //! new book implementation
 
+  const buildAbsoluteApiUrl = (path: string) => {
+    const baseUrl = api.BASE_URL.replace(/\/+$/, "");
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+    return `${baseUrl}${cleanPath}`;
+  };
+
+  const handleViewBillingStatement = (htmlPath: string) => {
+    const url = buildAbsoluteApiUrl(htmlPath);
+
+    Vibration.vibrate(10);
+    setBillingStatementUrl(url);
+    setShowBillingStatementWebView(true);
+  };
+
   const handlePayNow = async () => {
     try {
-      //! disabled and deprecated because it is an old implementation of the booking,
-      // const response = await createCheckout({
-      //   bookingId: booking!.id,
-      // }).unwrap();
-      // setCheckoutUrl(response.checkoutUrl);
-      //! disabled and deprecated because it is an old implementation of the booking,
-      // console.log("handlePayNow is feature is disabled for now");
-      // setShowWebView(true);
-
       const response = await createBookingChargeCheckout({
         bookingId: booking!.id,
       }).unwrap();
@@ -258,6 +250,7 @@ export default function BookingStatusScreen({ route }) {
     refetchStatus();
     refundPreviewRefetch();
     setRefreshing(false);
+    refetchBillingStatements();
   };
 
   if (isLoading || !booking) {
@@ -273,23 +266,16 @@ export default function BookingStatusScreen({ route }) {
       });
       return;
     }
-    // navigationRef.navigate("" , {
-    //   screen: "BoardingHouseDetails",
-    //   params: { id: booking.room.boardingHouse.id },
-    // });
-    // navigationRef.navigate("Properties", {
-    //   screen: "BoardingHouseDetails",
-    //   params: { id: booking.room.boardingHouse.id },
-    // });
-    // ownerNavigation.navigate("BoardingHouseDetailsScreen", {
-    //   id: booking.room.boardingHouse.id,
-    // });
   };
 
   const handleApproveExtension = async (input: {
     extensionId: number;
     extensionAmount: number;
     message?: string;
+    adjustments?: {
+      label: string;
+      amount: number;
+    }[];
   }) => {
     try {
       await approveExtension({
@@ -299,6 +285,7 @@ export default function BookingStatusScreen({ route }) {
           ownerId: userId,
           extensionAmount: input.extensionAmount,
           message: input.message,
+          adjustments: input.adjustments ?? [],
         },
       }).unwrap();
 
@@ -358,12 +345,7 @@ export default function BookingStatusScreen({ route }) {
   };
 
   const statusMeta = getBookingStatusDetails(booking.status);
-  // const statusMeta = React.useMemo(() => {
-  //   if (!booking?.status) return getBookingStatusDetails("UNKNOWN");
-  //   return getBookingStatusDetails(booking.status);
-  // }, [booking?.status]);
 
-  // const isProcessing = isActionLoading || isCheckOutLoading || isRefundLoading;
   const isProcessing = isActionLoading || isRefundLoading;
 
   return (
@@ -469,6 +451,11 @@ export default function BookingStatusScreen({ route }) {
         </Surface>
 
         <VStack space="xs">
+          <Text style={s.groupHeader}>Digital Agreement</Text>
+          <BookingAgreementBlock bookingId={bookId} viewerRole={role} />
+        </VStack>
+
+        <VStack space="xs">
           <Text style={s.groupHeader}>Contacts</Text>
           <UserInformationCard user={userData} />
         </VStack>
@@ -508,11 +495,20 @@ export default function BookingStatusScreen({ route }) {
                 refundPreviewRefetch();
               }}
             />
-            <BookingPaymentBlock
+            {/* <BookingPaymentBlock
               booking={booking}
               bookingStatus={bookingStatus}
               viewerRole={role}
               onPayNow={handlePayNow}
+            /> */}
+            <BookingPaymentBlock
+              booking={booking}
+              bookingStatus={bookingStatus}
+              billingStatements={billingStatements}
+              isBillingStatementsLoading={isBillingStatementsLoading}
+              viewerRole={role}
+              onPayNow={handlePayNow}
+              onViewBillingStatement={handleViewBillingStatement}
             />
           </Surface>
         </VStack>
@@ -557,10 +553,6 @@ export default function BookingStatusScreen({ route }) {
           visible={showWebView}
           checkoutUrl={checkoutUrl}
           onClose={() => setShowWebView(false)}
-          // onSuccess={() => {
-          //   setShowWebView(false);
-          //   refetch();
-          // }}
           onSuccess={() => {
             setShowWebView(false);
             refetch();
@@ -570,6 +562,50 @@ export default function BookingStatusScreen({ route }) {
           onCancel={() => setShowWebView(false)}
         />
       )}
+
+      <Portal>
+        <Modal
+          visible={showBillingStatementWebView}
+          onDismiss={() => setShowBillingStatementWebView(false)}
+          contentContainerStyle={s.billingWebViewModalContainer}
+        >
+          <Surface elevation={0} style={s.billingWebViewSheet}>
+            <HStack
+              justifyContent="space-between"
+              alignItems="center"
+              style={s.billingWebViewHeader}
+            >
+              <VStack>
+                <Text style={s.billingWebViewTitle}>Billing Statement</Text>
+                <Text style={s.billingWebViewSubtitle}>
+                  Generated booking charge summary
+                </Text>
+              </VStack>
+
+              <Button
+                mode="text"
+                compact
+                onPress={() => setShowBillingStatementWebView(false)}
+                labelStyle={s.buttonLabel}
+              >
+                Close
+              </Button>
+            </HStack>
+
+            <Divider style={s.hairlineLight} />
+
+            <View style={s.billingWebViewBody}>
+              {billingStatementUrl && (
+                <WebView
+                  source={{ uri: billingStatementUrl }}
+                  startInLoadingState
+                  style={s.billingWebView}
+                />
+              )}
+            </View>
+          </Surface>
+        </Modal>
+      </Portal>
     </StaticScreenWrapper>
   );
 }
@@ -708,5 +744,41 @@ const s = StyleSheet.create({
   buttonLabel: {
     fontFamily: "Poppins-Medium",
     fontSize: 14,
+  },
+  billingWebViewModalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+  billingWebViewSheet: {
+    height: "92%",
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    overflow: "hidden",
+  },
+  billingWebViewHeader: {
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+  },
+  billingWebViewTitle: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 16,
+    color: "#1A1A1A",
+  },
+  billingWebViewSubtitle: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 11,
+    color: "#767474",
+  },
+  billingWebViewBody: {
+    flex: 1,
+    backgroundColor: "#F7F9FC",
+  },
+  billingWebView: {
+    flex: 1,
+    backgroundColor: "#F7F9FC",
   },
 });

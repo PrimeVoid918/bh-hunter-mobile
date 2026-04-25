@@ -144,17 +144,17 @@ export default function MainScreen() {
               label="My Bookings"
               onPress={() => navigation.navigate("BookingStack")}
             />
-            <ActionTile
+            {/* <ActionTile
               icon="bookmark-outline"
               label="Saved"
               onPress={() => {}}
-            />
+            /> */}
             <ActionTile
               icon="history"
               label="Booking History"
               onPress={() => navigation.navigate("BookingHistoryScreen")}
             />
-            <ActionTile icon="bell-outline" label="Alerts" onPress={() => {}} />
+            {/* <ActionTile icon="bell-outline" label="Alerts" onPress={() => {}} /> */}
           </HStack>
         </VStack>
 

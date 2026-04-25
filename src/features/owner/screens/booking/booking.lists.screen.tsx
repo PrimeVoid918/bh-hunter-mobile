@@ -296,11 +296,7 @@ export default function BookingListsScreen() {
                       style={[s.metaText, { color: colors.outline }]}
                       numberOfLines={1}
                     >
-                      {[
-                        item.tenant.firstName,
-                        item.tenant.middleName,
-                        item.tenant.lastName,
-                      ]
+                      {[item.tenant?.firstname, item.tenant?.lastname]
                         .filter(Boolean)
                         .join(" ")}
                     </Text>

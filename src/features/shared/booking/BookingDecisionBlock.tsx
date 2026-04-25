@@ -35,6 +35,11 @@ type ApproveBookingForm = {
   securityDeposit: number;
 };
 
+type ExtensionAdjustmentInput = {
+  label: string;
+  amount: number;
+};
+
 interface BookingDecisionBlockInterface {
   booking: GetBooking;
   viewerRole: "TENANT" | "OWNER";
@@ -75,6 +80,7 @@ interface BookingDecisionBlockInterface {
     extensionId: number;
     extensionAmount: number;
     message?: string;
+    adjustments?: ExtensionAdjustmentInput[];
   }) => void;
 
   onRejectExtension?: (payload: {
@@ -121,9 +127,58 @@ export default function BookingDecisionBlock({
   const extensionAmountRef = React.useRef(String(booking.room.price ?? 0));
   const ownerExtensionMessageRef = React.useRef("");
   const ownerRejectReasonRef = React.useRef("");
-  // const [extensionAmount, setExtensionAmount] = React.useState("");
-  // const [ownerExtensionMessage, setOwnerExtensionMessage] = React.useState("");
-  // const [ownerRejectReason, setOwnerRejectReason] = React.useState("");
+
+  const extensionBaseAmountInputRef = React.useRef(
+    String(booking.room.price ?? 0),
+  );
+  const adjustmentLabelInputRef = React.useRef("");
+  const adjustmentAmountInputRef = React.useRef("");
+
+  const [extensionAdjustments, setExtensionAdjustments] = React.useState<
+    ExtensionAdjustmentInput[]
+  >([]);
+
+  const [extensionBaseAmountPreview, setExtensionBaseAmountPreview] =
+    React.useState(String(booking.room.price ?? 0));
+
+  const [approveExtensionFormKey, setApproveExtensionFormKey] =
+    React.useState(0);
+  const [adjustmentInputKey, setAdjustmentInputKey] = React.useState(0);
+
+  const extensionAdjustmentsTotal = extensionAdjustments.reduce(
+    (sum, item) => sum + item.amount,
+    0,
+  );
+
+  const extensionBaseAmountNumber = Number(extensionBaseAmountPreview || 0);
+
+  const extensionGrandTotal =
+    (Number.isFinite(extensionBaseAmountNumber)
+      ? extensionBaseAmountNumber
+      : 0) + extensionAdjustmentsTotal;
+
+  const handleAddExtensionAdjustment = () => {
+    const cleanLabel = adjustmentLabelInputRef.current.trim();
+    const amount = Number(adjustmentAmountInputRef.current || 0);
+
+    if (!cleanLabel || amount <= 0) return;
+
+    setExtensionAdjustments((prev) => [
+      ...prev,
+      {
+        label: cleanLabel,
+        amount,
+      },
+    ]);
+
+    adjustmentLabelInputRef.current = "";
+    adjustmentAmountInputRef.current = "";
+    setAdjustmentInputKey((prev) => prev + 1);
+  };
+
+  const handleRemoveExtensionAdjustment = (index: number) => {
+    setExtensionAdjustments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const [showApproveExtensionModal, setShowApproveExtensionModal] =
     React.useState(false);
@@ -211,6 +266,33 @@ export default function BookingDecisionBlock({
     }
     return false;
   }, [accessData, viewerRole]);
+
+  const sanitizeMoneyInput = (value: string) => {
+    // allows digits and one decimal point only
+    const cleaned = value.replace(/[^\d.]/g, "");
+    const parts = cleaned.split(".");
+
+    if (parts.length <= 1) return cleaned;
+
+    return `${parts[0]}.${parts.slice(1).join("")}`;
+  };
+
+  const openApproveExtensionModal = () => {
+    const defaultAmount = String(booking.room.price ?? 0);
+
+    extensionAmountRef.current = defaultAmount;
+    ownerExtensionMessageRef.current = "";
+    extensionBaseAmountInputRef.current = defaultAmount;
+    adjustmentLabelInputRef.current = "";
+    adjustmentAmountInputRef.current = "";
+
+    setExtensionBaseAmountPreview(defaultAmount);
+    setExtensionAdjustments([]);
+    setApproveExtensionFormKey((prev) => prev + 1);
+    setAdjustmentInputKey((prev) => prev + 1);
+
+    setShowApproveExtensionModal(true);
+  };
 
   const handlePress = (pattern: "light" | "heavy", action: () => void) => {
     Vibration.vibrate(pattern === "heavy" ? 40 : 10);
@@ -405,13 +487,7 @@ export default function BookingDecisionBlock({
                   style={s.flexButton}
                   icon="check"
                   loading={isLoading}
-                  onPress={() => {
-                    extensionAmountRef.current = String(
-                      booking.room.price ?? 0,
-                    );
-                    ownerExtensionMessageRef.current = "";
-                    setShowApproveExtensionModal(true);
-                  }}
+                  onPress={openApproveExtensionModal}
                 >
                   Approve Extension
                 </Button>
@@ -443,26 +519,147 @@ export default function BookingDecisionBlock({
                 <VStack space="md">
                   <Text style={s.modalTitle}>Approve Extension</Text>
                   <Text style={s.modalSubtitle}>
-                    Set the extension amount and optional note for the tenant.
+                    Set the extension amount and add optional utility
+                    adjustments if needed.
                   </Text>
 
                   <TextInput
+                    key={`base-extension-${approveExtensionFormKey}`}
                     mode="outlined"
-                    label="Extension Amount"
-                    defaultValue={String(booking.room.price ?? 0)}
+                    label="Base Extension Amount"
+                    defaultValue={extensionBaseAmountInputRef.current}
                     onChangeText={(text) => {
-                      extensionAmountRef.current = text;
+                      const clean = sanitizeMoneyInput(text);
+                      extensionBaseAmountInputRef.current = clean;
+                      extensionAmountRef.current = clean;
                     }}
-                    keyboardType="numeric"
+                    onBlur={() => {
+                      setExtensionBaseAmountPreview(
+                        extensionBaseAmountInputRef.current || "0",
+                      );
+                    }}
+                    keyboardType="decimal-pad"
                     style={s.input}
                     disabled={isLoading}
                   />
+
+                  <Surface elevation={0} style={s.adjustmentBox}>
+                    <VStack space="sm">
+                      <Text style={s.adjustmentTitle}>
+                        Optional Utility Adjustments
+                      </Text>
+                      <Text style={s.adjustmentSubtitle}>
+                        Add charges such as electricity or water only if they
+                        apply to this extension.
+                      </Text>
+
+                      <VStack space="sm">
+                        <VStack space="sm">
+                          <TextInput
+                            key={`adjustment-label-${adjustmentInputKey}`}
+                            mode="outlined"
+                            label="Charge name"
+                            defaultValue=""
+                            onChangeText={(text) => {
+                              adjustmentLabelInputRef.current = text;
+                            }}
+                            style={s.input}
+                            disabled={isLoading}
+                            placeholder="e.g Electricity"
+                            autoCapitalize="words"
+                          />
+
+                          <TextInput
+                            key={`adjustment-amount-${adjustmentInputKey}`}
+                            mode="outlined"
+                            label="Amount"
+                            defaultValue=""
+                            onChangeText={(text) => {
+                              adjustmentAmountInputRef.current =
+                                sanitizeMoneyInput(text);
+                            }}
+                            keyboardType="decimal-pad"
+                            style={s.input}
+                            disabled={isLoading}
+                            placeholder=""
+                          />
+                        </VStack>
+                      </VStack>
+
+                      <Button
+                        mode="outlined"
+                        icon="plus"
+                        onPress={handleAddExtensionAdjustment}
+                        disabled={isLoading}
+                        style={s.addAdjustmentButton}
+                      >
+                        Add Adjustment
+                      </Button>
+
+                      {extensionAdjustments.length > 0 && (
+                        <VStack space="xs" style={s.adjustmentList}>
+                          {extensionAdjustments.map((item, index) => (
+                            <Surface
+                              key={`${item.label}-${index}`}
+                              elevation={0}
+                              style={s.adjustmentRow}
+                            >
+                              <HStack
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
+                                <VStack style={{ flex: 1 }}>
+                                  <Text style={s.adjustmentRowTitle}>
+                                    {item.label}
+                                  </Text>
+                                  <Text style={s.adjustmentRowSub}>
+                                    Utility adjustment
+                                  </Text>
+                                </VStack>
+
+                                <HStack space="sm" alignItems="center">
+                                  <Text style={s.adjustmentAmount}>
+                                    PHP {item.amount.toLocaleString("en-PH")}
+                                  </Text>
+
+                                  <Button
+                                    mode="text"
+                                    compact
+                                    icon="close"
+                                    onPress={() =>
+                                      handleRemoveExtensionAdjustment(index)
+                                    }
+                                    disabled={isLoading}
+                                  >
+                                    Remove
+                                  </Button>
+                                </HStack>
+                              </HStack>
+                            </Surface>
+                          ))}
+                        </VStack>
+                      )}
+
+                      <Surface elevation={0} style={s.extensionTotalBox}>
+                        <HStack
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
+                          <Text style={s.extensionTotalLabel}>
+                            Total Extension Due
+                          </Text>
+                          <Text style={s.extensionTotalValue}>
+                            PHP {extensionGrandTotal.toLocaleString("en-PH")}
+                          </Text>
+                        </HStack>
+                      </Surface>
+                    </VStack>
+                  </Surface>
 
                   <TextInput
                     mode="outlined"
                     label="Message (Optional)"
                     defaultValue=""
-                    // value={ownerExtensionMessage}
                     onChangeText={(text) => {
                       ownerExtensionMessageRef.current = text;
                     }}
@@ -480,13 +677,18 @@ export default function BookingDecisionBlock({
                           onApproveExtension?.({
                             extensionId: extensionRequest.id,
                             extensionAmount: Number(
-                              extensionAmountRef.current || 0,
+                              extensionBaseAmountInputRef.current || 0,
                             ),
                             message:
                               ownerExtensionMessageRef.current.trim() ||
                               undefined,
+                            adjustments: extensionAdjustments,
                           });
+
                           setShowApproveExtensionModal(false);
+                          // setAdjustmentLabel("");
+                          // setAdjustmentAmount("");
+                          setExtensionAdjustments([]);
                         })
                       }
                     >
@@ -1064,6 +1266,69 @@ const RefundSummary = ({
 };
 
 const s = StyleSheet.create({
+  adjustmentBox: {
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    borderRadius: 12,
+    backgroundColor: "#F7F9FC",
+    padding: 12,
+  },
+  adjustmentTitle: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 13,
+    color: "#1A1A1A",
+  },
+  adjustmentSubtitle: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 11,
+    color: "#767474",
+    lineHeight: 16,
+  },
+  addAdjustmentButton: {
+    borderRadius: 10,
+  },
+  adjustmentList: {
+    marginTop: 4,
+  },
+  adjustmentRow: {
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: "#FFFFFF",
+  },
+  adjustmentRowTitle: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 12,
+    color: "#1A1A1A",
+  },
+  adjustmentRowSub: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 10,
+    color: "#767474",
+  },
+  adjustmentAmount: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 12,
+    color: "#1A1A1A",
+  },
+  extensionTotalBox: {
+    borderWidth: 1,
+    borderColor: "#D6ECFA",
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    padding: 10,
+  },
+  extensionTotalLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 12,
+    color: "#767474",
+  },
+  extensionTotalValue: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 15,
+    color: "#357FC1",
+  },
   lockdownCard: {
     padding: 14,
     borderRadius: 12,

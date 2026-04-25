@@ -1,6 +1,8 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import {
+  BillingStatement,
+  BookingBillingStatementsResponse,
   BookingStatusResponse,
   GetBooking,
 } from "@/infrastructure/booking/booking.schema";
@@ -13,6 +15,7 @@ import {
   useTheme,
   ActivityIndicator,
   Divider,
+  TouchableRipple,
 } from "react-native-paper";
 import { Spacing } from "@/constants";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
@@ -21,9 +24,12 @@ import { HStack, VStack, Box } from "@gluestack-ui/themed";
 interface BookingPaymentBlockInterface {
   booking: GetBooking;
   bookingStatus?: BookingStatusResponse | null;
+  billingStatements?: BookingBillingStatementsResponse | null;
   viewerRole: "TENANT" | "OWNER";
   onPayNow?: () => void;
+  onViewBillingStatement?: (htmlPath: string) => void;
   isLoading?: boolean;
+  isBillingStatementsLoading?: boolean;
 }
 
 const chargeLabels: Record<string, string> = {
@@ -53,6 +59,9 @@ export default function BookingPaymentBlock({
   bookingStatus,
   onPayNow,
   isLoading = false,
+  billingStatements,
+  isBillingStatementsLoading,
+  onViewBillingStatement,
 }: BookingPaymentBlockInterface) {
   const { status, currency, room } = booking;
   const theme = useTheme();
@@ -66,8 +75,20 @@ export default function BookingPaymentBlock({
     remainingCharges: 0,
   };
 
+  const initialBillingStatement =
+    billingStatements?.initialBillingStatement ?? null;
+
+  const extensionBillingStatements =
+    billingStatements?.extensionBillingStatements ?? [];
+
+  const hasBillingStatements =
+    !!initialBillingStatement || extensionBillingStatements.length > 0;
+
   const isCompleted =
-    !nextCharge && totals.remainingCharges === 0 && charges.length > 0;
+    !nextCharge &&
+    totals.remainingCharges === 0 &&
+    charges.length > 0 &&
+    charges.every((charge) => charge.status === "PAID");
   const displayPrice = nextCharge?.amount ?? room.price;
   const progressText =
     totals.totalCharges > 0
@@ -126,6 +147,196 @@ export default function BookingPaymentBlock({
           bg: theme.colors.secondary + "18",
         };
     }
+  };
+
+  const handleViewStatement = (statement: BillingStatement) => {
+    if (!statement.htmlPath) return;
+
+    ReactNativeHapticFeedback.trigger("impactLight");
+    onViewBillingStatement?.(statement.htmlPath);
+  };
+
+  const getStatementStatusMeta = (statementStatus?: string | null) => {
+    switch (statementStatus) {
+      case "PAID":
+        return {
+          label: "Paid",
+          color: theme.colors.success,
+          icon: "check-circle",
+          bg: theme.colors.success + "12",
+        };
+      case "REFUNDED":
+        return {
+          label: "Refunded",
+          color: theme.colors.primary,
+          icon: "cash-refund",
+          bg: theme.colors.primaryContainer,
+        };
+      case "EXPIRED":
+        return {
+          label: "Expired",
+          color: theme.colors.error,
+          icon: "clock-alert-outline",
+          bg: theme.colors.errorContainer,
+        };
+      case "CANCELLED":
+        return {
+          label: "Cancelled",
+          color: theme.colors.outline,
+          icon: "close-circle-outline",
+          bg: theme.colors.surfaceVariant,
+        };
+      case "PARTIALLY_PAID":
+        return {
+          label: "Partial",
+          color: theme.colors.warning,
+          icon: "progress-clock",
+          bg: theme.colors.warning + "18",
+        };
+      default:
+        return {
+          label: "Pending",
+          color: theme.colors.secondary,
+          icon: "clock-outline",
+          bg: theme.colors.secondary + "18",
+        };
+    }
+  };
+
+  const renderBillingStatementCard = (
+    statement: BillingStatement,
+    sectionLabel: string,
+  ) => {
+    const meta = getStatementStatusMeta(statement.status);
+    const itemPreview = statement.items
+      .map((item) => item.label)
+      .slice(0, 3)
+      .join(" • ");
+
+    return (
+      <TouchableRipple
+        key={statement.statementNumber}
+        borderless
+        onPress={() => handleViewStatement(statement)}
+        style={s.statementRipple}
+      >
+        <Surface
+          elevation={0}
+          style={[
+            s.statementCard,
+            {
+              borderColor: theme.colors.outlineVariant,
+              backgroundColor: theme.colors.surface,
+            },
+          ]}
+        >
+          <HStack space="sm" alignItems="flex-start">
+            <Box
+              style={[
+                s.statementIconWrap,
+                {
+                  backgroundColor:
+                    statement.type === "INITIAL_BOOKING"
+                      ? theme.colors.primaryContainer
+                      : theme.colors.secondary + "22",
+                },
+              ]}
+            >
+              <Icon
+                source={
+                  statement.type === "INITIAL_BOOKING"
+                    ? "file-document-outline"
+                    : "calendar-plus"
+                }
+                size={19}
+                color={
+                  statement.type === "INITIAL_BOOKING"
+                    ? theme.colors.primary
+                    : "#9A6B00"
+                }
+              />
+            </Box>
+
+            <VStack style={{ flex: 1 }}>
+              <HStack justifyContent="space-between" alignItems="flex-start">
+                <VStack style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={s.statementSectionLabel}>{sectionLabel}</Text>
+                  <Text style={s.statementTitle}>{statement.title}</Text>
+                  <Text style={s.statementDesc} numberOfLines={2}>
+                    {itemPreview || statement.subtitle}
+                  </Text>
+                </VStack>
+
+                <HStack
+                  space="xs"
+                  alignItems="center"
+                  style={[s.statusChip, { backgroundColor: meta.bg }]}
+                >
+                  <Icon source={meta.icon} size={14} color={meta.color} />
+                  <Text style={[s.statusChipText, { color: meta.color }]}>
+                    {meta.label}
+                  </Text>
+                </HStack>
+              </HStack>
+
+              <View style={s.statementTotalsBox}>
+                <HStack justifyContent="space-between" alignItems="center">
+                  <VStack>
+                    <Text style={s.statementMiniLabel}>Total Charges</Text>
+                    <Text style={s.statementAmount}>
+                      {statement.totals.totalAmountText}
+                    </Text>
+                  </VStack>
+
+                  <VStack alignItems="flex-end">
+                    <Text style={s.statementMiniLabel}>Remaining</Text>
+                    <Text
+                      style={[
+                        s.statementAmount,
+                        {
+                          color:
+                            statement.totals.remainingBalance > 0
+                              ? theme.colors.error
+                              : theme.colors.success,
+                        },
+                      ]}
+                    >
+                      {statement.totals.remainingBalanceText}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </View>
+
+              <HStack
+                justifyContent="space-between"
+                alignItems="center"
+                style={s.statementFooter}
+              >
+                <Text style={s.statementNumber}>
+                  {statement.statementNumber}
+                </Text>
+
+                <HStack space="xs" alignItems="center">
+                  <Text
+                    style={[
+                      s.viewStatementText,
+                      { color: theme.colors.primary },
+                    ]}
+                  >
+                    View billing statement
+                  </Text>
+                  <Icon
+                    source="chevron-right"
+                    size={18}
+                    color={theme.colors.primary}
+                  />
+                </HStack>
+              </HStack>
+            </VStack>
+          </HStack>
+        </Surface>
+      </TouchableRipple>
+    );
   };
 
   if (status === "PENDING_REQUEST") return null;
@@ -217,135 +428,66 @@ export default function BookingPaymentBlock({
           </Surface>
         )}
 
-        {charges.length > 0 && (
+        {(hasBillingStatements || isBillingStatementsLoading) && (
           <View style={s.sectionBlock}>
             <HStack
               justifyContent="space-between"
               alignItems="center"
               style={s.sectionHeader}
             >
-              <Text style={s.sectionTitle}>Payment Schedule</Text>
-              <Text style={s.sectionMeta}>
-                {totals.remainingCharges} remaining
-              </Text>
+              <Text style={s.sectionTitle}>Payment History</Text>
+
+              {isBillingStatementsLoading ? (
+                <ActivityIndicator size="small" />
+              ) : (
+                <Text style={s.sectionMeta}>
+                  {billingStatements?.summary.totalStatements ?? 0} statement
+                  {(billingStatements?.summary.totalStatements ?? 0) === 1
+                    ? ""
+                    : "s"}
+                </Text>
+              )}
             </HStack>
 
             <VStack space="sm">
-              {charges.map((charge, index) => {
-                const meta = getChargeStatusMeta(charge.status);
-                const isCurrent = nextCharge?.id === charge.id;
+              {initialBillingStatement &&
+                renderBillingStatementCard(
+                  initialBillingStatement,
+                  "Initial Booking",
+                )}
 
-                return (
-                  <Surface
-                    key={charge.id}
-                    elevation={0}
-                    style={[
-                      s.chargeRow,
-                      {
-                        borderColor: isCurrent
-                          ? theme.colors.primary
-                          : theme.colors.outlineVariant,
-                        backgroundColor: isCurrent
-                          ? theme.colors.primaryContainer + "55"
-                          : theme.colors.surface,
-                      },
-                    ]}
-                  >
-                    <HStack space="sm" alignItems="flex-start">
-                      <Box
-                        style={[s.chargeIconWrap, { backgroundColor: meta.bg }]}
-                      >
-                        <Icon
-                          source={getChargeIcon(charge.type)}
-                          size={18}
-                          color={meta.color}
-                        />
-                      </Box>
+              {extensionBillingStatements.length > 0 && (
+                <VStack space="sm">
+                  {extensionBillingStatements.map((statement, index) =>
+                    renderBillingStatementCard(
+                      statement,
+                      extensionBillingStatements.length > 1
+                        ? `Extension #${index + 1}`
+                        : "Extension",
+                    ),
+                  )}
+                </VStack>
+              )}
 
-                      <VStack style={{ flex: 1 }}>
-                        <HStack
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Text style={s.chargeTitle}>
-                            {index + 1}. {getChargeLabel(charge.type)}
-                          </Text>
-
-                          <HStack
-                            space="xs"
-                            alignItems="center"
-                            style={[s.statusChip, { backgroundColor: meta.bg }]}
-                          >
-                            <Icon
-                              source={meta.icon}
-                              size={14}
-                              color={meta.color}
-                            />
-                            <Text
-                              style={[s.statusChipText, { color: meta.color }]}
-                            >
-                              {meta.label}
-                            </Text>
-                          </HStack>
-                        </HStack>
-
-                        <Text style={s.chargeDesc}>
-                          {getChargeDescription(charge.type)}
-                        </Text>
-
-                        <HStack
-                          justifyContent="space-between"
-                          alignItems="center"
-                          style={s.chargeMetaRow}
-                        >
-                          <Text style={s.chargeAmount}>
-                            {currency ?? "PHP"}{" "}
-                            {formatNumberWithCommas(charge.amount)}
-                          </Text>
-
-                          {!!charge.dueDate && (
-                            <Text style={s.chargeDue}>
-                              Due{" "}
-                              {new Date(charge.dueDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                },
-                              )}
-                            </Text>
-                          )}
-                        </HStack>
-
-                        {!!charge.paidAt && (
-                          <Text style={s.paidAtText}>
-                            Paid on{" "}
-                            {new Date(charge.paidAt).toLocaleString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
-                          </Text>
-                        )}
-
-                        {isCurrent && (
-                          <Text
-                            style={[
-                              s.currentMarker,
-                              { color: theme.colors.primary },
-                            ]}
-                          >
-                            This is the active payment step.
-                          </Text>
-                        )}
-                      </VStack>
-                    </HStack>
-                  </Surface>
-                );
-              })}
+              {!isBillingStatementsLoading && !hasBillingStatements && (
+                <Surface
+                  elevation={0}
+                  style={[
+                    s.emptyStatementCard,
+                    { borderColor: theme.colors.outlineVariant },
+                  ]}
+                >
+                  <Icon
+                    source="file-document-alert-outline"
+                    size={22}
+                    color={theme.colors.outline}
+                  />
+                  <Text style={s.emptyStatementText}>
+                    Billing statement will appear after the booking has
+                    generated charges.
+                  </Text>
+                </Surface>
+              )}
             </VStack>
           </View>
         )}
@@ -702,5 +844,89 @@ const s = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(214, 69, 69, 0.2)",
+  },
+  statementRipple: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  statementCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: "#FFFFFF",
+  },
+  statementIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  statementSectionLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 10,
+    color: "#767474",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  statementTitle: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 13,
+    color: "#1A1A1A",
+  },
+  statementDesc: {
+    marginTop: 2,
+    fontFamily: "Poppins-Regular",
+    fontSize: 11,
+    color: "#767474",
+    lineHeight: 16,
+  },
+  statementTotalsBox: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: "#F7F9FC",
+    borderWidth: 1,
+    borderColor: "#F0F0F5",
+  },
+  statementMiniLabel: {
+    fontFamily: "Poppins-Medium",
+    fontSize: 10,
+    color: "#767474",
+  },
+  statementAmount: {
+    marginTop: 2,
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 13,
+    color: "#1A1A1A",
+  },
+  statementFooter: {
+    marginTop: 10,
+  },
+  statementNumber: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 10,
+    color: "#767474",
+  },
+  viewStatementText: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 11,
+  },
+  emptyStatementCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    gap: 6,
+  },
+  emptyStatementText: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 12,
+    color: "#767474",
+    textAlign: "center",
+    lineHeight: 18,
   },
 });

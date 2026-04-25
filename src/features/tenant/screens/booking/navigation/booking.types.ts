@@ -22,6 +22,7 @@ export type TenantBookingStackParamList = {
     ownerId: number | undefined;
     roomId: number | undefined;
   };
+  BookingAgreementWebviewMainScreen: { bookId: number };
 };
 
 export type RoomsBookingScreenRouteProp = RouteProp<
@@ -35,4 +36,5 @@ export const TenantBookingStackParamListArrayName = [
   "RoomsBookingListsScreen",
   "RoomsDetailsScreen",
   "RoomsCheckoutScreen",
+  "BookingAgreementWebviewMainScreen",
 ];

@@ -3,7 +3,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import type { RouteProp } from "@react-navigation/native";
 import BookingsScreen from "../dashboard.bookings.screen";
-import BookingDetailsScreen from "../dashboard.booking.details.screen";
+// import BookingDetailsScreen from "../dashboard.booking.details.screen";
+// import BookingDeta
 import { backButtonConfig } from "@/constants/navigation/screenOptions";
 import BookingStatusScreen from "@/features/shared/booking/BookingStatusScreen";
 

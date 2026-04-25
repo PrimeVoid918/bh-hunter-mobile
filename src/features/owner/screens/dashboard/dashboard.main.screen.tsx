@@ -161,7 +161,9 @@ export default function DashboardMainScreen() {
 
     if (!dashboard.hasActiveSubscription) {
       // Plug your subscription stack/screen here if you want a direct CTA later.
-      navigate.navigate("Settings" as never);
+      // navigate.navigate("Menu" as never);
+      navigate.navigate("SubscriptionWebviewMainScreen");
+      // navigationRef.navigate("Menu");
       return;
     }
 

@@ -34,6 +34,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AppDispatch } from "@/application/store/stores";
 import { refreshAccessStatusThunk } from "@/infrastructure/access/access.redux.thunk";
+import { navigationRef } from "../../../application/navigation/navigationRef";
 
 type VerificationMainNavigationProp =
   NativeStackNavigationProp<OwnerDashboardStackParamList>;
@@ -163,7 +164,8 @@ export default function VerificationMainScreen() {
         <VerificationStatusHeader
           verified={verificationStatusData?.verified}
           verificationList={verificationList}
-          onCompleteProfile={() => navigation.navigate("ProfileEditScreen")}
+          // onCompleteProfile={() => navigation.navigate("ProfileEditScreen")}
+          onCompleteProfile={() => navigationRef.navigate("Menu")}
         />
 
         <Text variant="labelLarge" style={s.sectionLabel}>
