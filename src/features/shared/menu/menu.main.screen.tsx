@@ -218,11 +218,11 @@ export default function MenuMainScreen() {
                 { borderColor: theme.colors.outlineVariant },
               ]}
             >
-              <MenuItem
+              {/* <MenuItem
                 icon="lifebuoy"
                 label="Help Center"
                 onPress={() => navigation.navigate("CustomerHelp")}
-              />
+              /> */}
               <MenuItem
                 icon="file-document-outline"
                 label="Policies and Legal"

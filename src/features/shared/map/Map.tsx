@@ -1,24 +1,22 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Image, ViewStyle, View, Text } from "react-native";
+import React from "react";
+import { StyleSheet, ViewStyle, View, Text } from "react-native";
 import {
   MapView,
   Camera,
   UserLocation,
   PointAnnotation,
 } from "@maplibre/maplibre-react-native";
-import * as Location from "expo-location";
 import { Surface } from "react-native-paper";
 
-// Infrastructure & Config
 import { BoardingHouse } from "@/infrastructure/boarding-houses/boarding-house.schema";
 import { MapMarker } from "@/infrastructure/map/map.types";
 import { DEFAULT_COORDS } from "@/application/config/map.config";
 import theme from "@/application/config/react-native-paper.config";
-import { BorderRadius, Spacing } from "@/constants";
 
 interface MapProps {
   data: MapMarker[];
   defaultCoordinates?: [number, number];
+  userLocationGranted?: boolean;
   isMarkersLoading?: boolean;
   handleMarkerPress: (house: BoardingHouse) => void;
   mapStyle?: ViewStyle;
@@ -28,19 +26,13 @@ interface MapProps {
 export default function Map({
   data,
   defaultCoordinates = [DEFAULT_COORDS.lng, DEFAULT_COORDS.lat],
+  userLocationGranted = false,
   isMarkersLoading,
   handleMarkerPress,
   mapStyle,
   backdropStyle,
 }: MapProps) {
-  const [locationGranted, setLocationGranted] = useState(false);
-  const [cameraCoords] = useState<[number, number]>(defaultCoordinates);
-
-  useEffect(() => {
-    Location.requestForegroundPermissionsAsync().then(({ status }) =>
-      setLocationGranted(status === "granted"),
-    );
-  }, []);
+  const cameraCoords = defaultCoordinates;
 
   return (
     <View style={[styles.container, mapStyle]}>
@@ -54,16 +46,16 @@ export default function Map({
           centerCoordinate={cameraCoords}
           zoomLevel={14}
           animationMode="flyTo"
+          animationDuration={900}
         />
 
-        {locationGranted && <UserLocation visible />}
+        {userLocationGranted && <UserLocation visible />}
 
         {!isMarkersLoading &&
           data?.map((marker) => {
             const lng = Number(marker.lng);
             const lat = Number(marker.lat);
 
-            // Logic for Green/Red status
             const statusColor = marker.availabilityStatus
               ? theme.colors.success
               : theme.colors.error;
@@ -78,7 +70,6 @@ export default function Map({
                 onSelected={() => handleMarkerPress(marker as any)}
                 anchor={{ x: 0.5, y: 1 }}
               >
-                {/* Custom Marker View */}
                 <View style={styles.markerContainer}>
                   <Surface
                     style={[
@@ -92,7 +83,7 @@ export default function Map({
                       {!marker.availabilityStatus && " • Full"}
                     </Text>
                   </Surface>
-                  {/* The Pointer Tip */}
+
                   <View
                     style={[
                       styles.markerPointer,
@@ -118,14 +109,14 @@ const styles = StyleSheet.create({
   markerContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 10, // Gives room for the pointer
+    paddingBottom: 10,
   },
   markerChip: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 20, // Modern Pill Shape
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.4)",
   },
@@ -145,7 +136,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    marginTop: -1, // Prevent gap between chip and pointer
+    marginTop: -1,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,

@@ -7,6 +7,7 @@ import {
   Divider,
   ActivityIndicator,
   TouchableRipple,
+  Button,
 } from "react-native-paper";
 import { VStack, HStack, Box, Image } from "@gluestack-ui/themed";
 import { useNavigation } from "@react-navigation/native";
@@ -31,6 +32,7 @@ import { TenantDashboardStackParamList } from "../navigation/dashboard.stack";
 import { DEFAULT_COORDS } from "@/application/config/map.config";
 import StayStatusSection from "../components/StayStatusSection";
 import { TenantTabsParamList } from "../../../navigation/tenant.tabs.types";
+import { navigationRef } from "@/application/navigation/navigationRef";
 
 export default function MainScreen() {
   const { colors } = useTheme();
@@ -172,9 +174,14 @@ export default function MainScreen() {
                 {markers.length} fresh listings in Ormoc this week.
               </Text>
             </VStack>
-            <Box style={s.promoBadge}>
+            <Button
+              onPress={() => {
+                navigationRef.navigate("Map");
+              }}
+              style={s.promoBadge}
+            >
               <Text style={s.promoBadgeText}>Explore</Text>
-            </Box>
+            </Button>
           </HStack>
         </Surface>
       </VStack>

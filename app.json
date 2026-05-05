@@ -13,6 +13,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.GG-View"
     },
+    "splash": {
+      "image": "./src/assets/logo/1_1/light/light-512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#071625"
+    },
     "android": {
       "usesCleartextTraffic": true,
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
@@ -24,7 +29,7 @@
     },
     "extra": {
       "api": {
-        "baseUrl": "http://10.0.9.1943000"
+        "baseUrl": "http://10.0.9.194:3000"
       },
       "eas": {
         "projectId": "f972946f-0577-48b6-bb4d-3eca11be116a"

@@ -14,7 +14,7 @@ import { Box, HStack, VStack } from "@gluestack-ui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 
-import { GlobalStyle, Spacing } from "@/constants";
+import { Fontsize, GlobalStyle, Spacing } from "@/constants";
 import StaticScreenWrapper from "@/components/layout/StaticScreenWrapper";
 import { useDynamicUserApi } from "@/infrastructure/user/user.hooks";
 import { computeProfileCompleteness } from "@/infrastructure/user/user.requirements.slice";
@@ -78,7 +78,7 @@ export default function MenuUserEditScreen() {
     <StaticScreenWrapper style={GlobalStyle.GlobalsContainer}>
       <VStack space="lg" style={s.mainScroll}>
         <Box style={s.avatarContainer}>
-          <Box>
+          {/* <Box>
             <Avatar.Image
               size={120}
               source={{
@@ -94,7 +94,7 @@ export default function MenuUserEditScreen() {
               size={20}
               style={s.cameraBtn}
             />
-          </Box>
+          </Box> */}
           <Text style={s.roleLabel}>{authUserRole?.toUpperCase()}</Text>
         </Box>
 
@@ -201,7 +201,7 @@ export default function MenuUserEditScreen() {
 const s = StyleSheet.create({
   mainScroll: { paddingBottom: Spacing.lg },
   flex1: { flex: 1 },
-  avatarContainer: { alignItems: "center", marginVertical: Spacing.lg },
+  avatarContainer: { alignItems: "center", marginVertical: 0 },
   cameraBtn: {
     position: "absolute",
     bottom: -5,
@@ -213,7 +213,7 @@ const s = StyleSheet.create({
   roleLabel: {
     marginTop: Spacing.sm,
     fontFamily: "Poppins-Bold",
-    fontSize: 10,
+    fontSize: Fontsize.h3,
     letterSpacing: 2,
     color: "#767474",
   },
