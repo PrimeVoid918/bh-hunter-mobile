@@ -74,7 +74,7 @@ export const BaseBoardingHouseSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 
-  bookings: z.array(GetBookingSchema), // or CreateBookingSchema if needed
+  bookings: z.array(GetBookingSchema),
   boardingHouseImage: z.array(BoardingHouseImageSchema),
   permits: z.array(PDFSchema),
   thumbnail: z.array(ImageUploadSchema).optional(),
@@ -193,14 +193,12 @@ export const CreateBoardingHouseInputSchema = z.object({
   // rooms: z.array(UnifiedRoomCreateSchema).optional(),
 });
 
-// Output schema with transformation  s
+// Output schema
 export const CreateBoardingHouseSchema =
   CreateBoardingHouseInputSchema.transform((data) => ({
     ...data,
     rooms: data.rooms
-      ? data.rooms.map(
-          (room) => CreateRoomInputSchema.parse(room), // Transform each room to output type
-        )
+      ? data.rooms.map((room) => CreateRoomInputSchema.parse(room))
       : undefined,
   }));
 
@@ -222,27 +220,12 @@ export const PatchBoardingHouseSchema = z
 
     availabilityStatus: z.boolean().optional(),
 
-    // Optional location update (coordinates only),
-    // but you mentioned this is coming from another module.
-    // Keeping this optional if you add it later.
     location: z
       .object({
         coordinates: z.tuple([z.number(), z.number()]).optional(),
       })
       .optional(),
   })
-  .strict(); // ⛔ blocks unwanted fields for safety
+  .strict();
 
 export type PatchBoardingHouseInput = z.infer<typeof PatchBoardingHouseSchema>;
-
-/**
-name
-address
-description
-ameneties []
-availability
-location [x,y] => has its own module
-
-thumbnail x
-gallery x
- */

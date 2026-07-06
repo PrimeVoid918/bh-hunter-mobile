@@ -8,7 +8,6 @@ import {
   UpdateReviewInput,
   ReviewSummary,
 } from "./reviews.schema";
-// import { Review } from "./reviews.schema";
 
 const reviewApiRoute = `/api/reviews`;
 
@@ -58,7 +57,6 @@ export const reviewsApi = createApi({
           distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
         },
 
-      // Use a single tag per boarding house summary
       providesTags: (result, error, boardingHouseId) => [
         { type: "Review", id: `BH-${boardingHouseId}-SUMMARY` },
       ],

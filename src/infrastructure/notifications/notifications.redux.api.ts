@@ -36,7 +36,7 @@ export const notificationApi = createApi({
             "Invalid notification query params",
             parsed.error.format(),
           );
-          return notificationApiRoute; // fallback
+          return notificationApiRoute;
         }
 
         const queryParams = new URLSearchParams(
@@ -66,7 +66,6 @@ export const notificationApi = createApi({
           return `${notificationApiRoute}/${id}/read`;
         }
 
-        // console.error("Invalid markAsRead params", parsed.error.format());
         const queryParams = new URLSearchParams(
           Object.entries(parsed.data).map(([k, v]) => [k, String(v)]),
         );

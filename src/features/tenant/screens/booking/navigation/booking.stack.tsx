@@ -19,33 +19,26 @@ export default function BookingStack() {
       screenOptions={{
         headerShown: false,
       }}
-      // routing problem
     >
-      {/* 1st */}
       <Stack.Screen
         name="BoardingHouseLists"
         component={BookingListsScreen}
-        // options={backButtonConfig}
       />
-      {/* 2nd */}
       <Stack.Screen
         name="BoardingHouseDetails"
         component={BoardingHouseDetailsScreen}
         options={backButtonConfig}
       />
-      {/* 3rd */}
       <Stack.Screen
         name="RoomsBookingListsScreen"
         component={RoomsBookingListsScreen}
         options={backButtonConfig}
       />
-      {/* 4th */}
       <Stack.Screen
         name="RoomsDetailsScreen"
         component={RoomsDetailsScreen}
         options={backButtonConfig}
       />
-      {/* 5th */}
       <Stack.Screen
         name="RoomsCheckoutScreen"
         component={RoomsCheckoutScreen}

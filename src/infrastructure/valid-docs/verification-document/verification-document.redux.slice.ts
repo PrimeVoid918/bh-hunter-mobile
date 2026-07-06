@@ -37,12 +37,10 @@ export const verificationSlice = createSlice({
     ) => {
       const { profile, verificationStatus } = action.payload;
 
-      // 1️⃣ Profile completeness
       const isProfileComplete = !!profile.firstName && !!profile.lastName;
 
       state.isProfileComplete = isProfileComplete;
 
-      // 2️⃣ Documents evaluation
       const docs = verificationStatus.verificationDocuments ?? [];
 
       state.hasPending = docs.some((d) => d.verificationStatus === "PENDING");
@@ -51,7 +49,6 @@ export const verificationSlice = createSlice({
 
       state.isFullyVerified = verificationStatus.verified;
 
-      // 3️⃣ Missing requirements logic
       const missing: string[] = [];
 
       if (!isProfileComplete) missing.push("PROFILE");
@@ -62,7 +59,6 @@ export const verificationSlice = createSlice({
 
       state.missingRequirements = missing;
 
-      // 4️⃣ Next step decision tree
       if (!isProfileComplete) {
         state.nextStep = "COMPLETE_PROFILE";
       } else if (state.hasRejected) {

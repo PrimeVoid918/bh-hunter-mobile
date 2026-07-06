@@ -1,4 +1,3 @@
-// import { BACKEND_API } from "@/app/config/api";
 import api from "@/application/config/api";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 

@@ -45,7 +45,7 @@ export const bookingApi = createApi({
         const parsed = QueryBookingSchema.safeParse(params ?? {});
         if (!parsed.success) {
           console.error("Invalid query params", parsed.error.format());
-          return bookingApiRoute; //* fallback
+          return bookingApiRoute;
         }
 
         const queryParams = new URLSearchParams(

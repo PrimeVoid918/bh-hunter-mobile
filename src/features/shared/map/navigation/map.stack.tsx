@@ -11,9 +11,7 @@ export default function MapStack() {
     headerShown: true,
     title: "",
     headerStyle: {
-      // backgroundColor: Colors.
     },
-    // headerTintColor: Colors.
   };
 
   return (
@@ -26,7 +24,6 @@ export default function MapStack() {
       <Stack.Screen
         name="MapMain"
         component={MapMainScreen}
-        // options={backButtonConfig}
       />
     </Stack.Navigator>
   );

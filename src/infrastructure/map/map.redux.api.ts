@@ -23,12 +23,8 @@ export const mapsApi = createApi({
   }),
 
   endpoints: (builder) => ({
-    // getAll: builder.query<[], void>({
-    //   query: () =>
-    // }),
     getAll: builder.query<MapMarker[], NearbyQuery>({
       query: (params) => {
-        // 1. Use the correct schema!
         const parsed = nearbyQuerySchema.safeParse(params ?? {});
 
         if (!parsed.success) {
@@ -36,7 +32,6 @@ export const mapsApi = createApi({
           return mapsApiRoute;
         }
 
-        // 2. Build the query string using the parsed data
         const queryParams = new URLSearchParams();
         Object.entries(parsed.data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -56,14 +51,14 @@ export const mapsApi = createApi({
         const parsed = QueryBoardingHouseSchema.safeParse(params ?? {});
         if (!parsed.success) {
           console.error("Invalid query params", parsed.error.format());
-          return mapsApiRoute; // fallback without query
+          return mapsApiRoute;
         }
 
         const queryParams = new URLSearchParams(
           Object.fromEntries(
             Object.entries(parsed.data)
               .filter(([_, v]) => v != null)
-              .map(([key, value]) => [key, String(value)]), // <-- cast to string
+              .map(([key, value]) => [key, String(value)]),
           ),
         );
 

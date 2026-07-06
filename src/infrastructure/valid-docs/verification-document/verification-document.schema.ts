@@ -122,7 +122,6 @@ export const VerificationDocumentStatusSchema = z.object({
     .default([]), // default to empty if backend returns nothing
 });
 
-/** TS types */
 export type FileFormat = z.infer<typeof FileFormatSchema>;
 export type MediaType = z.infer<typeof MediaTypeSchema>;
 export type VerificationType = z.infer<typeof VerificationTypeSchema>;

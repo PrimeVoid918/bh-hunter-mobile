@@ -58,7 +58,7 @@ export const roomApi = createApi({
     }),
 
     create: builder.mutation<
-      ApiResponseType<any>, // same as boarding house pattern
+      ApiResponseType<any>,
       { boardingHouseId: number | string; data: Partial<CreateRoom>[] }
     >({
       async queryFn({ boardingHouseId, data }) {
@@ -66,7 +66,6 @@ export const roomApi = createApi({
           const result = await uploadRoom(boardingHouseId, data);
 
           if (result.success) {
-            // Clean temp files after upload
             await expoStorageCleaner(["images", "documents"]);
             return {
               data: {
@@ -77,7 +76,6 @@ export const roomApi = createApi({
             };
           }
 
-          // ❌ Backend rejected request
           return {
             error: {
               status: "SERVER_REJECTED",
@@ -111,12 +109,10 @@ export const roomApi = createApi({
 
         const body: any = { ...parsed.data };
 
-        // Convert numeric fields to string for backend
         if (body.maxCapacity !== undefined)
           body.maxCapacity = String(body.maxCapacity);
         if (body.price !== undefined) body.price = String(body.price);
 
-        // Only send defined fields → true PATCH
         const dataToSend = Object.fromEntries(
           Object.entries(body).filter(([_, v]) => v !== undefined),
         );

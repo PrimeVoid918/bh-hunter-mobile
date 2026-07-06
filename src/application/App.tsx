@@ -11,7 +11,6 @@ import { PortalProvider, PortalHost } from "@gorhom/portal";
 import { Provider as PaperProvider, MD3LightTheme } from "react-native-paper";
 
 import { Linking } from "react-native";
-// import * as Linking from "expo-linking";
 import GlobalDocumentFullScreenProvider from "@/components/ui/DocumentComponentUtilities/GlobalDocumentFullScreenProvider";
 import theme from "./config/react-native-paper.config";
 import * as Font from "expo-font";
@@ -22,14 +21,12 @@ import { DecisionProvider } from "@/components/ui/Modals/DecisionModalWrapper";
 export default function App() {
   const [fontsLoaded] = useFonts(fonts);
 
-  // LogBox.ignoreAllLogs(true);
   React.useEffect(() => {
     const sub = Linking.addEventListener("url", (event) => {
       console.log("Returned to app with:", event.url);
 
       if (event.url.includes("payment-success")) {
         console.log("Payment flow finished");
-        // Navigate or refetch booking
       }
 
       if (event.url.includes("payment-cancel")) {
@@ -41,7 +38,7 @@ export default function App() {
   }, []);
 
   if (!fontsLoaded) {
-    return null; // or splash screen
+    return null;
   }
 
   return (
@@ -65,6 +62,4 @@ export default function App() {
       </GestureHandlerRootView>
     </PortalProvider>
   );
-
-  // return <TestModal></TestModal>;
 }
