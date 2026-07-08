@@ -1,271 +1,250 @@
-# BH View (React Native App)
+# BH View
 
-BH View is the React Native (Expo + TypeScript) mobile application for BH Hunter, a boarding house discovery, booking, and stay-management platform.
+> React Native (Expo + TypeScript) mobile application for the BH Hunter platform.
 
-It serves as the primary mobile interface for tenants, owners, and administrators, providing role-based access to booking workflows, property management, payments, and platform interactions.
-
----
-
-## Platform Overview
-
-The mobile app is a multi-role system with three main user experiences:
-
-- Tenant application (discovery, booking, stay tracking)
-- Owner application (property management, bookings, analytics)
-
-It communicates with the BH Hunter NestJS backend via REST APIs and event-driven updates.
+BH View is a multi-role mobile application that enables tenants to discover and book boarding houses while providing property owners with tools to manage listings, bookings, payments, and business operations.
 
 ---
 
-## Tech Stack
-
-- Expo (SDK 52)
-- React Native 0.76
-- TypeScript
-- Redux Toolkit (state management)
-- React Query (server state)
-- React Navigation (navigation system)
-- MapLibre / React Native Maps (geospatial discovery)
-- Gluestack UI (component system)
-- EAS Build (production builds)
-- PayMongo integration (payments)
-
----
-
-## Project Structure Overview
-
-The app follows a feature-based modular architecture:
-
-- application/ → app bootstrap, navigation, config, global store
-- features/ → role-based modules (tenant, owner, admin, auth, guest)
-- infrastructure/ → API layer, Redux slices, services, schemas
-- components/ → reusable UI components (shared system)
-- shared/ → cross-feature business components (booking, maps, verification)
-- assets/ → images, fonts, static files
-- constants/ → theme, styles, icons, global configs
-
-Each feature is isolated to maintain scalability and separation of concerns.
-
----
-
-## Role-Based Architecture
-
-The application supports three primary roles:
+# Features
 
 ### Tenant
 
-- Browse boarding houses
-- View maps and listings
-- Book rooms
-- Manage stays and bookings
-- View booking history and bookmarks
+- Browse nearby boarding houses
+- Interactive map-based property discovery
+- Room reservation and booking
+- Booking history and stay management
+- Reviews and bookmarks
 
 ### Owner
 
-- Create and manage properties
-- Manage rooms and pricing
-- Handle bookings and approvals
-- View analytics dashboard
+- Property and room management
+- Booking approval workflow
+- Dashboard and business analytics
+- Tenant management
 
-### Admin
+### Platform
 
-- User and owner management
-- Verification approval system
-- Audit logs and system monitoring
+- JWT Authentication
+- PayMongo payment integration
+- Role-based navigation
+- Document verification
+- Push notifications
+- MapLibre geospatial search
 
-NOTE: The legacy "admin" module still exists in the codebase but is deprecated and no longer actively used in routing.
+## Application Flow
 
----
+```
+Tenant
 
-## Navigation System
+    ↓
 
-- React Navigation (stack + tabs + nested navigators)
-- Role-based routing guards
-- Centralized route definitions in application/navigation/
-- Deep linking ready structure (partial implementation)
+Discover Boarding House
 
----
+    ↓
 
-## State Management
+View Rooms
 
-- Redux Toolkit for global application state
-- RTK Query-style API slices in infrastructure/
-- React Query for server synchronization
-- Event bus utility for cross-module communication
+    ↓
 
----
+Submit Booking Request
 
-## Maps & Location System
+    ↓
 
-- MapLibre for rendering interactive maps
-- Geolocation via Expo Location
-- Backend-powered geospatial search (PostGIS integration)
-- Custom map sheets and property markers
+Owner Review
 
----
+    ↓
 
-## Authentication
+Booking Approval
 
-- JWT-based authentication
-- Secure storage via Expo SecureStore
-- Role-based session hydration
-- Persistent login sessions
+    ↓
 
----
+Required Payment Stages
 
-## Payments
+    ↓
 
-- PayMongo integration
-- Booking-based payment lifecycle
-- Supports:
-  - reservation fees
-  - advance payments
-  - deposits
-  - extensions
-  - refunds (policy-based)
+Approved Stay Period
+```
 
 ---
 
-## Build & Deployment
+# Screenshots
 
-### Development
+| Login                                | Tenant Registration                          | Owner Registration                          |
+|--------------------------------------|----------------------------------------------|---------------------------------------------|
+| <p align="center"> <img src="docs/screenshots/auth/login.jpg" width="250"> </p> | <p align="center"> <img src="docs/screenshots/auth/signup-tenant.jpg" width="250"> </p> | <p align="center"> <img src="docs/screenshots/auth/signup-owner.jpg" width="250"> </p> |
+<!-- | ![](docs/screenshots/auth/login.jpg) | ![](docs/screenshots/auth/signup-tenant.jpg) | ![](docs/screenshots/auth/signup-owner.jpg) | -->
 
-- expo start --dev-client
+## Tenant Experience
 
-### Android Build
+### Dashboard
 
-- eas build --profile production --platform android
+<!-- ![Home](docs/screenshots/tenants/tenant-dashboard.jpg) -->
+<p align="center">
+<img src="docs/screenshots/tenants/tenant-dashboard.jpg" width="250">
+</p>
 
-### iOS
-
-- iOS project exists for Expo compatibility and potential App Store deployment
-
-### Web (optional)
-
-- expo start --web (for debugging only)
-
----
-
-## Screenshots (UI Documentation)
-
-### Important
-
-These screenshots are part of the user manual documentation layer, not core architecture.
-
-Recommended folder:
-
-/docs/screenshots/
-
-or
-
-/assets/docs/screenshots/
+Browse featured boarding houses and personalized recommendations.
 
 ---
 
-### Suggested Structure
+### Interactive Map Discovery
 
-/docs/screenshots/
-  /tenant/
-    home.png
-    map.png
-    booking-flow.png
-    booking-details.png
+The application includes a MapLibre-powered map for discovering nearby boarding houses. Property markers are populated from the backend based on active listings and owner subscription status.
 
-  /owner/
-    dashboard.png
-    property-management.png
-    booking-management.png
-
-  /auth/
-    login.png
-    signup.png
-
-  /admin/
-    admin-dashboard.png
-    user-verification.png
-    logs.png
+*Screenshot omitted because the archived backend environment is no longer available.*
 
 ---
 
-### How to reference them in README
+### Boarding House Details
 
-### Tenant Home Screen
+<!-- ![Rooms](docs/screenshots/tenants/tenant-bh-details.jpg) -->
+<p align="center"> <img src="docs/screenshots/tenants/tenant-bh-details.jpg" width="250"> </p>
 
-![Tenant Home Screen](./docs/screenshots/tenant/home.png)
-
-Shows the main discovery interface for tenants.
-
----
-
-### Owner Dashboard
-
-![Owner Dashboard](./docs/screenshots/owner/dashboard.png)
-
-Displays analytics and property management tools.
+View property information, amenities, images, and available rooms.
 
 ---
 
-### Admin Verification Panel
+### Room Selection
 
-![Admin Panel](./docs/screenshots/admin/user-verification.png)
+<!-- ![Rooms](docs/screenshots/tenants/tenant-roomdetails.jpg) -->
+<p align="center"> <img src="docs/screenshots/tenants/tenant-roomdetails.jpg" width="250"> </p>
 
-Used for verification of users and documents.
+Browse room availability before making a reservation.
+
+---
+
+### Booking Request
+
+<!-- ![Booking Request](docs/screenshots/tenants/tenant-booking-request.jpg) -->
+<p align="center"> <img src="docs/screenshots/tenants/tenant-booking-request.jpg" width="250"> </p>
+
+Review booking details before proceeding to payment.
 
 ---
 
-## Notes on Architecture Decisions
+### Booking Status
 
-- Feature-first modular design
-- Clear separation of domain logic and UI
-- Infrastructure layer isolates API complexity
-- Shared components reused across roles
-- Admin module is legacy and will be removed later
+<!-- ![Booking](docs/screenshots/tenants/tenant-booking-status.jpg) -->
+<p align="center"> <img src="docs/screenshots/tenants/tenant-booking-status.jpg" width="250"> </p>
+
+Track reservation progress, payments, and booking lifecycle.
+
+## Owner Experience
+
+### Dashboard
+
+<!-- ![Dashboard](docs/screenshots/owners/owner-dashboard.jpg) -->
+<p align="center"> <img src="docs/screenshots/owners/owner-dashboard.jpg" width="250"> </p>
+
+Overview of bookings, occupancy, and business metrics.
 
 ---
+
+### Property Management
+
+<!-- ![Properties](docs/screenshots/owners/owner-manage-properties.jpg) -->
+<p align="center"> <img src="docs/screenshots/owners/owner-manage-properties.jpg" width="250"> </p>
+
+Manage boarding house listings and property information.
+
+---
+
+### Booking Management
+
+<!-- ![Bookings](docs/screenshots/owners/owners-booking-management.jpg) -->
+<p align="center"> <img src="docs/screenshots/owners/owners-booking-management.jpg" width="250"> </p>
+
+Review, approve, or decline reservation requests.
+
+---
+
+## Shared Features
+
+### Verification
+
+| Tenant Verification                                               | Owner Verification                                  |
+|-------------------------------------------------------------------|-----------------------------------------------------|
+| <p align="center"> <img src="docs/screenshots/tenants/tenant-verification.jpg" width="250"> </p> | <p align="center"> <img src="docs/screenshots/owners/owner-verification.jpg" width="250"> </p> |
+
+<!-- <p align="center"> <img src="" width="250"> </p> -->
+
+Identity verification workflow for users and property owners.
+
+---
+
+### Reviews
+
+Tenants can submit a single review and rating for each boarding house after their stay. The platform provides aggregated ratings and review summaries to help future tenants evaluate listings.
+
+*Screenshot unavailable in the archived project documentation.*
+
+---
+
+### Notifications
+
+The notification interface is shared across user roles, with content varying based on user activity and permissions.
+
+---
+
+### Profile
+
+<!-- ![Profile](docs/screenshots/tenants/tenant-profile.jpg) -->
+<p align="center"> <img src="docs/screenshots/tenants/tenant-profile.jpg" width="250"> </p>
+
+Manage personal information and account settings.
+
+## Tech Stack
+
+- React Native 0.76
+- Expo SDK 52
+- TypeScript
+- Redux Toolkit
+- React Query
+- React Navigation
+- MapLibre
+- Gluestack UI
+- Expo SecureStore
+- PayMongo
+- EAS Build
+
+## Architecture
+
+The application follows a feature-first modular architecture to improve maintainability and scalability.
+
+```
+src/
+├── application/      # App bootstrap, navigation, configuration
+├── features/         # Feature modules (tenant, owner, auth)
+├── infrastructure/   # API layer, services, Redux
+├── components/       # Shared UI components
+├── assets/           # Fonts, images, icons
+└── constants/        # Theme and global configuration
+```
+
+This separation keeps business logic, presentation, and infrastructure concerns isolated across the application.
+
+## Technical Highlight
+
+- Multi-role application architecture
+- Feature-first module organization
+- JWT authentication with persistent sessions
+- Interactive MapLibre integration
+- REST API communication with NestJS backend
+- Booking lifecycle management
+- PayMongo payment workflow
+- Role-based navigation guards
 
 ## Known Limitations
 
-- Admin module is deprecated but still present
-- Some navigation flows are deeply nested
-- Some legacy Redux patterns remain
-- Deep linking not fully standardized
+- Legacy admin module remains in the repository but is no longer maintained.
+- Some navigation flows remain deeply nested due to project evolution.
+- Deep linking support is partially implemented.
 
----
+## Related Projects
 
-## Why This Project Exists
-
-This system was built iteratively to simulate a real-world boarding house booking platform with:
-
-- discovery
-- booking workflows
-- payment lifecycle tracking
-- role-based property management
-- localized deployment context
-
-## Related Repositories
-
-This mobile application is part of the broader BH Hunter ecosystem.
-
-### Backend API (NestJS)
-
-Responsible for core business logic, booking workflows, payments, authentication, and platform services.
-
-Repository:
-
-- [BH Hunter Backend](https://github.com/PrimeVoid918/bh-hunter-core)
-
-### Web Frontend (React + Vite)
-
-Provides the public website, admin dashboard, and role-based web application.
-
-Repository:
-
-- [BH Hunter Web Frontend](https://github.com/PrimeVoid918/bh-hunter-core/tree/main/frontend)
-
-### Mobile App (React Native - this repo)
-
-This repository:
-
-- BH View (Mobile Application)
-- Primary user-facing mobile platform for tenants and owners
-- Handles maps, booking flows, and mobile interactions
+| Repository | Description |
+|------------|-------------|
+| [BH Hunter Backend](https://github.com/PrimeVoid918/bh-hunter-core) | NestJS backend API |
+| [BH Hunter Web](https://github.com/PrimeVoid918/bh-hunter-core/tree/main/frontend) | React + Vite web application |
+| **BH View** | React Native mobile application (this repository) |
