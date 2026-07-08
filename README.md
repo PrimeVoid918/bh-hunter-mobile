@@ -248,3 +248,7 @@ This separation keeps business logic, presentation, and infrastructure concerns 
 | [BH Hunter Backend](https://github.com/PrimeVoid918/bh-hunter-core) | NestJS backend API |
 | [BH Hunter Web](https://github.com/PrimeVoid918/bh-hunter-core/tree/main/frontend) | React + Vite web application |
 | **BH View** | React Native mobile application (this repository) |
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
